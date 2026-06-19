@@ -115,3 +115,13 @@ input {
   border-radius: 12px;
   margin-top: 8px;
 }
+
+.btn.travado {
+  background: #dc2626;
+  color: #ffffff;
+  cursor: not-allowed;
+}
+
+.btn.travado:hover {
+  background: #dc2626;
+}
