@@ -1,0 +1,117 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #111827;
+  color: #f9fafb;
+}
+
+.app {
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.topo {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.topo h1 {
+  margin-bottom: 6px;
+  font-size: 32px;
+}
+
+.card {
+  background: #1f2937;
+  border-radius: 18px;
+  padding: 18px;
+  margin-bottom: 18px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+}
+
+.destaque {
+  border: 1px solid #22c55e;
+}
+
+input {
+  width: 100%;
+  padding: 12px;
+  margin: 8px 0;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+}
+
+.btn {
+  width: 100%;
+  padding: 12px;
+  margin-top: 8px;
+  background: #22c55e;
+  color: #052e16;
+  border: none;
+  border-radius: 10px;
+  font-weight: bold;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.btn:hover {
+  background: #16a34a;
+}
+
+.btn.secundario {
+  background: #374151;
+  color: #f9fafb;
+}
+
+.escondido {
+  display: none;
+}
+
+.erro {
+  color: #f87171;
+}
+
+.bloqueado {
+  color: #facc15;
+}
+
+.jogo {
+  background: #111827;
+  padding: 14px;
+  border-radius: 14px;
+  margin-top: 12px;
+}
+
+.times {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  font-weight: bold;
+}
+
+.palpite {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.palpite input {
+  text-align: center;
+}
+
+.ranking-item {
+  display: flex;
+  justify-content: space-between;
+  background: #111827;
+  padding: 12px;
+  border-radius: 12px;
+  margin-top: 8px;
+}
