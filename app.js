@@ -1,4 +1,4 @@
-// VERSÃO 11
+// VERSÃO 13
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
 import {
@@ -128,73 +128,89 @@ async function carregarJogosHoje() {
 
   jogosHojeDiv.innerHTML = "";
 
-  const q = query(
-    collection(db, "matches"),
-    where("date", "==", hojeISO()),
-    orderBy("kickoff", "asc")
-  );
+  try {
+    const q = query(
+      collection(db, "matches"),
+      where("date", "==", hojeISO())
+    );
 
-  const snap = await getDocs(q);
+    const snap = await getDocs(q);
 
-  const jogos = [];
-  snap.forEach((docSnap) => {
-    jogos.push({
-      id: docSnap.id,
-      ...docSnap.data()
+    const jogos = [];
+    snap.forEach((docSnap) => {
+      jogos.push({
+        id: docSnap.id,
+        ...docSnap.data()
+      });
     });
-  });
 
-  if (jogos.length === 0) {
-    statusRodada.innerText = "Nenhum jogo cadastrado para hoje.";
-    return;
-  }
+    jogos.sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
 
-  const rodadaAberta = rodadaEstaAberta(jogos);
+    if (jogos.length === 0) {
+      statusRodada.innerText = "Nenhum jogo cadastrado para hoje.";
+      return;
+    }
 
-  statusRodada.innerText = rodadaAberta
-    ? "Rodada aberta para palpites."
-    : "Rodada ainda fechada. Abre 4 horas antes do primeiro jogo.";
+    const rodadaAberta = rodadaEstaAberta(jogos);
 
-  for (const jogo of jogos) {
-    jogosHojeDiv.appendChild(await criarCardJogo(jogo, rodadaAberta));
+    statusRodada.innerText = rodadaAberta
+      ? "Rodada aberta para palpites."
+      : "Rodada ainda fechada. Abre 4 horas antes do primeiro jogo.";
+
+    for (const jogo of jogos) {
+      jogosHojeDiv.appendChild(await criarCardJogo(jogo, rodadaAberta));
+    }
+  } catch (error) {
+    console.log("Erro ao carregar jogos de hoje:", error);
+    statusRodada.innerText = `Erro ao carregar jogos: ${error.code}`;
   }
 }
-
 async function carregarJogosAmanha() {
   const jogosAmanhaDiv = document.getElementById("jogosAmanha");
   jogosAmanhaDiv.innerHTML = "";
 
-  const q = query(
-    collection(db, "matches"),
-    where("date", "==", amanhaISO()),
-    orderBy("kickoff", "asc")
-  );
+  try {
+    const q = query(
+      collection(db, "matches"),
+      where("date", "==", amanhaISO())
+    );
 
-  const snap = await getDocs(q);
+    const snap = await getDocs(q);
 
-  if (snap.empty) {
-    jogosAmanhaDiv.innerHTML = "<p>Nenhum jogo cadastrado para amanhã.</p>";
-    return;
+    const jogos = [];
+    snap.forEach((docSnap) => {
+      jogos.push({
+        id: docSnap.id,
+        ...docSnap.data()
+      });
+    });
+
+    jogos.sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
+
+    if (jogos.length === 0) {
+      jogosAmanhaDiv.innerHTML = "<p>Nenhum jogo cadastrado para amanhã.</p>";
+      return;
+    }
+
+    jogos.forEach((jogo) => {
+      const div = document.createElement("div");
+      div.className = "jogo";
+      div.innerHTML = `
+        <div class="times">
+          <span>${jogo.homeTeam}</span>
+          <span>x</span>
+          <span>${jogo.awayTeam}</span>
+        </div>
+        <p>${formatarHora(jogo.kickoff)}</p>
+      `;
+
+      jogosAmanhaDiv.appendChild(div);
+    });
+  } catch (error) {
+    console.log("Erro ao carregar jogos de amanhã:", error);
+    jogosAmanhaDiv.innerHTML = `<p>Erro ao carregar jogos: ${error.code}</p>`;
   }
-
-  snap.forEach((docSnap) => {
-    const jogo = docSnap.data();
-
-    const div = document.createElement("div");
-    div.className = "jogo";
-    div.innerHTML = `
-      <div class="times">
-        <span>${jogo.homeTeam}</span>
-        <span>x</span>
-        <span>${jogo.awayTeam}</span>
-      </div>
-      <p>${formatarHora(jogo.kickoff)}</p>
-    `;
-
-    jogosAmanhaDiv.appendChild(div);
-  });
 }
-
 async function criarCardJogo(jogo, rodadaAberta) {
   const div = document.createElement("div");
   div.className = "jogo";
