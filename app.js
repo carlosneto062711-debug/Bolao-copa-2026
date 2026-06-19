@@ -1,4 +1,4 @@
-// VERSÃO 14
+// VERSÃO 15
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
 import {
@@ -276,9 +276,9 @@ async function criarCardJogo(jogo, rodadaAberta) {
       <input type="number" min="0" value="${awayGuess}" ${podePalpitar ? "" : "disabled"} />
     </div>
 
-    <button class="btn" ${podePalpitar ? "" : "disabled"}>
-      Salvar palpite
-    </button>
+   <button class="btn ${podePalpitar ? "" : "travado"}" ${podePalpitar ? "" : "disabled"}>
+  ${podePalpitar ? "Salvar palpite" : "Palpite travado"}
+</button>
   `;
 
   const inputs = div.querySelectorAll("input");
