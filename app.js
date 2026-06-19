@@ -1,4 +1,4 @@
-// VERSÃO 13
+// VERSÃO 14
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
 import {
@@ -221,15 +221,43 @@ async function criarCardJogo(jogo, rodadaAberta) {
 
   let homeGuess = "";
   let awayGuess = "";
+  let editCount = 0;
+  let jaTemPalpite = false;
 
   if (palpiteSnap.exists()) {
     const p = palpiteSnap.data();
     homeGuess = p.homeGuess ?? "";
     awayGuess = p.awayGuess ?? "";
+    editCount = p.editCount ?? 0;
+    jaTemPalpite = true;
   }
 
-  const jogoJaComecou = new Date() >= new Date(jogo.kickoff);
-  const podePalpitar = rodadaAberta && !jogoJaComecou;
+  const agora = new Date();
+  const horarioJogo = new Date(jogo.kickoff);
+
+  const jogoJaComecou = agora >= horarioJogo;
+  const atingiuLimiteAlteracoes = editCount >= 2;
+
+  const podePalpitar =
+    rodadaAberta &&
+    !jogoJaComecou &&
+    !atingiuLimiteAlteracoes;
+
+  const alteracoesRestantes = Math.max(0, 2 - editCount);
+
+  let statusPalpite = "";
+
+  if (!rodadaAberta) {
+    statusPalpite = "Rodada ainda fechada.";
+  } else if (jogoJaComecou) {
+    statusPalpite = "Jogo iniciado. Palpite travado.";
+  } else if (atingiuLimiteAlteracoes) {
+    statusPalpite = "Limite de alterações atingido. Palpite travado.";
+  } else if (jaTemPalpite) {
+    statusPalpite = `Alterações restantes: ${alteracoesRestantes}`;
+  } else {
+    statusPalpite = "Você ainda não palpitou.";
+  }
 
   div.innerHTML = `
     <div class="times">
@@ -239,6 +267,8 @@ async function criarCardJogo(jogo, rodadaAberta) {
     </div>
 
     <p>${formatarHora(jogo.kickoff)}</p>
+
+    <p class="status-palpite">${statusPalpite}</p>
 
     <div class="palpite">
       <input type="number" min="0" value="${homeGuess}" ${podePalpitar ? "" : "disabled"} />
@@ -258,20 +288,36 @@ async function criarCardJogo(jogo, rodadaAberta) {
     const casa = Number(inputs[0].value);
     const fora = Number(inputs[1].value);
 
+    if (inputs[0].value === "" || inputs[1].value === "") {
+      botao.innerText = "Preencha o placar!";
+      setTimeout(() => {
+        botao.innerText = "Salvar palpite";
+      }, 1500);
+      return;
+    }
+
+    const novoEditCount = jaTemPalpite ? editCount + 1 : 0;
+
     await setDoc(palpiteRef, {
       userId: usuarioAtual.uid,
       userName: dadosUsuarioAtual.nome,
       matchId: jogo.id,
+      homeTeam: jogo.homeTeam,
+      awayTeam: jogo.awayTeam,
       homeGuess: casa,
       awayGuess: fora,
       points: 0,
-      createdAt: new Date().toISOString()
+      editCount: novoEditCount,
+      locked: novoEditCount >= 2,
+      createdAt: jaTemPalpite ? palpiteSnap.data().createdAt : new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     });
 
     botao.innerText = "Palpite salvo!";
-    setTimeout(() => {
-      botao.innerText = "Salvar palpite";
-    }, 1500);
+
+    setTimeout(async () => {
+      await carregarTudo();
+    }, 1000);
   });
 
   return div;
