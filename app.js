@@ -22,12 +22,12 @@ import {
 
 // TROQUE ESTES DADOS PELOS DADOS DO SEU FIREBASE
 const firebaseConfig = {
-  apiKey: "COLE_AQUI",
-  authDomain: "COLE_AQUI",
-  projectId: "COLE_AQUI",
-  storageBucket: "COLE_AQUI",
-  messagingSenderId: "COLE_AQUI",
-  appId: "COLE_AQUI"
+  apiKey: "AIzaSyAQszm5MRBszffXrrPxJHIcSoOoLYo5A6g",
+  authDomain: "bolao-copa-2026-48fc2.firebaseapp.com",
+  projectId: "bolao-copa-2026-48fc2",
+  storageBucket: "bolao-copa-2026-48fc2.firebasestorage.app",
+  messagingSenderId: "866731236351",
+  appId: "1:866731236351:web:0bc6c58d7fd7da8224a5ca"
 };
 
 const app = initializeApp(firebaseConfig);
