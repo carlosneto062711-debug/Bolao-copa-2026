@@ -91,16 +91,16 @@ onAuthStateChanged(auth, async (user) => {
 async function entrar() {
   loginErro.innerText = "";
 
-  const email = document.getElementById("email").value;
+  const email = document.getElementById("email").value.trim();
   const senha = document.getElementById("senha").value;
 
   try {
     await signInWithEmailAndPassword(auth, email, senha);
   } catch (error) {
-    loginErro.innerText = "E-mail ou senha inválidos.";
+    console.log("Erro no login:", error.code, error.message);
+    loginErro.innerText = `Erro: ${error.code}`;
   }
 }
-
 async function sair() {
   await signOut(auth);
 }
