@@ -117,11 +117,11 @@ input {
 }
 
 .btn.travado {
-  background: #dc2626;
-  color: #ffffff;
+  background: #dc2626 !important;
+  color: #ffffff !important;
   cursor: not-allowed;
 }
 
 .btn.travado:hover {
-  background: #dc2626;
+  background: #dc2626 !important;
 }
