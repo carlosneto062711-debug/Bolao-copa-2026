@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bolão Copa 2026</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="topo">
+      <h1>Bolão Copa 2026</h1>
+      <p id="saudacao">Faça login para entrar</p>
+      <button id="btnSair" class="btn secundario escondido">Sair</button>
+    </header>
+
+    <section id="loginBox" class="card">
+      <h2>Entrar</h2>
+
+      <input id="email" type="email" placeholder="E-mail" />
+      <input id="senha" type="password" placeholder="Senha" />
+
+      <button id="btnEntrar" class="btn">Entrar</button>
+
+      <p id="loginErro" class="erro"></p>
+    </section>
+
+    <main id="conteudo" class="escondido">
+      <section class="card destaque">
+        <h2>Jogos de hoje</h2>
+        <p id="statusRodada">Verificando rodada...</p>
+        <div id="jogosHoje"></div>
+      </section>
+
+      <section class="card">
+        <h2>Jogos de amanhã</h2>
+        <p class="bloqueado">Palpites bloqueados. Abre amanhã, 4 horas antes do primeiro jogo.</p>
+        <div id="jogosAmanha"></div>
+      </section>
+
+      <section class="card">
+        <h2>Ranking</h2>
+        <div id="ranking"></div>
+      </section>
+
+      <section id="adminBox" class="card escondido">
+        <h2>Área do organizador</h2>
+
+        <h3>Cadastrar jogo</h3>
+
+        <input id="dataJogo" type="date" />
+        <input id="horaJogo" type="time" />
+        <input id="timeCasa" type="text" placeholder="Time da casa" />
+        <input id="timeFora" type="text" placeholder="Time de fora" />
+
+        <button id="btnCadastrarJogo" class="btn">Cadastrar jogo</button>
+
+        <p id="adminMsg"></p>
+      </section>
+    </main>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
