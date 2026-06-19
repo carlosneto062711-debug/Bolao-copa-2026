@@ -1,4 +1,4 @@
-// VERSÃO 10
+// VERSÃO 11
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
 import {
@@ -23,14 +23,13 @@ import {
 
 // TROQUE ESTES DADOS PELOS DADOS DO SEU FIREBASE
 const firebaseConfig = {
-  apiKey: "AIzaSyAQszm5MRBszffXrrPxJHIcSoOoLYo5A6g",
+  apiKey: "AIzaSyAQszm5MRBszffXrrPxJHlcSoOoLYo5A6g",
   authDomain: "bolao-copa-2026-48fc2.firebaseapp.com",
   projectId: "bolao-copa-2026-48fc2",
   storageBucket: "bolao-copa-2026-48fc2.firebasestorage.app",
   messagingSenderId: "866731236351",
   appId: "1:866731236351:web:0bc6c58d7fd7da8224a5ca"
 };
-
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
