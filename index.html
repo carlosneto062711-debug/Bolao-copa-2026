@@ -26,6 +26,11 @@
     </section>
 
     <main id="conteudo" class="escondido">
+      <section class="card painel-tempo">
+  <h2 id="tituloContagem">Carregando rodada...</h2>
+  <p id="textoContagem">Verificando horários dos jogos.</p>
+  <div id="contadorPrincipal" class="contador">--:--:--</div>
+</section>
       <section class="card destaque">
         <h2>Jogos de hoje</h2>
         <p id="statusRodada">Verificando rodada...</p>
@@ -37,7 +42,15 @@
         <p class="bloqueado">Palpites bloqueados. Abre amanhã, 4 horas antes do primeiro jogo.</p>
         <div id="jogosAmanha"></div>
       </section>
+<section class="card">
+  <div class="abas">
+    <button id="btnResultados" class="aba ativa">Resultados anteriores</button>
+    <button id="btnMeusPalpites" class="aba">Seus palpites</button>
+  </div>
 
+  <div id="painelResultados"></div>
+  <div id="painelMeusPalpites" class="escondido"></div>
+</section>
       <section class="card">
         <h2>Ranking</h2>
         <div id="ranking"></div>
@@ -59,6 +72,6 @@
       </section>
     </main>
   </div>
-<script type="module" src="./app.js?v=15"></script>
+<script type="module" src="./app.js?v=16"></script>
 </body>
 </html>
