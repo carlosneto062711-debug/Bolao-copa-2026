@@ -1,4 +1,4 @@
-// VERSÃO 21
+// VERSÃO 22
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
 import {
@@ -564,32 +564,6 @@ async function carregarPainelTempo() {
   texto.innerText = "Os palpites dos jogos de hoje já foram travados.";
   contador.innerText = "00h 00m 00s";
   alvoContagem = null;
-}
-
-  const agora = new Date();
-  const abertura = horarioAberturaRodada(jogos);
-  const rodadaAberta = agora >= abertura;
-
-  const proximosJogos = jogos.filter(jogo => new Date(jogo.kickoff) > agora);
-
-  if (!rodadaAberta) {
-    titulo.innerText = "Rodada fechada";
-    texto.innerText = "Palpites abrem 4 horas antes do primeiro jogo.";
-    contador.innerText = formatarContagem(abertura - agora);
-    return;
-  }
-
-  if (proximosJogos.length > 0) {
-    const proximo = proximosJogos[0];
-    titulo.innerText = "Rodada aberta";
-    texto.innerText = `Próximo jogo trava: ${proximo.homeTeam} x ${proximo.awayTeam}`;
-    contador.innerText = formatarContagem(new Date(proximo.kickoff) - agora);
-    return;
-  }
-
-  titulo.innerText = "Jogos do dia em andamento ou encerrados";
-  texto.innerText = "Os palpites dos jogos de hoje já foram travados.";
-  contador.innerText = "00h 00m 00s";
 }
 
 async function carregarResultadosAnteriores() {
