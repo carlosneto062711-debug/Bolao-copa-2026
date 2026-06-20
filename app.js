@@ -1,4 +1,4 @@
-// VERSÃO 20
+// VERSÃO 21
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
 import {
@@ -36,6 +36,9 @@ const db = getFirestore(app);
 
 let usuarioAtual = null;
 let dadosUsuarioAtual = null;
+
+let alvoContagem = null;
+let intervaloContagem = null;
 
 const loginBox = document.getElementById("loginBox");
 const conteudo = document.getElementById("conteudo");
@@ -85,6 +88,7 @@ onAuthStateChanged(auth, async (user) => {
     }
 
     await carregarTudo();
+    iniciarContagemEmTempoReal();
   } else {
     usuarioAtual = null;
     dadosUsuarioAtual = null;
@@ -168,6 +172,15 @@ async function carregarJogosHoje() {
     statusRodada.innerText = rodadaAberta
       ? "Rodada aberta para palpites."
       : "Rodada ainda fechada. Abre 4 horas antes do primeiro jogo.";
+
+    if (rodadaAberta) {
+      for (const jogo of jogos) {
+        const card = await criarCardJogo(jogo, rodadaAberta);
+        jogosHojeDiv.appendChild(card);
+      }
+
+      return;
+    }
 
     const primeiroJogo = jogos[0];
     const outrosJogos = jogos.slice(1);
@@ -520,8 +533,38 @@ async function carregarPainelTempo() {
     titulo.innerText = "Nenhum jogo hoje";
     texto.innerText = "Quando houver jogos cadastrados, a contagem aparecerá aqui.";
     contador.innerText = "--:--:--";
+    alvoContagem = null;
     return;
   }
+
+  const agora = new Date();
+  const abertura = horarioAberturaRodada(jogos);
+  const rodadaAberta = agora >= abertura;
+
+  const proximosJogos = jogos.filter(jogo => new Date(jogo.kickoff) > agora);
+
+  if (!rodadaAberta) {
+    titulo.innerText = "Rodada fechada";
+    texto.innerText = "Palpites abrem 4 horas antes do primeiro jogo.";
+    alvoContagem = abertura;
+    contador.innerText = formatarContagem(alvoContagem - agora);
+    return;
+  }
+
+  if (proximosJogos.length > 0) {
+    const proximo = proximosJogos[0];
+    titulo.innerText = "Rodada aberta";
+    texto.innerText = `Próximo jogo trava: ${proximo.homeTeam} x ${proximo.awayTeam}`;
+    alvoContagem = new Date(proximo.kickoff);
+    contador.innerText = formatarContagem(alvoContagem - agora);
+    return;
+  }
+
+  titulo.innerText = "Jogos do dia em andamento ou encerrados";
+  texto.innerText = "Os palpites dos jogos de hoje já foram travados.";
+  contador.innerText = "00h 00m 00s";
+  alvoContagem = null;
+}
 
   const agora = new Date();
   const abertura = horarioAberturaRodada(jogos);
@@ -662,7 +705,7 @@ function textoResultadoPalpite(palpiteCasa, palpiteFora, realCasa, realFora) {
   }
 
   if (pontos === 1) {
-    return "Você acertou o vencedor/empate. +1 ponto";
+    return "Você acertou o vencedor. +1 ponto";
   }
 
   return "Você errou este palpite. +0 pontos";
@@ -708,4 +751,17 @@ function trocarAba(aba) {
     painelMeusPalpites.classList.remove("escondido");
     painelResultados.classList.add("escondido");
   }
+}
+
+function iniciarContagemEmTempoReal() {
+  if (intervaloContagem) return;
+
+  intervaloContagem = setInterval(() => {
+    const contador = document.getElementById("contadorPrincipal");
+
+    if (!contador || !alvoContagem) return;
+
+    const agora = new Date();
+    contador.innerText = formatarContagem(alvoContagem - agora);
+  }, 1000);
 }
