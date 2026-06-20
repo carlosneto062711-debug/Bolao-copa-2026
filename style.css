@@ -235,3 +235,11 @@ input {
   background: #facc15;
   color: #111827;
 }
+
+.contador.alerta {
+  color: #dc2626 !important;
+}
+
+#contadorAmanha.alerta {
+  color: #dc2626 !important;
+}
