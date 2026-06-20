@@ -1,4 +1,4 @@
-// VERSÃO 37
+// VERSÃO 38
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
 import {
@@ -138,6 +138,46 @@ async function listarIdsCopaApi() {
 }
 
 window.listarIdsCopaApi = listarIdsCopaApi;
+
+async function buscarJogosCopa2026() {
+  try {
+    console.log("Buscando jogos da Copa 2026 por período...");
+
+    const response = await fetch(
+      `${API_FOOTBALL_BASE_URL}/fixtures?league=1&season=2026&from=2026-06-11&to=2026-07-19`,
+      {
+        method: "GET",
+        headers: {
+          "x-apisports-key": API_FOOTBALL_KEY
+        }
+      }
+    );
+
+    const data = await response.json();
+
+    console.log("Jogos Copa 2026:", data);
+
+    const jogos = data.response.map((item) => ({
+      id: item.fixture.id,
+      data: item.fixture.date,
+      status: item.fixture.status.short,
+      casa: item.teams.home.name,
+      fora: item.teams.away.name,
+      golsCasa: item.goals.home,
+      golsFora: item.goals.away
+    }));
+
+    console.table(jogos);
+
+    alert(`Busca finalizada. Jogos encontrados: ${data.results}`);
+
+  } catch (error) {
+    console.error("Erro ao buscar jogos da Copa:", error);
+    alert("Erro ao buscar jogos da Copa. Veja o console.");
+  }
+}
+
+window.buscarJogosCopa2026 = buscarJogosCopa2026;
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
