@@ -1,4 +1,4 @@
-// VERSÃO 26
+// VERSÃO 27
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
 import {
@@ -721,18 +721,23 @@ async function carregarMeusPalpites() {
 
     const jogo = jogoSnap.data();
 
+    const agora = new Date();
+    const jogoComecou = agora >= new Date(jogo.kickoff);
+    const jogoFinalizado = jogo.status === "finished";
+    const jogoAoVivo = jogoComecou && !jogoFinalizado;
+
     let statusTexto = "Agendado";
     let badgeClasse = "agendado";
     let comparacao = "Aguardando o jogo acontecer.";
 
-    if (jogo.status === "live") {
-      statusTexto = "Ao vivo";
+    if (jogoAoVivo) {
+      statusTexto = "AO VIVO";
       badgeClasse = "ao-vivo";
       comparacao = `Placar atual: ${jogo.homeScore ?? 0} x ${jogo.awayScore ?? 0}`;
     }
 
-    if (jogo.status === "finished") {
-      statusTexto = "Finalizado";
+    if (jogoFinalizado) {
+      statusTexto = "Encerrado";
       badgeClasse = "finalizado";
       comparacao = textoResultadoPalpite(
         palpite.homeGuess,
@@ -867,5 +872,5 @@ function iniciarAtualizacaoAutomatica() {
     if (usuarioAtual) {
       await carregarTudo();
     }
-  }, 30000);
+  }, 5000);
 }
