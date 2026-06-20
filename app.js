@@ -1,4 +1,4 @@
-// VERSÃO 28
+// VERSÃO 29
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
 import {
@@ -495,23 +495,73 @@ async function carregarRanking() {
   const rankingDiv = document.getElementById("ranking");
   rankingDiv.innerHTML = "";
 
-  const q = query(collection(db, "users"), orderBy("pontos", "desc"));
-  const snap = await getDocs(q);
+  const usersSnap = await getDocs(collection(db, "users"));
+  const matchesSnap = await getDocs(collection(db, "matches"));
+  const predictionsSnap = await getDocs(collection(db, "predictions"));
 
-  let posicao = 1;
+  const usuarios = [];
+  usersSnap.forEach((docSnap) => {
+    usuarios.push({
+      id: docSnap.id,
+      ...docSnap.data(),
+      pontosCalculados: 0
+    });
+  });
 
-  snap.forEach((docSnap) => {
-    const user = docSnap.data();
+  const jogosFinalizados = [];
+  matchesSnap.forEach((docSnap) => {
+    const jogo = {
+      id: docSnap.id,
+      ...docSnap.data()
+    };
 
+    if (jogo.status === "finished") {
+      jogosFinalizados.push(jogo);
+    }
+  });
+
+  const palpites = [];
+  predictionsSnap.forEach((docSnap) => {
+    palpites.push({
+      id: docSnap.id,
+      ...docSnap.data()
+    });
+  });
+
+  usuarios.forEach((usuario) => {
+    let total = 0;
+
+    jogosFinalizados.forEach((jogo) => {
+      const palpite = palpites.find((p) =>
+        p.userId === usuario.id &&
+        p.matchId === jogo.id
+      );
+
+      if (palpite) {
+        total += calcularPontos(
+          palpite.homeGuess,
+          palpite.awayGuess,
+          jogo.homeScore,
+          jogo.awayScore
+        );
+      }
+    });
+
+    usuario.pontosCalculados = total;
+  });
+
+  usuarios.sort((a, b) => b.pontosCalculados - a.pontosCalculados);
+
+  usuarios.forEach((usuario, index) => {
     const div = document.createElement("div");
     div.className = "ranking-item";
+
     div.innerHTML = `
-      <span>${posicao}. ${user.nome}</span>
-      <strong>${user.pontos || 0} pts</strong>
+      <span>${index + 1}. ${usuario.nome}</span>
+      <strong>${usuario.pontosCalculados} pts</strong>
     `;
 
     rankingDiv.appendChild(div);
-    posicao++;
   });
 }
 
@@ -800,14 +850,14 @@ function textoResultadoPalpite(palpiteCasa, palpiteFora, realCasa, realFora) {
   const pontos = calcularPontos(palpiteCasa, palpiteFora, realCasa, realFora);
 
   if (pontos === 3) {
-    return "Você acertou o placar exato. +3 pontos";
+    return "MAIS TREXXXXX PONTOS!!!";
   }
 
   if (pontos === 1) {
-    return "Você acertou o vencedor. +1 ponto";
+    return "É... UM PONTINHO...";
   }
 
-  return "Você errou este palpite. +0 pontos";
+  return "NADA PRA NINGUÉM...";
 }
 
 function calcularPontos(palpiteCasa, palpiteFora, realCasa, realFora) {
@@ -815,10 +865,17 @@ function calcularPontos(palpiteCasa, palpiteFora, realCasa, realFora) {
     return 3;
   }
 
-  const resultadoPalpite = getResultado(palpiteCasa, palpiteFora);
-  const resultadoReal = getResultado(realCasa, realFora);
+  const palpiteTeveVencedor = palpiteCasa !== palpiteFora;
+  const jogoTeveVencedor = realCasa !== realFora;
 
-  if (resultadoPalpite === resultadoReal) {
+  if (!palpiteTeveVencedor || !jogoTeveVencedor) {
+    return 0;
+  }
+
+  const vencedorPalpite = palpiteCasa > palpiteFora ? "CASA" : "FORA";
+  const vencedorReal = realCasa > realFora ? "CASA" : "FORA";
+
+  if (vencedorPalpite === vencedorReal) {
     return 1;
   }
 
