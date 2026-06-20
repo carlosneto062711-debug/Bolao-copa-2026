@@ -1,4 +1,4 @@
-// VERSÃO 25
+// VERSÃO 26
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
 import {
@@ -88,8 +88,9 @@ onAuthStateChanged(auth, async (user) => {
       adminBox.classList.add("escondido");
     }
 
-    await carregarTudo();
-    iniciarContagemEmTempoReal();
+ await carregarTudo();
+iniciarContagemEmTempoReal();
+iniciarAtualizacaoAutomatica();
   } else {
     usuarioAtual = null;
     dadosUsuarioAtual = null;
@@ -308,6 +309,41 @@ async function criarCardJogo(jogo, rodadaAberta) {
 const placarCasa = jogo.homeScore ?? 0;
 const placarFora = jogo.awayScore ?? 0;
 
+  if (estaAoVivo) {
+  div.classList.add("jogo-ao-vivo");
+
+  div.innerHTML = `
+    <div class="ao-vivo-topo">
+      <div class="ao-vivo-label">
+        <span class="bolinha-ao-vivo"></span>
+        AO VIVO
+      </div>
+    </div>
+
+    <div class="placar-live">
+      <div class="time-live">
+        <strong>${jogo.homeTeam}</strong>
+      </div>
+
+      <div class="score-live">
+        <span>${placarCasa}</span>
+        <small>x</small>
+        <span>${placarFora}</span>
+      </div>
+
+      <div class="time-live direita">
+        <strong>${jogo.awayTeam}</strong>
+      </div>
+    </div>
+
+    <div class="detalhes-live">
+      <p>Eventos do jogo aparecerão aqui quando a API estiver conectada.</p>
+    </div>
+  `;
+
+  return div;
+}
+  
   const podePalpitar =
     rodadaAberta &&
     !jogoJaComecou &&
@@ -820,4 +856,16 @@ async function obterPalpiteDoUsuario(matchId) {
   }
 
   return palpiteSnap.data();
+}
+
+function iniciarAtualizacaoAutomatica() {
+  if (window.atualizacaoAutomaticaLigada) return;
+
+  window.atualizacaoAutomaticaLigada = true;
+
+  setInterval(async () => {
+    if (usuarioAtual) {
+      await carregarTudo();
+    }
+  }, 30000);
 }
