@@ -1,4 +1,4 @@
-// VERSÃO 41
+// VERSÃO 42
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
 import {
@@ -50,13 +50,12 @@ async function testarFootballDataHoje() {
 
     const url = `${FOOTBALL_DATA_BASE_URL}/competitions/${FOOTBALL_DATA_COMPETICAO}/matches?dateFrom=${dataDeISO}&dateTo=${dataAteISO}`;
 
-    const response = await fetch(
-  FOOTBALL_DATA_PROXY + encodeURIComponent(url),
+const urlComToken = `${url}&X-Auth-Token=${FOOTBALL_DATA_TOKEN}`;
+
+const response = await fetch(
+  FOOTBALL_DATA_PROXY + encodeURIComponent(urlComToken) + `&_=${Date.now()}`,
   {
     method: "GET",
-    headers: {
-      "X-Auth-Token": FOOTBALL_DATA_TOKEN
-    },
     cache: "no-store"
   }
 );
