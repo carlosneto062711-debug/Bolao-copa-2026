@@ -1,4 +1,4 @@
-// VERSÃO 46
+// VERSÃO 47
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -190,7 +190,14 @@ async function sincronizarFootballDataPeriodo(dataInicioISO, dataFimISO) {
       const foraNormalizada = normalizarNomeTime(foraApi);
 
       const jogoFirestore = jogosFirestore.find((jogo) => {
-        const mesmaData = jogo.date === dataApi;
+       const dataFirestore = jogo.date;
+const dataAnteriorApi = new Date(new Date(jogoApi.utcDate).getTime() - 3 * 60 * 60 * 1000)
+  .toISOString()
+  .slice(0, 10);
+
+const mesmaData =
+  dataFirestore === dataApi ||
+  dataFirestore === dataAnteriorApi;
 
         const casaFirestore = normalizarNomeTime(jogo.homeTeam);
         const foraFirestore = normalizarNomeTime(jogo.awayTeam);
