@@ -1,4 +1,4 @@
-// VERSÃO 27
+// VERSÃO 28
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
 import {
@@ -308,6 +308,40 @@ async function criarCardJogo(jogo, rodadaAberta) {
   const estaAoVivo = jogoJaComecou && jogo.status !== "finished";
 const placarCasa = jogo.homeScore ?? 0;
 const placarFora = jogo.awayScore ?? 0;
+
+  const estaFinalizado = jogo.status === "finished";
+
+if (estaFinalizado) {
+  div.classList.add("jogo-finalizado");
+
+  div.innerHTML = `
+    <div class="finalizado-topo">
+      <span class="badge-finalizado">ENCERRADO</span>
+    </div>
+
+    <div class="placar-live">
+      <div class="time-live">
+        <strong>${jogo.homeTeam}</strong>
+      </div>
+
+      <div class="score-live final">
+        <span>${placarCasa}</span>
+        <small>x</small>
+        <span>${placarFora}</span>
+      </div>
+
+      <div class="time-live direita">
+        <strong>${jogo.awayTeam}</strong>
+      </div>
+    </div>
+
+    <div class="detalhes-live">
+      <p>Resumo do jogo aparecerá aqui quando a API estiver conectada.</p>
+    </div>
+  `;
+
+  return div;
+}
 
   if (estaAoVivo) {
   div.classList.add("jogo-ao-vivo");
