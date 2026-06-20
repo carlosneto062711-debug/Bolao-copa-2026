@@ -1,4 +1,4 @@
-// VERSÃO 29
+// VERSÃO 30
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
 import {
@@ -960,8 +960,17 @@ function iniciarAtualizacaoAutomatica() {
   window.atualizacaoAutomaticaLigada = true;
 
   setInterval(async () => {
-    if (usuarioAtual) {
-      await carregarTudo();
+    if (!usuarioAtual) return;
+
+    const campoAtivo = document.activeElement;
+    const usuarioEstaDigitando =
+      campoAtivo &&
+      (campoAtivo.tagName === "INPUT" || campoAtivo.tagName === "TEXTAREA");
+
+    if (usuarioEstaDigitando) {
+      return;
     }
-  }, 5000);
+
+    await carregarTudo();
+  }, 15000);
 }
