@@ -1,4 +1,4 @@
-// VERSÃO 32
+// VERSÃO 33
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
 import {
@@ -31,6 +31,50 @@ const firebaseConfig = {
   messagingSenderId: "866731236351",
   appId: "1:866731236351:web:0bc6c58d7fd7da8224a5ca"
 };
+
+// ===============================
+// API-FOOTBALL / COPA DO MUNDO
+// ===============================
+
+const API_FOOTBALL_KEY = "318670cf13b5dbabf5a70cfcd11fca9d";
+const API_FOOTBALL_BASE_URL = "https://v3.football.api-sports.io";
+
+const WORLD_CUP_LEAGUE_ID = 1;
+const WORLD_CUP_SEASON = 2026;
+
+async function testarApiCopa() {
+  try {
+    console.log("Testando API da Copa...");
+
+    const response = await fetch(
+      `${API_FOOTBALL_BASE_URL}/fixtures?league=${WORLD_CUP_LEAGUE_ID}&season=${WORLD_CUP_SEASON}`,
+      {
+        method: "GET",
+        headers: {
+          "x-apisports-key": API_FOOTBALL_KEY
+        }
+      }
+    );
+
+    const data = await response.json();
+
+    console.log("Resposta da API-Football:", data);
+
+    if (!response.ok) {
+      alert("Erro ao consultar API. Veja o console.");
+      return;
+    }
+
+    alert("API respondeu! Abra o console para ver os jogos.");
+
+  } catch (error) {
+    console.error("Erro ao testar API:", error);
+    alert("Erro ao testar API. Veja o console.");
+  }
+}
+
+window.testarApiCopa = testarApiCopa;
+
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
