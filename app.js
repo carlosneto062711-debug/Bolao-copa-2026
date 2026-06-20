@@ -1,4 +1,4 @@
-// VERSÃO 23
+// VERSÃO 24
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
 import {
@@ -791,4 +791,16 @@ function iniciarContagemEmTempoReal() {
       }
     }
   }, 1000);
+}
+
+async function obterPalpiteDoUsuario(matchId) {
+  const palpiteId = `${usuarioAtual.uid}_${matchId}`;
+  const palpiteRef = doc(db, "predictions", palpiteId);
+  const palpiteSnap = await getDoc(palpiteRef);
+
+  if (!palpiteSnap.exists()) {
+    return null;
+  }
+
+  return palpiteSnap.data();
 }
