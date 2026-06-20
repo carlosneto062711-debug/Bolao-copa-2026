@@ -1,4 +1,4 @@
-// VERSÃO 39
+// VERSÃO 40
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
 import {
@@ -33,179 +33,60 @@ const firebaseConfig = {
 };
 
 // ===============================
-// API-FOOTBALL / COPA DO MUNDO
+// FOOTBALL-DATA.ORG / COPA DO MUNDO
 // ===============================
 
-const API_FOOTBALL_KEY = "318670cf13b5dbabf5a70cfcd11fca9d";
-const API_FOOTBALL_BASE_URL = "https://v3.football.api-sports.io";
+const FOOTBALL_DATA_TOKEN = "1788502d181a4a8aa6d072dc0d12096d";
+const FOOTBALL_DATA_BASE_URL = "https://api.football-data.org/v4";
+const FOOTBALL_DATA_COMPETICAO = "WC";
 
-const WORLD_CUP_LEAGUE_ID = 1;
-const WORLD_CUP_SEASON = 2026;
-
-async function testarApiCopa() {
+async function testarFootballDataHoje() {
   try {
-    console.log("Testando API da Copa...");
+    console.log("Testando football-data.org...");
 
-    const response = await fetch(
-      `${API_FOOTBALL_BASE_URL}/fixtures?league=${WORLD_CUP_LEAGUE_ID}&season=${WORLD_CUP_SEASON}`,
-      {
-        method: "GET",
-        headers: {
-          "x-apisports-key": API_FOOTBALL_KEY
-        }
-      }
-    );
+    const dataDeISO = "2026-06-20";
+    const dataAteISO = "2026-06-20";
+
+    const url = `${FOOTBALL_DATA_BASE_URL}/competitions/${FOOTBALL_DATA_COMPETICAO}/matches?dateFrom=${dataDeISO}&dateTo=${dataAteISO}`;
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "X-Auth-Token": FOOTBALL_DATA_TOKEN
+      },
+      cache: "no-store"
+    });
 
     const data = await response.json();
 
-    console.log("Resposta da API-Football:", data);
+    console.log("Resposta football-data.org:", data);
 
     if (!response.ok) {
-      alert("Erro ao consultar API. Veja o console.");
+      alert("Erro na football-data.org. Veja o console.");
       return;
     }
 
-    alert("API respondeu! Abra o console para ver os jogos.");
-
-  } catch (error) {
-    console.error("Erro ao testar API:", error);
-    alert("Erro ao testar API. Veja o console.");
-  }
-}
-
-window.testarApiCopa = testarApiCopa;
-
-async function procurarCopaApi() {
-  try {
-    console.log("Procurando Copa do Mundo na API...");
-
-    const response = await fetch(
-      `${API_FOOTBALL_BASE_URL}/leagues?search=world cup`,
-      {
-        method: "GET",
-        headers: {
-          "x-apisports-key": API_FOOTBALL_KEY
-        }
-      }
-    );
-
-    const data = await response.json();
-
-    console.log("Ligas encontradas:", data);
-
-    alert("Busca feita. Veja o console para encontrar o ID da Copa.");
-
-  } catch (error) {
-    console.error("Erro ao procurar Copa:", error);
-    alert("Erro ao procurar Copa. Veja o console.");
-  }
-}
-
-window.procurarCopaApi = procurarCopaApi;
-
-async function listarIdsCopaApi() {
-  try {
-    console.log("Listando IDs encontrados para World Cup...");
-
-    const response = await fetch(
-      `${API_FOOTBALL_BASE_URL}/leagues?search=world cup`,
-      {
-        method: "GET",
-        headers: {
-          "x-apisports-key": API_FOOTBALL_KEY
-        }
-      }
-    );
-
-    const data = await response.json();
-
-    const lista = data.response.map((item) => ({
-      id: item.league.id,
-      nome: item.league.name,
-      tipo: item.league.type,
-      pais: item.country.name,
-      temporada: item.seasons?.map((s) => s.year).join(", ")
-    }));
-
-    console.table(lista);
-
-    alert("Lista de IDs criada. Veja a tabela no console.");
-
-  } catch (error) {
-    console.error("Erro ao listar IDs da Copa:", error);
-    alert("Erro ao listar IDs. Veja o console.");
-  }
-}
-
-window.listarIdsCopaApi = listarIdsCopaApi;
-
-async function buscarJogosCopa2026() {
-  try {
-    console.log("Buscando jogos da Copa 2026 por período...");
-
-    const response = await fetch(
-      `${API_FOOTBALL_BASE_URL}/fixtures?league=1&season=2026&from=2026-06-11&to=2026-07-19`,
-      {
-        method: "GET",
-        headers: {
-          "x-apisports-key": API_FOOTBALL_KEY
-        }
-      }
-    );
-
-    const data = await response.json();
-
-    console.log("Jogos Copa 2026:", data);
-
-    const jogos = data.response.map((item) => ({
-      id: item.fixture.id,
-      data: item.fixture.date,
-      status: item.fixture.status.short,
-      casa: item.teams.home.name,
-      fora: item.teams.away.name,
-      golsCasa: item.goals.home,
-      golsFora: item.goals.away
+    const jogos = (data.matches || []).map((jogo) => ({
+      id: jogo.id,
+      data: jogo.utcDate,
+      status: jogo.status,
+      casa: jogo.homeTeam?.name,
+      fora: jogo.awayTeam?.name,
+      golsCasa: jogo.score?.fullTime?.home,
+      golsFora: jogo.score?.fullTime?.away
     }));
 
     console.table(jogos);
 
-    alert(`Busca finalizada. Jogos encontrados: ${data.results}`);
+    alert(`football-data respondeu. Jogos encontrados: ${jogos.length}`);
 
   } catch (error) {
-    console.error("Erro ao buscar jogos da Copa:", error);
-    alert("Erro ao buscar jogos da Copa. Veja o console.");
+    console.error("Erro ao testar football-data.org:", error);
+    alert("Erro ao testar football-data.org. Veja o console.");
   }
 }
 
-window.buscarJogosCopa2026 = buscarJogosCopa2026;
-
-async function verificarCopa2026Api() {
-  try {
-    console.log("Verificando dados da World Cup 2026...");
-
-    const response = await fetch(
-      `${API_FOOTBALL_BASE_URL}/leagues?id=1&season=2026`,
-      {
-        method: "GET",
-        headers: {
-          "x-apisports-key": API_FOOTBALL_KEY
-        }
-      }
-    );
-
-    const data = await response.json();
-
-    console.log("Dados da World Cup 2026:", data);
-
-    alert(`Verificação feita. Resultados encontrados: ${data.results}`);
-
-  } catch (error) {
-    console.error("Erro ao verificar Copa 2026:", error);
-    alert("Erro ao verificar Copa 2026. Veja o console.");
-  }
-}
-
-window.verificarCopa2026Api = verificarCopa2026Api;
+window.testarFootballDataHoje = testarFootballDataHoje;
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
