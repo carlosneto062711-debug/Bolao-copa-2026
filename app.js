@@ -1,4 +1,4 @@
-// VERSÃO 34
+// VERSÃO 35
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
 import {
@@ -102,6 +102,34 @@ window.procurarCopaApi = procurarCopaApi;
 }
 
 window.testarApiCopa = testarApiCopa;
+
+async function procurarCopaApi() {
+  try {
+    console.log("Procurando Copa do Mundo na API...");
+
+    const response = await fetch(
+      `${API_FOOTBALL_BASE_URL}/leagues?search=world cup`,
+      {
+        method: "GET",
+        headers: {
+          "x-apisports-key": API_FOOTBALL_KEY
+        }
+      }
+    );
+
+    const data = await response.json();
+
+    console.log("Ligas encontradas:", data);
+
+    alert("Busca feita. Veja o console para encontrar o ID da Copa.");
+
+  } catch (error) {
+    console.error("Erro ao procurar Copa:", error);
+    alert("Erro ao procurar Copa. Veja o console.");
+  }
+}
+
+window.procurarCopaApi = procurarCopaApi;
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
