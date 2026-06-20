@@ -1,4 +1,4 @@
-// VERSÃO 18
+// VERSÃO 19
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
 import {
@@ -203,20 +203,6 @@ async function carregarJogosHoje() {
   }
 }
 
-    const rodadaAberta = rodadaEstaAberta(jogos);
-
-    statusRodada.innerText = rodadaAberta
-      ? "Rodada aberta para palpites."
-      : "Rodada ainda fechada. Abre 4 horas antes do primeiro jogo.";
-
-    for (const jogo of jogos) {
-      jogosHojeDiv.appendChild(await criarCardJogo(jogo, rodadaAberta));
-    }
-  } catch (error) {
-    console.log("Erro ao carregar jogos de hoje:", error);
-    statusRodada.innerText = `Erro ao carregar jogos: ${error.code}`;
-  }
-}
 async function carregarJogosAmanha() {
   const jogosAmanhaDiv = document.getElementById("jogosAmanha");
   jogosAmanhaDiv.innerHTML = "";
