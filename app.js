@@ -1,4 +1,4 @@
-// VERSÃO 17
+// VERSÃO 18
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
 import {
@@ -48,12 +48,16 @@ const adminBox = document.getElementById("adminBox");
 btnEntrar.addEventListener("click", entrar);
 btnSair.addEventListener("click", sair);
 document.getElementById("btnCadastrarJogo").addEventListener("click", cadastrarJogo);
-document.getElementById("btnResultados").addEventListener("click", () => trocarAba("resultados"));
-document.getElementById("btnMeusPalpites").addEventListener("click", () => trocarAba("palpites"));
+const btnResultados = document.getElementById("btnResultados");
+const btnMeusPalpites = document.getElementById("btnMeusPalpites");
 
-document.getElementById("btnResultados").addEventListener("click", () => trocarAba("resultados"));
-document.getElementById("btnMeusPalpites").addEventListener("click", () => trocarAba("palpites"));
+if (btnResultados) {
+  btnResultados.addEventListener("click", () => trocarAba("resultados"));
+}
 
+if (btnMeusPalpites) {
+  btnMeusPalpites.addEventListener("click", () => trocarAba("palpites"));
+}
 onAuthStateChanged(auth, async (user) => {
   if (user) {
     usuarioAtual = user;
