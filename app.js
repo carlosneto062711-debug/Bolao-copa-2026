@@ -1,12 +1,19 @@
-// VERSÃO 43
+// VERSÃO 44
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
 import {
-  getAuth,
-  signInWithEmailAndPassword,
-  onAuthStateChanged,
-  signOut
-} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+  getFirestore,
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  addDoc,
+  setDoc,
+  query,
+  where,
+  orderBy,
+  onSnapshot
+} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
 import {
   getFirestore,
@@ -90,6 +97,166 @@ const response = await fetch(
 }
 
 window.testarFootballDataHoje = testarFootballDataHoje;
+
+// ===============================
+// SINCRONIZAR FOOTBALL-DATA COM FIRESTORE
+// ===============================
+
+const MAPA_TIMES_FOOTBALL_DATA = {
+  "Brazil": "BRASIL",
+  "Haiti": "HAITI",
+  "Turkey": "TURQUIA",
+  "Paraguay": "PARAGUAI",
+  "Netherlands": "HOLANDA",
+  "Sweden": "SUÉCIA",
+  "Germany": "ALEMANHA",
+  "Ivory Coast": "COSTA DO MARFIM",
+  "Ecuador": "EQUADOR",
+  "Curaçao": "CURAÇAU",
+  "Curacao": "CURAÇAU",
+  "Tunisia": "TUNÍSIA",
+  "Japan": "JAPÃO",
+  "Spain": "ESPANHA",
+  "Saudi Arabia": "ARÁBIA SAUDITA",
+  "Belgium": "BÉLGICA",
+  "Iran": "IRÃ",
+  "Uruguay": "URUGUAI",
+  "Cape Verde": "CABO VERDE",
+  "New Zealand": "NOVA ZELÂNDIA",
+  "Egypt": "EGITO"
+};
+
+function normalizarNomeTime(nome) {
+  return String(nome || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase()
+    .trim();
+}
+
+function traduzirTimeFootballData(nomeApi) {
+  return MAPA_TIMES_FOOTBALL_DATA[nomeApi] || nomeApi;
+}
+
+function statusFootballDataParaFirestore(statusApi) {
+  if (statusApi === "FINISHED") return "finished";
+  if (statusApi === "IN_PLAY" || statusApi === "PAUSED") return "live";
+  return "scheduled";
+}
+
+function dataISODeUTC(utcDate) {
+  return new Date(utcDate).toISOString().slice(0, 10);
+}
+
+async function buscarFootballDataPorPeriodo(dataInicioISO, dataFimISO) {
+  const url = `${FOOTBALL_DATA_BASE_URL}/competitions/${FOOTBALL_DATA_COMPETICAO}/matches?dateFrom=${dataInicioISO}&dateTo=${dataFimISO}`;
+
+  const response = await fetch(
+    FOOTBALL_DATA_PROXY + encodeURIComponent(url) + `&_=${Date.now()}`,
+    {
+      headers: {
+        "X-Auth-Token": FOOTBALL_DATA_TOKEN
+      },
+      cache: "no-store"
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    console.error("Erro football-data:", data);
+    throw new Error("Erro ao buscar dados na football-data.");
+  }
+
+  return data.matches || [];
+}
+
+async function sincronizarFootballDataPeriodo(dataInicioISO, dataFimISO) {
+  try {
+    console.log(`Sincronizando jogos de ${dataInicioISO} até ${dataFimISO}...`);
+
+    const jogosApi = await buscarFootballDataPorPeriodo(dataInicioISO, dataFimISO);
+
+    const snapshot = await getDocs(collection(db, "matches"));
+    const jogosFirestore = snapshot.docs.map((documento) => ({
+      id: documento.id,
+      ...documento.data()
+    }));
+
+    let atualizados = 0;
+    let naoEncontrados = [];
+
+    for (const jogoApi of jogosApi) {
+      const casaApi = traduzirTimeFootballData(jogoApi.homeTeam?.name);
+      const foraApi = traduzirTimeFootballData(jogoApi.awayTeam?.name);
+      const dataApi = dataISODeUTC(jogoApi.utcDate);
+
+      const casaNormalizada = normalizarNomeTime(casaApi);
+      const foraNormalizada = normalizarNomeTime(foraApi);
+
+      const jogoFirestore = jogosFirestore.find((jogo) => {
+        const mesmaData = jogo.date === dataApi;
+
+        const casaFirestore = normalizarNomeTime(jogo.homeTeam);
+        const foraFirestore = normalizarNomeTime(jogo.awayTeam);
+
+        const mesmosTimes =
+          casaFirestore === casaNormalizada &&
+          foraFirestore === foraNormalizada;
+
+        return mesmaData && mesmosTimes;
+      });
+
+      if (!jogoFirestore) {
+        naoEncontrados.push({
+          data: dataApi,
+          casa: casaApi,
+          fora: foraApi,
+          status: jogoApi.status
+        });
+        continue;
+      }
+
+      const novoStatus = statusFootballDataParaFirestore(jogoApi.status);
+
+      const novosDados = {
+        status: novoStatus,
+        apiProvider: "football-data",
+        apiMatchId: jogoApi.id,
+        updatedFromApiAt: new Date().toISOString()
+      };
+
+      if (jogoApi.score?.fullTime?.home !== null && jogoApi.score?.fullTime?.home !== undefined) {
+        novosDados.homeScore = Number(jogoApi.score.fullTime.home);
+      }
+
+      if (jogoApi.score?.fullTime?.away !== null && jogoApi.score?.fullTime?.away !== undefined) {
+        novosDados.awayScore = Number(jogoApi.score.fullTime.away);
+      }
+
+      await updateDoc(doc(db, "matches", jogoFirestore.id), novosDados);
+
+      atualizados++;
+    }
+
+    console.log("Jogos atualizados:", atualizados);
+    console.table(naoEncontrados);
+
+    alert(`Sincronização concluída. Atualizados: ${atualizados}. Não encontrados: ${naoEncontrados.length}`);
+
+  } catch (error) {
+    console.error("Erro ao sincronizar football-data:", error);
+    alert("Erro ao sincronizar API com Firestore. Veja o console.");
+  }
+}
+
+async function sincronizarFootballDataHoje() {
+  const hojeISO = new Date().toISOString().slice(0, 10);
+  await sincronizarFootballDataPeriodo(hojeISO, hojeISO);
+}
+
+window.sincronizarFootballDataHoje = sincronizarFootballDataHoje;
+window.sincronizarFootballDataPeriodo = sincronizarFootballDataPeriodo;
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
