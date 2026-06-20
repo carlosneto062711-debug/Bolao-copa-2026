@@ -1,4 +1,4 @@
-// VERSÃO 31
+// VERSÃO 32
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
 import {
@@ -862,21 +862,19 @@ function textoResultadoPalpite(palpiteCasa, palpiteFora, realCasa, realFora) {
 }
 
 function calcularPontos(palpiteCasa, palpiteFora, realCasa, realFora) {
+  palpiteCasa = Number(palpiteCasa);
+  palpiteFora = Number(palpiteFora);
+  realCasa = Number(realCasa);
+  realFora = Number(realFora);
+
   if (palpiteCasa === realCasa && palpiteFora === realFora) {
     return 3;
   }
 
-  const palpiteTeveVencedor = palpiteCasa !== palpiteFora;
-  const jogoTeveVencedor = realCasa !== realFora;
+  const resultadoPalpite = getResultado(palpiteCasa, palpiteFora);
+  const resultadoReal = getResultado(realCasa, realFora);
 
-  if (!palpiteTeveVencedor || !jogoTeveVencedor) {
-    return 0;
-  }
-
-  const vencedorPalpite = palpiteCasa > palpiteFora ? "CASA" : "FORA";
-  const vencedorReal = realCasa > realFora ? "CASA" : "FORA";
-
-  if (vencedorPalpite === vencedorReal) {
+  if (resultadoPalpite === resultadoReal) {
     return 1;
   }
 
@@ -884,6 +882,9 @@ function calcularPontos(palpiteCasa, palpiteFora, realCasa, realFora) {
 }
 
 function getResultado(casa, fora) {
+  casa = Number(casa);
+  fora = Number(fora);
+
   if (casa > fora) return "CASA";
   if (fora > casa) return "FORA";
   return "EMPATE";
