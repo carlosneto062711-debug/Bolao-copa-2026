@@ -1,4 +1,4 @@
-// VERSÃO 22
+// VERSÃO 23
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
 import {
@@ -38,6 +38,7 @@ let usuarioAtual = null;
 let dadosUsuarioAtual = null;
 
 let alvoContagem = null;
+let alvoContagemAmanha = null;
 let intervaloContagem = null;
 
 const loginBox = document.getElementById("loginBox");
@@ -238,21 +239,23 @@ async function carregarJogosAmanha() {
 
     jogos.sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
 
-    if (jogos.length === 0) {
-      jogosAmanhaDiv.innerHTML = "<p>Nenhum jogo cadastrado para amanhã.</p>";
-      return;
-    }
+   if (jogos.length === 0) {
+  jogosAmanhaDiv.innerHTML = "<p>Nenhum jogo cadastrado para amanhã.</p>";
+  alvoContagemAmanha = null;
+  return;
+}
 
-    const aberturaAmanha = horarioAberturaRodada(jogos);
-    const agora = new Date();
+   alvoContagemAmanha = aberturaAmanha;
 
-    const textoAbertura = agora >= aberturaAmanha
-      ? "Rodada de amanhã já está dentro da janela de abertura."
-      : `Abre em ${formatarContagem(aberturaAmanha - agora)}`;
+const aviso = document.createElement("p");
 
-    const aviso = document.createElement("p");
-    aviso.innerHTML = `<strong>${textoAbertura}</strong>`;
-    jogosAmanhaDiv.appendChild(aviso);
+if (agora >= aberturaAmanha) {
+  aviso.innerHTML = `<strong>Rodada de amanhã já está dentro da janela de abertura.</strong>`;
+} else {
+  aviso.innerHTML = `<strong>Abre em <span id="contadorAmanha">${formatarContagem(aberturaAmanha - agora)}</span></strong>`;
+}
+
+jogosAmanhaDiv.appendChild(aviso);
 
     jogos.forEach((jogo) => {
       const item = document.createElement("div");
@@ -551,14 +554,44 @@ async function carregarPainelTempo() {
     return;
   }
 
-  if (proximosJogos.length > 0) {
-    const proximo = proximosJogos[0];
-    titulo.innerText = "Rodada aberta";
-    texto.innerText = `Próximo jogo trava: ${proximo.homeTeam} x ${proximo.awayTeam}`;
-    alvoContagem = new Date(proximo.kickoff);
-    contador.innerText = formatarContagem(alvoContagem - agora);
-    return;
+ if (proximosJogos.length > 0) {
+  let jogoAlvo = null;
+  let aindaPodePalpitar = false;
+
+  for (const jogo of proximosJogos) {
+    const palpite = await obterPalpiteDoUsuario(jogo.id);
+
+    if (!palpite) {
+      jogoAlvo = jogo;
+      aindaPodePalpitar = true;
+      break;
+    }
+
+    const editCount = palpite.editCount ?? 0;
+
+    if (editCount < 2) {
+      jogoAlvo = jogo;
+      aindaPodePalpitar = true;
+      break;
+    }
   }
+
+  if (!jogoAlvo) {
+    jogoAlvo = proximosJogos[0];
+  }
+
+  titulo.innerText = `${jogoAlvo.homeTeam} x ${jogoAlvo.awayTeam}`;
+
+  if (aindaPodePalpitar) {
+    texto.innerText = "Rodada aberta";
+  } else {
+    texto.innerText = "Jogo inicia";
+  }
+
+  alvoContagem = new Date(jogoAlvo.kickoff);
+  contador.innerText = formatarContagem(alvoContagem - agora);
+  return;
+}
 
   titulo.innerText = "Jogos do dia em andamento ou encerrados";
   texto.innerText = "Os palpites dos jogos de hoje já foram travados.";
@@ -732,10 +765,30 @@ function iniciarContagemEmTempoReal() {
 
   intervaloContagem = setInterval(() => {
     const contador = document.getElementById("contadorPrincipal");
-
-    if (!contador || !alvoContagem) return;
+    const contadorAmanha = document.getElementById("contadorAmanha");
 
     const agora = new Date();
-    contador.innerText = formatarContagem(alvoContagem - agora);
+
+    if (contador && alvoContagem) {
+      const restante = alvoContagem - agora;
+      contador.innerText = formatarContagem(restante);
+
+      if (restante <= 60 * 60 * 1000) {
+        contador.classList.add("alerta");
+      } else {
+        contador.classList.remove("alerta");
+      }
+    }
+
+    if (contadorAmanha && alvoContagemAmanha) {
+      const restanteAmanha = alvoContagemAmanha - agora;
+      contadorAmanha.innerText = formatarContagem(restanteAmanha);
+
+      if (restanteAmanha <= 60 * 60 * 1000) {
+        contadorAmanha.classList.add("alerta");
+      } else {
+        contadorAmanha.classList.remove("alerta");
+      }
+    }
   }, 1000);
 }
