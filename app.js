@@ -1,4 +1,4 @@
-// VERSÃO 38
+// VERSÃO 39
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
 import {
@@ -178,6 +178,34 @@ async function buscarJogosCopa2026() {
 }
 
 window.buscarJogosCopa2026 = buscarJogosCopa2026;
+
+async function verificarCopa2026Api() {
+  try {
+    console.log("Verificando dados da World Cup 2026...");
+
+    const response = await fetch(
+      `${API_FOOTBALL_BASE_URL}/leagues?id=1&season=2026`,
+      {
+        method: "GET",
+        headers: {
+          "x-apisports-key": API_FOOTBALL_KEY
+        }
+      }
+    );
+
+    const data = await response.json();
+
+    console.log("Dados da World Cup 2026:", data);
+
+    alert(`Verificação feita. Resultados encontrados: ${data.results}`);
+
+  } catch (error) {
+    console.error("Erro ao verificar Copa 2026:", error);
+    alert("Erro ao verificar Copa 2026. Veja o console.");
+  }
+}
+
+window.verificarCopa2026Api = verificarCopa2026Api;
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
