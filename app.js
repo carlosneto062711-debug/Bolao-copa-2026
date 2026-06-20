@@ -237,16 +237,19 @@ async function carregarJogosAmanha() {
       });
     });
 
-    jogos.sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
+ jogos.sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
 
-   if (jogos.length === 0) {
+if (jogos.length === 0) {
   jogosAmanhaDiv.innerHTML = "<p>Nenhum jogo cadastrado para amanhã.</p>";
   alvoContagemAmanha = null;
   return;
 }
 
-   alvoContagemAmanha = aberturaAmanha;
+const aberturaAmanha = horarioAberturaRodada(jogos);
+const agora = new Date();
 
+alvoContagemAmanha = aberturaAmanha;
+    
 const aviso = document.createElement("p");
 
 if (agora >= aberturaAmanha) {
