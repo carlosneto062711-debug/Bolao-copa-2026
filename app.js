@@ -1,4 +1,4 @@
-// VERSÃO 24
+// VERSÃO 25
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
 import {
@@ -304,6 +304,10 @@ async function criarCardJogo(jogo, rodadaAberta) {
   const jogoJaComecou = agora >= horarioJogo;
   const atingiuLimiteAlteracoes = editCount >= 2;
 
+  const estaAoVivo = jogoJaComecou && jogo.status !== "finished";
+const placarCasa = jogo.homeScore ?? 0;
+const placarFora = jogo.awayScore ?? 0;
+
   const podePalpitar =
     rodadaAberta &&
     !jogoJaComecou &&
@@ -332,9 +336,19 @@ async function criarCardJogo(jogo, rodadaAberta) {
       <span>${jogo.awayTeam}</span>
     </div>
 
-    <p>${formatarHora(jogo.kickoff)}</p>
+   <p>${formatarHora(jogo.kickoff)}</p>
 
-    <p class="status-palpite">${statusPalpite}</p>
+${estaAoVivo ? `
+  <div class="ao-vivo-label">
+    <span class="bolinha-ao-vivo"></span>
+    AO VIVO
+  </div>
+  <div class="placar-atual">
+    ${jogo.homeTeam} ${placarCasa} x ${placarFora} ${jogo.awayTeam}
+  </div>
+` : ""}
+
+<p class="status-palpite">${statusPalpite}</p>
 
     <div class="palpite">
       <input type="number" min="0" value="${homeGuess}" ${podePalpitar ? "" : "disabled"} />
