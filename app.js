@@ -1,4 +1,4 @@
-// VERSÃO 30
+// VERSÃO 31
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
 import {
@@ -18,7 +18,8 @@ import {
   setDoc,
   query,
   where,
-  orderBy
+  orderBy,
+  onSnapshot
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
 // TROQUE ESTES DADOS PELOS DADOS DO SEU FIREBASE
@@ -955,9 +956,11 @@ async function obterPalpiteDoUsuario(matchId) {
 }
 
 function iniciarAtualizacaoAutomatica() {
-  if (window.atualizacaoAutomaticaLigada) return;
+  iniciarListenersTempoReal();
 
-  window.atualizacaoAutomaticaLigada = true;
+  if (window.atualizacaoPorTempoLigada) return;
+
+  window.atualizacaoPorTempoLigada = true;
 
   setInterval(async () => {
     if (!usuarioAtual) return;
@@ -967,10 +970,37 @@ function iniciarAtualizacaoAutomatica() {
       campoAtivo &&
       (campoAtivo.tagName === "INPUT" || campoAtivo.tagName === "TEXTAREA");
 
-    if (usuarioEstaDigitando) {
-      return;
-    }
+    if (usuarioEstaDigitando) return;
 
     await carregarTudo();
   }, 15000);
+}
+
+function iniciarListenersTempoReal() {
+  if (window.listenersTempoRealLigados) return;
+
+  window.listenersTempoRealLigados = true;
+
+  let timeoutAtualizacao = null;
+
+  function atualizarComDebounce() {
+    clearTimeout(timeoutAtualizacao);
+
+    timeoutAtualizacao = setTimeout(async () => {
+      if (!usuarioAtual) return;
+
+      const campoAtivo = document.activeElement;
+      const usuarioEstaDigitando =
+        campoAtivo &&
+        (campoAtivo.tagName === "INPUT" || campoAtivo.tagName === "TEXTAREA");
+
+      if (usuarioEstaDigitando) return;
+
+      await carregarTudo();
+    }, 400);
+  }
+
+  onSnapshot(collection(db, "matches"), atualizarComDebounce);
+  onSnapshot(collection(db, "predictions"), atualizarComDebounce);
+  onSnapshot(collection(db, "users"), atualizarComDebounce);
 }
