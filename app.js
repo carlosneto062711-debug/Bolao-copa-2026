@@ -1,4 +1,4 @@
-// VERSÃO 36
+// VERSÃO 37
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
 import {
@@ -56,70 +56,6 @@ async function testarApiCopa() {
       }
     );
 
-    async function procurarCopaApi() {
-  try {
-    console.log("Procurando Copa do Mundo na API...");
-
-    const response = await fetch(
-      `${API_FOOTBALL_BASE_URL}/leagues?search=world cup`,
-      {
-        method: "GET",
-        headers: {
-          "x-apisports-key": API_FOOTBALL_KEY
-        }
-      }
-    );
-
-    const data = await response.json();
-
-    console.log("Ligas encontradas:", data);
-
-    alert("Busca feita. Veja o console para encontrar o ID da Copa.");
-
-  } catch (error) {
-    console.error("Erro ao procurar Copa:", error);
-    alert("Erro ao procurar Copa. Veja o console.");
-  }
-}
-
-window.procurarCopaApi = procurarCopaApi;
-
-    async function listarIdsCopaApi() {
-  try {
-    console.log("Listando IDs encontrados para World Cup...");
-
-    const response = await fetch(
-      `${API_FOOTBALL_BASE_URL}/leagues?search=world cup`,
-      {
-        method: "GET",
-        headers: {
-          "x-apisports-key": API_FOOTBALL_KEY
-        }
-      }
-    );
-
-    const data = await response.json();
-
-    const lista = data.response.map((item) => ({
-      id: item.league.id,
-      nome: item.league.name,
-      tipo: item.league.type,
-      pais: item.country.name,
-      temporada: item.seasons?.map((s) => s.year).join(", ")
-    }));
-
-    console.table(lista);
-
-    alert("Lista de IDs criada. Veja a tabela no console.");
-
-  } catch (error) {
-    console.error("Erro ao listar IDs da Copa:", error);
-    alert("Erro ao listar IDs. Veja o console.");
-  }
-}
-
-window.listarIdsCopaApi = listarIdsCopaApi;
-
     const data = await response.json();
 
     console.log("Resposta da API-Football:", data);
@@ -166,6 +102,42 @@ async function procurarCopaApi() {
 }
 
 window.procurarCopaApi = procurarCopaApi;
+
+async function listarIdsCopaApi() {
+  try {
+    console.log("Listando IDs encontrados para World Cup...");
+
+    const response = await fetch(
+      `${API_FOOTBALL_BASE_URL}/leagues?search=world cup`,
+      {
+        method: "GET",
+        headers: {
+          "x-apisports-key": API_FOOTBALL_KEY
+        }
+      }
+    );
+
+    const data = await response.json();
+
+    const lista = data.response.map((item) => ({
+      id: item.league.id,
+      nome: item.league.name,
+      tipo: item.league.type,
+      pais: item.country.name,
+      temporada: item.seasons?.map((s) => s.year).join(", ")
+    }));
+
+    console.table(lista);
+
+    alert("Lista de IDs criada. Veja a tabela no console.");
+
+  } catch (error) {
+    console.error("Erro ao listar IDs da Copa:", error);
+    alert("Erro ao listar IDs. Veja o console.");
+  }
+}
+
+window.listarIdsCopaApi = listarIdsCopaApi;
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
