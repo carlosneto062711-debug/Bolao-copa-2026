@@ -1,4 +1,4 @@
-// VERSÃO 42
+// VERSÃO 43
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
 import {
@@ -38,8 +38,8 @@ const firebaseConfig = {
 
 const FOOTBALL_DATA_TOKEN = "1788502d181a4a8aa6d072dc0d12096d";
 const FOOTBALL_DATA_BASE_URL = "https://api.football-data.org/v4";
-const FOOTBALL_DATA_COMPETICAO = "WC";
-const FOOTBALL_DATA_PROXY = "https://api.allorigins.win/raw?url=";
+const FOOTBALL_DATA_COMPETICAO = 2000;
+const FOOTBALL_DATA_PROXY = "https://corsproxy.io/?url=";
 
 async function testarFootballDataHoje() {
   try {
@@ -50,12 +50,12 @@ async function testarFootballDataHoje() {
 
     const url = `${FOOTBALL_DATA_BASE_URL}/competitions/${FOOTBALL_DATA_COMPETICAO}/matches?dateFrom=${dataDeISO}&dateTo=${dataAteISO}`;
 
-const urlComToken = `${url}&X-Auth-Token=${FOOTBALL_DATA_TOKEN}`;
-
 const response = await fetch(
-  FOOTBALL_DATA_PROXY + encodeURIComponent(urlComToken) + `&_=${Date.now()}`,
+  FOOTBALL_DATA_PROXY + encodeURIComponent(url) + `&_=${Date.now()}`,
   {
-    method: "GET",
+    headers: {
+      "X-Auth-Token": FOOTBALL_DATA_TOKEN
+    },
     cache: "no-store"
   }
 );
