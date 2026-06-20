@@ -1,4 +1,4 @@
-// VERSÃO 15
+// VERSÃO 16
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
 import {
@@ -48,6 +48,8 @@ const adminBox = document.getElementById("adminBox");
 btnEntrar.addEventListener("click", entrar);
 btnSair.addEventListener("click", sair);
 document.getElementById("btnCadastrarJogo").addEventListener("click", cadastrarJogo);
+document.getElementById("btnResultados").addEventListener("click", () => trocarAba("resultados"));
+document.getElementById("btnMeusPalpites").addEventListener("click", () => trocarAba("palpites"));
 
 onAuthStateChanged(auth, async (user) => {
   if (user) {
@@ -106,8 +108,11 @@ async function sair() {
 }
 
 async function carregarTudo() {
+  await carregarPainelTempo();
   await carregarJogosHoje();
   await carregarJogosAmanha();
+  await carregarResultadosAnteriores();
+  await carregarMeusPalpites();
   await carregarRanking();
 }
 
@@ -157,6 +162,46 @@ async function carregarJogosHoje() {
       ? "Rodada aberta para palpites."
       : "Rodada ainda fechada. Abre 4 horas antes do primeiro jogo.";
 
+    const primeiroJogo = jogos[0];
+    const outrosJogos = jogos.slice(1);
+
+    const cardPrincipal = await criarCardJogo(primeiroJogo, rodadaAberta);
+    cardPrincipal.classList.add("jogo-principal");
+    jogosHojeDiv.appendChild(cardPrincipal);
+
+    if (outrosJogos.length > 0) {
+      const listaMenor = document.createElement("div");
+      listaMenor.className = "jogos-menores";
+      listaMenor.innerHTML = "<h3>Próximos jogos de hoje</h3>";
+
+      for (const jogo of outrosJogos) {
+        const status = statusDoJogo(jogo, rodadaAberta);
+
+        const item = document.createElement("div");
+        item.className = "jogo-mini";
+        item.innerHTML = `
+          <span>${formatarHora(jogo.kickoff)}</span>
+          <strong>${jogo.homeTeam} x ${jogo.awayTeam}</strong>
+          <span class="${status.classe}">${status.texto}</span>
+        `;
+
+        listaMenor.appendChild(item);
+      }
+
+      jogosHojeDiv.appendChild(listaMenor);
+    }
+  } catch (error) {
+    console.log("Erro ao carregar jogos de hoje:", error);
+    statusRodada.innerText = `Erro ao carregar jogos: ${error.code}`;
+  }
+}
+
+    const rodadaAberta = rodadaEstaAberta(jogos);
+
+    statusRodada.innerText = rodadaAberta
+      ? "Rodada aberta para palpites."
+      : "Rodada ainda fechada. Abre 4 horas antes do primeiro jogo.";
+
     for (const jogo of jogos) {
       jogosHojeDiv.appendChild(await criarCardJogo(jogo, rodadaAberta));
     }
@@ -191,6 +236,34 @@ async function carregarJogosAmanha() {
       jogosAmanhaDiv.innerHTML = "<p>Nenhum jogo cadastrado para amanhã.</p>";
       return;
     }
+
+    const aberturaAmanha = horarioAberturaRodada(jogos);
+    const agora = new Date();
+
+    const textoAbertura = agora >= aberturaAmanha
+      ? "Rodada de amanhã já está dentro da janela de abertura."
+      : `Abre em ${formatarContagem(aberturaAmanha - agora)}`;
+
+    const aviso = document.createElement("p");
+    aviso.innerHTML = `<strong>${textoAbertura}</strong>`;
+    jogosAmanhaDiv.appendChild(aviso);
+
+    jogos.forEach((jogo) => {
+      const item = document.createElement("div");
+      item.className = "jogo-mini";
+      item.innerHTML = `
+        <span>${formatarHora(jogo.kickoff)}</span>
+        <strong>${jogo.homeTeam} x ${jogo.awayTeam}</strong>
+        <span class="status-fechado">Bloqueado</span>
+      `;
+
+      jogosAmanhaDiv.appendChild(item);
+    });
+  } catch (error) {
+    console.log("Erro ao carregar jogos de amanhã:", error);
+    jogosAmanhaDiv.innerHTML = `<p>Erro ao carregar jogos: ${error.code}</p>`;
+  }
+}
 
     jogos.forEach((jogo) => {
       const div = document.createElement("div");
@@ -397,4 +470,268 @@ async function cadastrarJogo() {
   document.getElementById("timeFora").value = "";
 
   await carregarTudo();
+}
+
+function horarioAberturaRodada(jogos) {
+  const horarios = jogos.map(jogo => new Date(jogo.kickoff).getTime());
+  const primeiroJogo = new Date(Math.min(...horarios));
+  return new Date(primeiroJogo.getTime() - 4 * 60 * 60 * 1000);
+}
+
+function formatarContagem(ms) {
+  if (ms <= 0) return "00h 00m 00s";
+
+  const totalSegundos = Math.floor(ms / 1000);
+  const horas = Math.floor(totalSegundos / 3600);
+  const minutos = Math.floor((totalSegundos % 3600) / 60);
+  const segundos = totalSegundos % 60;
+
+  return `${String(horas).padStart(2, "0")}h ${String(minutos).padStart(2, "0")}m ${String(segundos).padStart(2, "0")}s`;
+}
+
+function statusDoJogo(jogo, rodadaAberta) {
+  const agora = new Date();
+  const kickoff = new Date(jogo.kickoff);
+
+  if (jogo.status === "finished") {
+    return {
+      texto: "Finalizado",
+      classe: "status-travado"
+    };
+  }
+
+  if (agora >= kickoff) {
+    return {
+      texto: "Travado",
+      classe: "status-travado"
+    };
+  }
+
+  if (rodadaAberta) {
+    return {
+      texto: "Aberto",
+      classe: "status-aberto"
+    };
+  }
+
+  return {
+    texto: "Fechado",
+    classe: "status-fechado"
+  };
+}
+
+async function carregarPainelTempo() {
+  const titulo = document.getElementById("tituloContagem");
+  const texto = document.getElementById("textoContagem");
+  const contador = document.getElementById("contadorPrincipal");
+
+  const q = query(
+    collection(db, "matches"),
+    where("date", "==", hojeISO())
+  );
+
+  const snap = await getDocs(q);
+
+  const jogos = [];
+  snap.forEach((docSnap) => {
+    jogos.push({
+      id: docSnap.id,
+      ...docSnap.data()
+    });
+  });
+
+  jogos.sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
+
+  if (jogos.length === 0) {
+    titulo.innerText = "Nenhum jogo hoje";
+    texto.innerText = "Quando houver jogos cadastrados, a contagem aparecerá aqui.";
+    contador.innerText = "--:--:--";
+    return;
+  }
+
+  const agora = new Date();
+  const abertura = horarioAberturaRodada(jogos);
+  const rodadaAberta = agora >= abertura;
+
+  const proximosJogos = jogos.filter(jogo => new Date(jogo.kickoff) > agora);
+
+  if (!rodadaAberta) {
+    titulo.innerText = "Rodada fechada";
+    texto.innerText = "Palpites abrem 4 horas antes do primeiro jogo.";
+    contador.innerText = formatarContagem(abertura - agora);
+    return;
+  }
+
+  if (proximosJogos.length > 0) {
+    const proximo = proximosJogos[0];
+    titulo.innerText = "Rodada aberta";
+    texto.innerText = `Próximo jogo trava: ${proximo.homeTeam} x ${proximo.awayTeam}`;
+    contador.innerText = formatarContagem(new Date(proximo.kickoff) - agora);
+    return;
+  }
+
+  titulo.innerText = "Jogos do dia em andamento ou encerrados";
+  texto.innerText = "Os palpites dos jogos de hoje já foram travados.";
+  contador.innerText = "00h 00m 00s";
+}
+
+async function carregarResultadosAnteriores() {
+  const painel = document.getElementById("painelResultados");
+  painel.innerHTML = "";
+
+  const snap = await getDocs(collection(db, "matches"));
+
+  const jogos = [];
+  snap.forEach((docSnap) => {
+    jogos.push({
+      id: docSnap.id,
+      ...docSnap.data()
+    });
+  });
+
+  const finalizados = jogos
+    .filter(jogo => jogo.status === "finished")
+    .sort((a, b) => new Date(b.kickoff) - new Date(a.kickoff));
+
+  if (finalizados.length === 0) {
+    painel.innerHTML = "<p>Nenhum resultado anterior ainda.</p>";
+    return;
+  }
+
+  finalizados.forEach((jogo) => {
+    const div = document.createElement("div");
+    div.className = "linha-info";
+    div.innerHTML = `
+      <strong>${jogo.homeTeam} ${jogo.homeScore} x ${jogo.awayScore} ${jogo.awayTeam}</strong>
+      <span>${jogo.date} — ${formatarHora(jogo.kickoff)}</span>
+      <br>
+      <span class="badge finalizado">Finalizado</span>
+    `;
+
+    painel.appendChild(div);
+  });
+}
+
+async function carregarMeusPalpites() {
+  const painel = document.getElementById("painelMeusPalpites");
+  painel.innerHTML = "";
+
+  const q = query(
+    collection(db, "predictions"),
+    where("userId", "==", usuarioAtual.uid)
+  );
+
+  const snap = await getDocs(q);
+
+  const palpites = [];
+  snap.forEach((docSnap) => {
+    palpites.push({
+      id: docSnap.id,
+      ...docSnap.data()
+    });
+  });
+
+  if (palpites.length === 0) {
+    painel.innerHTML = "<p>Você ainda não fez nenhum palpite.</p>";
+    return;
+  }
+
+  for (const palpite of palpites) {
+    const jogoRef = doc(db, "matches", palpite.matchId);
+    const jogoSnap = await getDoc(jogoRef);
+
+    if (!jogoSnap.exists()) continue;
+
+    const jogo = jogoSnap.data();
+
+    let statusTexto = "Agendado";
+    let badgeClasse = "agendado";
+    let comparacao = "Aguardando o jogo acontecer.";
+
+    if (jogo.status === "live") {
+      statusTexto = "Ao vivo";
+      badgeClasse = "ao-vivo";
+      comparacao = `Placar atual: ${jogo.homeScore ?? 0} x ${jogo.awayScore ?? 0}`;
+    }
+
+    if (jogo.status === "finished") {
+      statusTexto = "Finalizado";
+      badgeClasse = "finalizado";
+      comparacao = textoResultadoPalpite(
+        palpite.homeGuess,
+        palpite.awayGuess,
+        jogo.homeScore,
+        jogo.awayScore
+      );
+    }
+
+    const div = document.createElement("div");
+    div.className = "linha-info";
+    div.innerHTML = `
+      <strong>${jogo.homeTeam} x ${jogo.awayTeam}</strong>
+      <span>Seu palpite: ${palpite.homeGuess} x ${palpite.awayGuess}</span>
+      <br>
+      <span>${comparacao}</span>
+      <br>
+      <span class="badge ${badgeClasse}">${statusTexto}</span>
+    `;
+
+    painel.appendChild(div);
+  }
+}
+
+function textoResultadoPalpite(palpiteCasa, palpiteFora, realCasa, realFora) {
+  const pontos = calcularPontos(palpiteCasa, palpiteFora, realCasa, realFora);
+
+  if (pontos === 3) {
+    return "Você acertou o placar exato. +3 pontos";
+  }
+
+  if (pontos === 1) {
+    return "Você acertou o vencedor/empate. +1 ponto";
+  }
+
+  return "Você errou este palpite. +0 pontos";
+}
+
+function calcularPontos(palpiteCasa, palpiteFora, realCasa, realFora) {
+  if (palpiteCasa === realCasa && palpiteFora === realFora) {
+    return 3;
+  }
+
+  const resultadoPalpite = getResultado(palpiteCasa, palpiteFora);
+  const resultadoReal = getResultado(realCasa, realFora);
+
+  if (resultadoPalpite === resultadoReal) {
+    return 1;
+  }
+
+  return 0;
+}
+
+function getResultado(casa, fora) {
+  if (casa > fora) return "CASA";
+  if (fora > casa) return "FORA";
+  return "EMPATE";
+}
+
+function trocarAba(aba) {
+  const btnResultados = document.getElementById("btnResultados");
+  const btnMeusPalpites = document.getElementById("btnMeusPalpites");
+  const painelResultados = document.getElementById("painelResultados");
+  const painelMeusPalpites = document.getElementById("painelMeusPalpites");
+
+  if (aba === "resultados") {
+    btnResultados.classList.add("ativa");
+    btnMeusPalpites.classList.remove("ativa");
+
+    painelResultados.classList.remove("escondido");
+    painelMeusPalpites.classList.add("escondido");
+  } else {
+    btnMeusPalpites.classList.add("ativa");
+    btnResultados.classList.remove("ativa");
+
+    painelMeusPalpites.classList.remove("escondido");
+    painelResultados.classList.add("escondido");
+  }
 }
