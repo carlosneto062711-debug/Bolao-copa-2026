@@ -1,5 +1,13 @@
-// VERSÃO 45
+// VERSÃO 46
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  onAuthStateChanged,
+  signOut
+} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 
 import {
   getFirestore,
@@ -9,6 +17,7 @@ import {
   getDocs,
   addDoc,
   setDoc,
+  updateDoc,
   query,
   where,
   orderBy,
