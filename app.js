@@ -1,4 +1,4 @@
-// VERSÃO 19
+// VERSÃO 20
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
 import {
@@ -258,25 +258,6 @@ async function carregarJogosAmanha() {
   }
 }
 
-    jogos.forEach((jogo) => {
-      const div = document.createElement("div");
-      div.className = "jogo";
-      div.innerHTML = `
-        <div class="times">
-          <span>${jogo.homeTeam}</span>
-          <span>x</span>
-          <span>${jogo.awayTeam}</span>
-        </div>
-        <p>${formatarHora(jogo.kickoff)}</p>
-      `;
-
-      jogosAmanhaDiv.appendChild(div);
-    });
-  } catch (error) {
-    console.log("Erro ao carregar jogos de amanhã:", error);
-    jogosAmanhaDiv.innerHTML = `<p>Erro ao carregar jogos: ${error.code}</p>`;
-  }
-}
 async function criarCardJogo(jogo, rodadaAberta) {
   const div = document.createElement("div");
   div.className = "jogo";
