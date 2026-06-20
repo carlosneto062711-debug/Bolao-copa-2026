@@ -125,3 +125,113 @@ input {
 .btn.travado:hover {
   background: #dc2626 !important;
 }
+
+.painel-tempo {
+  text-align: center;
+  border: 1px solid #38bdf8;
+}
+
+.contador {
+  font-size: 34px;
+  font-weight: bold;
+  margin-top: 10px;
+  color: #22c55e;
+}
+
+.jogo-principal {
+  border: 1px solid #22c55e;
+  background: #0f172a;
+}
+
+.jogo-principal .times {
+  font-size: 20px;
+}
+
+.jogos-menores {
+  margin-top: 14px;
+}
+
+.jogo-mini {
+  display: grid;
+  grid-template-columns: 70px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  background: #111827;
+  padding: 10px;
+  border-radius: 12px;
+  margin-top: 8px;
+  font-size: 14px;
+}
+
+.status-aberto {
+  color: #22c55e;
+  font-weight: bold;
+}
+
+.status-fechado {
+  color: #facc15;
+  font-weight: bold;
+}
+
+.status-travado {
+  color: #f87171;
+  font-weight: bold;
+}
+
+.abas {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.aba {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 10px;
+  background: #374151;
+  color: #ffffff;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.aba.ativa {
+  background: #22c55e;
+  color: #052e16;
+}
+
+.linha-info {
+  background: #111827;
+  border-radius: 12px;
+  padding: 12px;
+  margin-top: 8px;
+}
+
+.linha-info strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: bold;
+  margin-top: 6px;
+}
+
+.badge.finalizado {
+  background: #374151;
+  color: #ffffff;
+}
+
+.badge.ao-vivo {
+  background: #dc2626;
+  color: #ffffff;
+}
+
+.badge.agendado {
+  background: #facc15;
+  color: #111827;
+}
