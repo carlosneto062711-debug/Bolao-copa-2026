@@ -1,4 +1,4 @@
-// VERSÃO 68
+// VERSÃO 69
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -294,10 +294,12 @@ kickoff: kickoffApi,
     novoJogo.awayScore = Number(jogoApi.score.fullTime.away);
   }
 
-  await addDoc(collection(db, "matches"), novoJogo);
+ const idDocumentoApi = `football_data_${jogoApi.id}`;
 
-  atualizados++;
-  continue;
+await setDoc(doc(db, "matches", idDocumentoApi), novoJogo, { merge: true });
+
+atualizados++;
+continue;
 }
 
       const novoStatus = statusFootballDataParaFirestore(jogoApi.status);
@@ -352,6 +354,18 @@ function usuarioAtualEhAdmin() {
   return dadosUsuarioAtual && dadosUsuarioAtual.admin === true;
 }
 
+function usuarioPodeSincronizarApi() {
+  return usuarioAtual !== null;
+}
+
+function intervaloSincronizacaoApiMs() {
+  if (usuarioAtualEhAdmin()) {
+    return 3 * 60 * 1000;
+  }
+
+  return 5 * 60 * 1000;
+}
+
 function dataHojeEAmanhaParaApi() {
   const hoje = hojeISO();
   const amanha = adicionarDiasISO(hoje, 1);
@@ -391,10 +405,10 @@ async function existeJogoAtivoOuProximo() {
 }
 
 async function sincronizarApiAutomaticamente(mostrarLog = true) {
-  if (!usuarioAtualEhAdmin()) {
-    if (mostrarLog) console.log("Sincronização automática ignorada: usuário não é admin.");
-    return;
-  }
+ if (!usuarioPodeSincronizarApi()) {
+  if (mostrarLog) console.log("Sincronização automática ignorada: usuário não está logado.");
+  return;
+}
 
   if (sincronizacaoApiRodando) {
     if (mostrarLog) console.log("Sincronização automática já está rodando.");
@@ -412,9 +426,12 @@ async function sincronizarApiAutomaticamente(mostrarLog = true) {
 
     await sincronizarFootballDataPeriodo(periodo.hoje, periodo.amanha);
 
-    await recalcularRankingPorPalpites();
-    await carregarTudo();
+    if (usuarioAtualEhAdmin()) {
+  await recalcularRankingPorPalpites();
+}
 
+await carregarTudo();
+    
   } catch (error) {
     console.error("Erro na sincronização automática da API:", error);
   } finally {
@@ -423,7 +440,7 @@ async function sincronizarApiAutomaticamente(mostrarLog = true) {
 }
 
 async function iniciarSincronizacaoApiAutomatica() {
-  if (!usuarioAtualEhAdmin()) return;
+  if (!usuarioPodeSincronizarApi()) return;
 
   await sincronizarApiAutomaticamente(false);
 
@@ -439,8 +456,8 @@ async function iniciarSincronizacaoApiAutomatica() {
       return;
     }
 
-    await sincronizarApiAutomaticamente(true);
-  }, 3 * 60 * 1000);
+     await sincronizarApiAutomaticamente(true);
+  }, intervaloSincronizacaoApiMs());
 }
 
 window.sincronizarApiAutomaticamente = sincronizarApiAutomaticamente;
@@ -1169,9 +1186,9 @@ async function carregarPalpitesAdversarios(dataFiltro = dataSelecionadaAdversari
     let resultadoJogo = "Os palpites serão liberados quando o jogo começar.";
 
     if (jogoAoVivo) {
-      statusJogo = "AO VIVO";
-      resultadoJogo = `Placar atual: ${jogo.homeScore ?? 0} x ${jogo.awayScore ?? 0}`;
-    }
+  statusJogo = textoTempoDoJogo(jogo) || "AO VIVO";
+  resultadoJogo = `Placar atual: ${jogo.homeScore ?? 0} x ${jogo.awayScore ?? 0}`;
+}
 
     if (jogoFinalizado) {
       statusJogo = "Encerrado";
@@ -1314,6 +1331,38 @@ function amanhaISO() {
   amanha.setDate(amanha.getDate() + 1);
 
   return formatarDataLocalISO(amanha);
+}
+
+function textoTempoDoJogo(jogo) {
+  if (jogo.status === "finished") {
+    return "ENCERRADO";
+  }
+
+  if (jogo.status !== "live") {
+    return "";
+  }
+
+  const agora = Date.now();
+  const inicio = new Date(jogo.kickoff).getTime();
+  const minutos = Math.floor((agora - inicio) / 60000);
+
+  if (minutos < 0) {
+    return "";
+  }
+
+  if (minutos <= 45) {
+    return "1º TEMPO";
+  }
+
+  if (minutos > 45 && minutos <= 60) {
+    return "INTERVALO";
+  }
+
+  if (minutos > 60 && minutos <= 120) {
+    return "2º TEMPO";
+  }
+
+  return "AO VIVO";
 }
 
 function jogoComecou(jogo) {
@@ -1618,13 +1667,15 @@ if (estaFinalizado) {
 }
 
   if (estaAoVivo) {
+  const tempoJogo = textoTempoDoJogo(jogo);
+
   div.classList.add("jogo-ao-vivo");
 
   div.innerHTML = `
     <div class="ao-vivo-topo">
       <div class="ao-vivo-label">
         <span class="bolinha-ao-vivo"></span>
-        AO VIVO
+        ${tempoJogo || "AO VIVO"}
       </div>
     </div>
 
@@ -2187,11 +2238,11 @@ async function carregarMeusPalpites(dataFiltro = dataSelecionadaMeusPalpites) {
     let pontosLinha = "";
 
     if (jogoAoVivo) {
-      statusTexto = "AO VIVO";
-      badgeClasse = "ao-vivo";
-      resultadoLinha = `Placar atual: ${jogo.homeScore ?? 0} x ${jogo.awayScore ?? 0}`;
-      comparacao = "Jogo em andamento.";
-    }
+  statusTexto = textoTempoDoJogo(jogo) || "AO VIVO";
+  badgeClasse = "ao-vivo";
+  resultadoLinha = `Placar atual: ${jogo.homeScore ?? 0} x ${jogo.awayScore ?? 0}`;
+  comparacao = "Jogo em andamento.";
+}
 
     if (jogoFinalizado) {
       statusTexto = "Encerrado";
