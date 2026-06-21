@@ -1,4 +1,4 @@
-// VERSÃO 59
+// VERSÃO 60
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -569,6 +569,9 @@ function nomeCanonicoTime(nome) {
     "GERMANY": "ALEMANHA",
 
     "CURACAO": "CURACAO",
+"CURACAU": "CURACAO",
+"CURAÇAO": "CURACAO",
+"CURAÇAU": "CURACAO",
 
     "HOLANDA": "HOLANDA",
     "NETHERLANDS": "HOLANDA",
@@ -591,8 +594,10 @@ function nomeCanonicoTime(nome) {
     "ESPANHA": "ESPANHA",
     "SPAIN": "ESPANHA",
 
-    "CABO VERDE": "CABO VERDE",
-    "CAPE VERDE": "CABO VERDE",
+  "CABO VERDE": "CABO VERDE",
+"CAPE VERDE": "CABO VERDE",
+"CABO VERDE ISLANDS": "CABO VERDE",
+"CAPE VERDE ISLANDS": "CABO VERDE",
 
     "BELGICA": "BELGICA",
     "BELGIUM": "BELGICA",
