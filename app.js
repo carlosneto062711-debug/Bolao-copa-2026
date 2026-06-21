@@ -1,4 +1,4 @@
-// VERSÃO 74
+// VERSÃO 75
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -1416,12 +1416,26 @@ function jogoComecou(jogo) {
   return new Date(jogo.kickoff).getTime() <= Date.now();
 }
 
+function dataHoraAberturaPalpites(jogo) {
+  const dataJogo = new Date(`${jogo.date}T00:00:00`);
+
+  // Dia anterior ao jogo
+  dataJogo.setDate(dataJogo.getDate() - 1);
+
+  const ano = dataJogo.getFullYear();
+  const mes = String(dataJogo.getMonth() + 1).padStart(2, "0");
+  const dia = String(dataJogo.getDate()).padStart(2, "0");
+
+  // Abre às 20:00 do dia anterior
+  return new Date(`${ano}-${mes}-${dia}T20:00:00`).getTime();
+}
+
 function jogoLiberadoParaPalpite(jogo) {
   if (jogo.status !== "scheduled") return false;
 
   const agora = Date.now();
   const inicio = new Date(jogo.kickoff).getTime();
-  const abre = inicio - 4 * 60 * 60 * 1000;
+  const abre = dataHoraAberturaPalpites(jogo);
 
   return agora >= abre && agora < inicio;
 }
@@ -1432,22 +1446,24 @@ function jogoEncerradoAindaFicaHoje(jogo) {
   const agora = Date.now();
   const inicio = new Date(jogo.kickoff).getTime();
 
-  // 2h de jogo + 2h de tolerância = 4h após o kickoff
-  const limite = inicio + 4 * 60 * 60 * 1000;
+  // Jogo estimado em 2h + 1h aparecendo após o fim estimado
+  const limite = inicio + 3 * 60 * 60 * 1000;
 
   return agora <= limite;
 }
 
 function jogoDeveAparecerHoje(jogo) {
+  if (jogo.date !== hojeISO()) return false;
+
   if (jogo.status === "live") return true;
   if (jogo.status === "finished") return jogoEncerradoAindaFicaHoje(jogo);
-  if (jogo.status === "scheduled") return jogoLiberadoParaPalpite(jogo) || jogoComecou(jogo);
+  if (jogo.status === "scheduled") return jogoLiberadoParaPalpite(jogo);
 
   return false;
 }
 
 function jogoDeveAparecerAmanha(jogo) {
-  return jogo.status === "scheduled" && !jogoLiberadoParaPalpite(jogo) && !jogoComecou(jogo);
+  return jogo.status === "scheduled" && jogo.date >= amanhaISO();
 }
 
 async function carregarJogosHoje() {
@@ -1458,12 +1474,15 @@ async function carregarJogosHoje() {
 
   try {
     const hoje = hojeISO();
-    const amanha = amanhaISO();
 
-    const qHoje = query(
-      collection(db, "matches"),
-      where("date", "in", [hoje, amanha])
-    );
+const qHoje = query(
+  collection(db, "matches"),
+  where("date", "==", hoje)
+);
+
+    const jogosFiltrados = todosJogos.filter((jogo) => {
+  return jogoDeveAparecerHoje(jogo);
+});
 
     const snap = await getDocs(qHoje);
 
