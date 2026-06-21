@@ -1,4 +1,4 @@
-// VERSÃO 65
+// VERSÃO 66
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -1091,8 +1091,16 @@ async function carregarPalpitesAdversarios(dataFiltro = dataSelecionadaAdversari
     }
 
     const palpitesDoJogo = palpites
-      .filter((palpite) => palpite.matchId === jogo.id)
-      .filter((palpite) => palpite.userId !== usuarioAtual.uid);
+  .filter((palpite) => palpite.matchId === jogo.id)
+  .sort((a, b) => {
+    if (a.userId === usuarioAtual.uid) return -1;
+    if (b.userId === usuarioAtual.uid) return 1;
+
+    const nomeA = usuariosPorId[a.userId]?.nome || "";
+    const nomeB = usuariosPorId[b.userId]?.nome || "";
+
+    return nomeA.localeCompare(nomeB);
+  });
 
     if (palpitesDoJogo.length === 0) {
       const semPalpites = document.createElement("p");
@@ -1105,7 +1113,10 @@ async function carregarPalpitesAdversarios(dataFiltro = dataSelecionadaAdversari
 
     palpitesDoJogo.forEach((palpite) => {
       const usuario = usuariosPorId[palpite.userId];
-      const nomeUsuario = usuario?.nome || usuario?.name || usuario?.displayName || "Usuário";
+const souEu = palpite.userId === usuarioAtual.uid;
+const nomeUsuario = souEu
+  ? "⭐ Você"
+  : usuario?.nome || usuario?.name || usuario?.displayName || "Usuário";
 
       let bolinha = "⚪";
       let textoPontos = "";
@@ -1123,13 +1134,16 @@ async function carregarPalpitesAdversarios(dataFiltro = dataSelecionadaAdversari
       }
 
       const linha = document.createElement("div");
-      linha.className = "linha-palpite-adversario";
-      linha.innerHTML = `
-        <span>${bolinha}</span>
-        <strong>${nomeUsuario}</strong>
-        <span>${palpite.homeGuess} x ${palpite.awayGuess}${textoPontos}</span>
-      `;
+linha.className = souEu
+  ? "linha-palpite-adversario meu-palpite-adversario"
+  : "linha-palpite-adversario";
 
+linha.innerHTML = `
+  <span>${bolinha}</span>
+  <strong>${nomeUsuario}</strong>
+  <span>${palpite.homeGuess} x ${palpite.awayGuess}${textoPontos}</span>
+`;
+      
       cardJogo.appendChild(linha);
     });
 
