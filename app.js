@@ -1,4 +1,4 @@
-// VERSÃO 73
+// VERSÃO 74
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -1303,16 +1303,21 @@ if (btnPalpitesAdversarios) {
 async function carregarTudo() {
   await carregarPainelTempo();
   await carregarJogosHoje();
-  await carregarJogosAmanha();
+  await carregarJogosAmanha(dataSelecionadaJogosAmanha);
 
   if (!window.usuarioMexendoEmFiltroResultados) {
     await carregarResultadosAnteriores(dataSelecionadaResultados);
   }
 
-if (!window.usuarioVendoMeusPalpites && !window.usuarioMexendoEmFiltroPalpites) {
-  await carregarMeusPalpites(dataSelecionadaMeusPalpites);
-}
+  if (!window.usuarioMexendoEmFiltroPalpites) {
+    await carregarMeusPalpites(dataSelecionadaMeusPalpites);
+  }
+
   await carregarRanking();
+
+  if (painelAdversariosAberto) {
+    await carregarPalpitesAdversarios(dataSelecionadaAdversarios);
+  }
 }
 
 function formatarDataLocalISO(data) {
@@ -1345,22 +1350,24 @@ function textoTempoDoJogo(jogo) {
 
   const agora = Date.now();
   const inicio = new Date(jogo.kickoff).getTime();
-  const minutos = Math.floor((agora - inicio) / 60000);
+  const minutosCorridos = Math.floor((agora - inicio) / 60000);
 
-  if (minutos < 0) {
+  if (minutosCorridos < 0) {
     return "";
   }
 
-  if (minutos <= 45) {
-    return "1º TEMPO";
+  if (minutosCorridos <= 45) {
+    const minutoJogo = Math.max(1, minutosCorridos + 1);
+    return `1º TEMPO - ${minutoJogo}'`;
   }
 
-  if (minutos > 45 && minutos <= 60) {
+  if (minutosCorridos > 45 && minutosCorridos <= 60) {
     return "INTERVALO";
   }
 
-  if (minutos > 60 && minutos <= 120) {
-    return "2º TEMPO";
+  if (minutosCorridos > 60) {
+    const minutoJogo = Math.min(90, minutosCorridos - 15);
+    return `2º TEMPO - ${minutoJogo}'`;
   }
 
   return "AO VIVO";
