@@ -1,4 +1,4 @@
-// VERSÃO 48
+// VERSÃO 49
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -359,15 +359,23 @@ async function carregarTudo() {
   await carregarRanking();
 }
 
+function formatarDataLocalISO(data) {
+  const ano = data.getFullYear();
+  const mes = String(data.getMonth() + 1).padStart(2, "0");
+  const dia = String(data.getDate()).padStart(2, "0");
+
+  return `${ano}-${mes}-${dia}`;
+}
+
 function hojeISO() {
-  const hoje = new Date();
-  return hoje.toISOString().slice(0, 10);
+  return formatarDataLocalISO(new Date());
 }
 
 function amanhaISO() {
   const amanha = new Date();
   amanha.setDate(amanha.getDate() + 1);
-  return amanha.toISOString().slice(0, 10);
+
+  return formatarDataLocalISO(amanha);
 }
 
 function jogoComecou(jogo) {
