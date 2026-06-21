@@ -1,4 +1,4 @@
-// VERSÃO 76
+// VERSÃO 77
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -1564,23 +1564,22 @@ async function carregarJogosAmanha(dataEscolhida = dataSelecionadaJogosAmanha) {
     });
 
     const hoje = hojeISO();
-    const dataJogosSeguintes = adicionarDiasISO(hoje, 1);
+    const amanha = amanhaISO();
+    const dataPosterior = adicionarDiasISO(dataEscolhida || amanha, 1);
 
-    const jogosBloqueadosFiltrados = todosJogos
-      .filter((jogo) => jogo.status === "scheduled")
-      .filter((jogo) => jogo.date >= hoje)
-      .filter((jogo) => jogoDeveAparecerAmanha(jogo));
+    const jogosFuturos = removerJogosDuplicados(
+      todosJogos
+        .filter((jogo) => jogo.status === "scheduled")
+        .filter((jogo) => jogo.date >= amanha)
+    ).sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
 
-    const jogosBloqueados = removerJogosDuplicados(jogosBloqueadosFiltrados)
-      .sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
-
-    const primeiraDataComJogos = jogosBloqueados.length > 0
-      ? jogosBloqueados[0].date
-      : hoje;
+    const primeiraDataComJogos = jogosFuturos.length > 0
+      ? jogosFuturos[0].date
+      : amanha;
 
     const dataParaMostrar = dataEscolhida || primeiraDataComJogos;
 
-    dataSelecionadaJogosAmanha = dataEscolhida;
+    dataSelecionadaJogosAmanha = dataParaMostrar;
 
     const topo = document.createElement("div");
     topo.className = "topo-jogos-amanha";
@@ -1590,18 +1589,17 @@ async function carregarJogosAmanha(dataEscolhida = dataSelecionadaJogosAmanha) {
 
     const botao = document.createElement("button");
 
-    if (dataParaMostrar === dataJogosSeguintes) {
-      botao.innerText = "Voltar aos próximos jogos";
+    const existeDataPosterior = jogosFuturos.some((jogo) => jogo.date === dataPosterior);
+
+    if (existeDataPosterior) {
+      botao.innerText = formatarDataBR(dataPosterior);
       botao.onclick = () => {
-        dataSelecionadaJogosAmanha = null;
-        carregarJogosAmanha();
+        dataSelecionadaJogosAmanha = dataPosterior;
+        carregarJogosAmanha(dataPosterior);
       };
     } else {
-      botao.innerText = "Jogos seguintes";
-      botao.onclick = () => {
-        dataSelecionadaJogosAmanha = dataJogosSeguintes;
-        carregarJogosAmanha(dataJogosSeguintes);
-      };
+      botao.innerText = "Fim da fase";
+      botao.disabled = true;
     }
 
     topo.appendChild(tituloData);
@@ -1610,30 +1608,28 @@ async function carregarJogosAmanha(dataEscolhida = dataSelecionadaJogosAmanha) {
 
     const jogosFiltrados = todosJogos
       .filter((jogo) => jogo.status === "scheduled")
-      .filter((jogo) => jogo.date === dataParaMostrar)
-      .filter((jogo) => jogoDeveAparecerAmanha(jogo));
+      .filter((jogo) => jogo.date === dataParaMostrar);
 
     const jogos = removerJogosDuplicados(jogosFiltrados)
       .sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
 
     if (jogos.length === 0) {
-      jogosAmanhaDiv.innerHTML += "<p>Nenhum jogo bloqueado para esta data.</p>";
+      jogosAmanhaDiv.innerHTML += "<p>Nenhum jogo encontrado para esta data.</p>";
       alvoContagemAmanha = null;
       return;
     }
 
-    const proximoJogoBloqueado = jogos[0];
-    const aberturaProximoJogo = new Date(proximoJogoBloqueado.kickoff).getTime() - 4 * 60 * 60 * 1000;
+    const aberturaJogos = dataHoraAberturaPalpites(jogos[0]);
     const agora = Date.now();
 
-    alvoContagemAmanha = new Date(aberturaProximoJogo);
+    alvoContagemAmanha = new Date(aberturaJogos);
 
     const aviso = document.createElement("p");
 
-    if (agora >= aberturaProximoJogo) {
-      aviso.innerHTML = `<strong>O próximo jogo já está dentro da janela de abertura.</strong>`;
+    if (agora >= aberturaJogos) {
+      aviso.innerHTML = `<strong>Palpites desta data já estão abertos.</strong>`;
     } else {
-      aviso.innerHTML = `<strong>Próximo jogo abre em <span id="contadorAmanha">${formatarContagem(aberturaProximoJogo - agora)}</span></strong>`;
+      aviso.innerHTML = `<strong>Palpites abrem em <span id="contadorAmanha">${formatarContagem(aberturaJogos - agora)}</span></strong>`;
     }
 
     jogosAmanhaDiv.appendChild(aviso);
@@ -1650,7 +1646,7 @@ async function carregarJogosAmanha(dataEscolhida = dataSelecionadaJogosAmanha) {
       jogosAmanhaDiv.appendChild(item);
     });
   } catch (error) {
-    console.log("Erro ao carregar jogos de amanhã:", error);
+    console.log("Erro ao carregar jogos seguintes:", error);
     jogosAmanhaDiv.innerHTML = `<p>Erro ao carregar jogos: ${error.code}</p>`;
   }
 }
@@ -1764,6 +1760,18 @@ if (estaFinalizado) {
 
   const alteracoesRestantes = Math.max(0, 2 - editCount);
 
+  if (atingiuLimiteAlteracoes && !jogoJaComecou) {
+  div.className = "jogo-mini palpite-travado-mini";
+
+  div.innerHTML = `
+    <span>${formatarHora(jogo.kickoff)}</span>
+    <strong>${jogo.homeTeam} x ${jogo.awayTeam}</strong>
+    <span class="status-fechado">Palpite feito. Aguarde começar!</span>
+  `;
+
+  return div;
+}
+  
   let statusPalpite = "";
 
   if (!rodadaAberta) {
@@ -1850,15 +1858,6 @@ ${estaAoVivo ? `
   });
 
   return div;
-}
-
-function rodadaEstaAberta(jogos) {
-  const horarios = jogos.map(jogo => new Date(jogo.kickoff).getTime());
-  const primeiroJogo = new Date(Math.min(...horarios));
-
-  const abertura = new Date(primeiroJogo.getTime() - 4 * 60 * 60 * 1000);
-
-  return new Date() >= abertura;
 }
 
 function formatarHora(dataISO) {
@@ -2032,10 +2031,10 @@ async function carregarPainelTempo() {
   const contador = document.getElementById("contadorPrincipal");
 
   try {
-    const snap = await getDocs(collection(db, "matches"));
+    const snapJogos = await getDocs(collection(db, "matches"));
 
     const jogos = [];
-    snap.forEach((docSnap) => {
+    snapJogos.forEach((docSnap) => {
       jogos.push({
         id: docSnap.id,
         ...docSnap.data()
@@ -2050,22 +2049,44 @@ async function carregarPainelTempo() {
       return;
     }
 
+    const snapPalpites = await getDocs(
+      query(
+        collection(db, "predictions"),
+        where("userId", "==", usuarioAtual.uid)
+      )
+    );
+
+    const palpitesPorJogo = {};
+    snapPalpites.forEach((docSnap) => {
+      const palpite = docSnap.data();
+      palpitesPorJogo[palpite.matchId] = palpite;
+    });
+
     const agora = Date.now();
 
-    jogos.sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
+    const jogosOrdenados = removerJogosDuplicados(jogos)
+      .sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
 
-    const jogosAgendados = jogos.filter((jogo) => jogo.status === "scheduled");
-    const jogosAoVivo = jogos.filter((jogo) => jogo.status === "live");
+    const jogosAgendados = jogosOrdenados.filter((jogo) => jogo.status === "scheduled");
+    const jogosAoVivo = jogosOrdenados.filter((jogo) => jogo.status === "live");
 
-    const jogosAbertosParaPalpite = jogosAgendados.filter((jogo) => {
+    const jogosAbertos = jogosAgendados.filter((jogo) => {
       const inicio = new Date(jogo.kickoff).getTime();
-      const abre = inicio - 4 * 60 * 60 * 1000;
+      const abre = dataHoraAberturaPalpites(jogo);
 
       return agora >= abre && agora < inicio;
     });
 
-    if (jogosAbertosParaPalpite.length > 0) {
-      const jogoAlvo = jogosAbertosParaPalpite[0];
+    const jogosAbertosSemPalpiteLivre = jogosAbertos.filter((jogo) => {
+      const palpite = palpitesPorJogo[jogo.id];
+
+      if (!palpite) return true;
+
+      return Number(palpite.editCount || 0) < 2;
+    });
+
+    if (jogosAbertosSemPalpiteLivre.length > 0) {
+      const jogoAlvo = jogosAbertosSemPalpiteLivre[0];
       const inicio = new Date(jogoAlvo.kickoff).getTime();
 
       titulo.innerText = `${jogoAlvo.homeTeam} x ${jogoAlvo.awayTeam}`;
@@ -2076,20 +2097,30 @@ async function carregarPainelTempo() {
       return;
     }
 
-    const proximosJogosFechados = jogosAgendados.filter((jogo) => {
-      const inicio = new Date(jogo.kickoff).getTime();
-      const abre = inicio - 4 * 60 * 60 * 1000;
+    const proximoJogoAberto = jogosAbertos[0];
 
+    if (proximoJogoAberto) {
+      const inicio = new Date(proximoJogoAberto.kickoff).getTime();
+
+      titulo.innerText = `${proximoJogoAberto.homeTeam} x ${proximoJogoAberto.awayTeam}`;
+      texto.innerText = "Jogo inicia em";
+      alvoContagem = new Date(inicio);
+      contador.innerText = formatarContagem(inicio - agora);
+
+      return;
+    }
+
+    const proximosJogosFechados = jogosAgendados.filter((jogo) => {
+      const abre = dataHoraAberturaPalpites(jogo);
       return abre > agora;
     });
 
     if (proximosJogosFechados.length > 0) {
       const jogoAlvo = proximosJogosFechados[0];
-      const inicio = new Date(jogoAlvo.kickoff).getTime();
-      const abertura = inicio - 4 * 60 * 60 * 1000;
+      const abertura = dataHoraAberturaPalpites(jogoAlvo);
 
       titulo.innerText = `${jogoAlvo.homeTeam} x ${jogoAlvo.awayTeam}`;
-      texto.innerText = "Palpites abrem 4 horas antes do jogo";
+      texto.innerText = "Palpites abrem às 20h do dia anterior";
       alvoContagem = new Date(abertura);
       contador.innerText = formatarContagem(abertura - agora);
 
@@ -2100,7 +2131,7 @@ async function carregarPainelTempo() {
       const jogoAlvo = jogosAoVivo[0];
 
       titulo.innerText = `${jogoAlvo.homeTeam} x ${jogoAlvo.awayTeam}`;
-      texto.innerText = "Jogo em andamento";
+      texto.innerText = textoTempoDoJogo(jogoAlvo) || "Jogo em andamento";
       contador.innerText = "00h 00m 00s";
       alvoContagem = null;
 
@@ -2108,7 +2139,7 @@ async function carregarPainelTempo() {
     }
 
     titulo.innerText = "Jogos do dia em andamento ou encerrados";
-    texto.innerText = "Os palpites dos jogos de hoje já foram travados.";
+    texto.innerText = "Aguarde a próxima abertura de palpites.";
     contador.innerText = "00h 00m 00s";
     alvoContagem = null;
 
@@ -2120,9 +2151,6 @@ async function carregarPainelTempo() {
     alvoContagem = null;
   }
 }
-
-let dataSelecionadaResultados = hojeISO();
-let dataSelecionadaMeusPalpites = hojeISO();
 
 async function carregarResultadosAnteriores(dataFiltro = dataSelecionadaResultados) {
   dataSelecionadaResultados = dataFiltro;
