@@ -1,4 +1,4 @@
-// VERSÃO 77
+// VERSÃO 78
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -1023,6 +1023,9 @@ const db = getFirestore(app);
 let usuarioAtual = null;
 let dadosUsuarioAtual = null;
 
+let dataSelecionadaResultados = hojeISO();
+let dataSelecionadaMeusPalpites = hojeISO();
+
 let alvoContagem = null;
 let alvoContagemAmanha = null;
 let intervaloContagem = null;
@@ -1589,6 +1592,13 @@ async function carregarJogosAmanha(dataEscolhida = dataSelecionadaJogosAmanha) {
 
     const botao = document.createElement("button");
 
+    const botaoVoltar = document.createElement("button");
+botaoVoltar.innerText = "Voltar";
+botaoVoltar.onclick = () => {
+  dataSelecionadaJogosAmanha = null;
+  carregarJogosAmanha();
+};
+
     const existeDataPosterior = jogosFuturos.some((jogo) => jogo.date === dataPosterior);
 
     if (existeDataPosterior) {
@@ -1602,8 +1612,13 @@ async function carregarJogosAmanha(dataEscolhida = dataSelecionadaJogosAmanha) {
       botao.disabled = true;
     }
 
-    topo.appendChild(tituloData);
-    topo.appendChild(botao);
+   topo.appendChild(tituloData);
+
+if (dataEscolhida) {
+  topo.appendChild(botaoVoltar);
+}
+
+topo.appendChild(botao);
     jogosAmanhaDiv.appendChild(topo);
 
     const jogosFiltrados = todosJogos
