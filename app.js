@@ -1,4 +1,4 @@
-// VERSÃO 60
+// VERSÃO 61
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -996,7 +996,9 @@ async function carregarTudo() {
     await carregarResultadosAnteriores(dataSelecionadaResultados);
   }
 
+ if (!window.usuarioVendoMeusPalpites) {
   await carregarMeusPalpites();
+}
   await carregarRanking();
 }
 
@@ -1139,34 +1141,85 @@ async function carregarJogosHoje() {
   }
 }
 
-async function carregarJogosAmanha() {
+let dataSelecionadaJogosAmanha = null;
+
+function adicionarDiasISO(dataISO, dias) {
+  const data = new Date(`${dataISO}T00:00:00`);
+  data.setDate(data.getDate() + dias);
+  return formatarDataLocalISO(data);
+}
+
+function formatarDataBR(dataISO) {
+  const [ano, mes, dia] = dataISO.split("-");
+  return `${dia}/${mes}/${ano}`;
+}
+
+async function carregarJogosAmanha(dataEscolhida = dataSelecionadaJogosAmanha) {
   const jogosAmanhaDiv = document.getElementById("jogosAmanha");
   jogosAmanhaDiv.innerHTML = "";
 
   try {
-    const q = query(
-      collection(db, "matches"),
-      where("date", "==", amanhaISO())
-    );
+    const snap = await getDocs(collection(db, "matches"));
 
-    const snap = await getDocs(q);
-
-    const jogos = [];
+    const todosJogos = [];
     snap.forEach((docSnap) => {
-      const jogo = {
+      todosJogos.push({
         id: docSnap.id,
         ...docSnap.data()
-      };
-
-      if (jogoDeveAparecerAmanha(jogo)) {
-        jogos.push(jogo);
-      }
+      });
     });
 
-    jogos.sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
+    const hoje = hojeISO();
+    const dataJogosSeguintes = adicionarDiasISO(hoje, 1);
+
+    const jogosBloqueados = todosJogos
+      .filter((jogo) => jogo.status === "scheduled")
+      .filter((jogo) => jogo.date >= hoje)
+      .filter((jogo) => jogoDeveAparecerAmanha(jogo))
+      .sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
+
+    const primeiraDataComJogos = jogosBloqueados.length > 0
+      ? jogosBloqueados[0].date
+      : hoje;
+
+    const dataParaMostrar = dataEscolhida || primeiraDataComJogos;
+
+    dataSelecionadaJogosAmanha = dataEscolhida;
+
+    const topo = document.createElement("div");
+    topo.className = "topo-jogos-amanha";
+
+    const tituloData = document.createElement("p");
+    tituloData.innerHTML = `<strong>Jogos de ${formatarDataBR(dataParaMostrar)}</strong>`;
+
+    const botao = document.createElement("button");
+
+    if (dataParaMostrar === dataJogosSeguintes) {
+      botao.innerText = "Voltar aos próximos jogos";
+      botao.onclick = () => {
+        dataSelecionadaJogosAmanha = null;
+        carregarJogosAmanha();
+      };
+    } else {
+      botao.innerText = "Jogos seguintes";
+      botao.onclick = () => {
+        dataSelecionadaJogosAmanha = dataJogosSeguintes;
+        carregarJogosAmanha(dataJogosSeguintes);
+      };
+    }
+
+    topo.appendChild(tituloData);
+    topo.appendChild(botao);
+    jogosAmanhaDiv.appendChild(topo);
+
+    const jogos = todosJogos
+      .filter((jogo) => jogo.status === "scheduled")
+      .filter((jogo) => jogo.date === dataParaMostrar)
+      .filter((jogo) => jogoDeveAparecerAmanha(jogo))
+      .sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
 
     if (jogos.length === 0) {
-      jogosAmanhaDiv.innerHTML = "<p>Nenhum jogo bloqueado para amanhã.</p>";
+      jogosAmanhaDiv.innerHTML += "<p>Nenhum jogo bloqueado para esta data.</p>";
       alvoContagemAmanha = null;
       return;
     }
@@ -1738,76 +1791,106 @@ async function carregarResultadosAnteriores(dataFiltro = dataSelecionadaResultad
   });
 }
 
-async function carregarMeusPalpites() {
-  const painel = document.getElementById("painelMeusPalpites");
-  painel.innerHTML = "";
+async function carregarJogosAmanha(dataEscolhida = dataSelecionadaJogosAmanha) {
+  const jogosAmanhaDiv = document.getElementById("jogosAmanha");
+  jogosAmanhaDiv.innerHTML = "";
 
-  const q = query(
-    collection(db, "predictions"),
-    where("userId", "==", usuarioAtual.uid)
-  );
+  try {
+    const snap = await getDocs(collection(db, "matches"));
 
-  const snap = await getDocs(q);
-
-  const palpites = [];
-  snap.forEach((docSnap) => {
-    palpites.push({
-      id: docSnap.id,
-      ...docSnap.data()
+    const todosJogos = [];
+    snap.forEach((docSnap) => {
+      todosJogos.push({
+        id: docSnap.id,
+        ...docSnap.data()
+      });
     });
-  });
 
-  if (palpites.length === 0) {
-    painel.innerHTML = "<p>Você ainda não fez nenhum palpite.</p>";
-    return;
-  }
+    const hoje = hojeISO();
+    const dataJogosSeguintes = adicionarDiasISO(hoje, 1);
 
-  for (const palpite of palpites) {
-    const jogoRef = doc(db, "matches", palpite.matchId);
-    const jogoSnap = await getDoc(jogoRef);
+    const jogosBloqueados = todosJogos
+      .filter((jogo) => jogo.status === "scheduled")
+      .filter((jogo) => jogo.date >= hoje)
+      .filter((jogo) => jogoDeveAparecerAmanha(jogo))
+      .sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
 
-    if (!jogoSnap.exists()) continue;
+    const primeiraDataComJogos = jogosBloqueados.length > 0
+      ? jogosBloqueados[0].date
+      : hoje;
 
-    const jogo = jogoSnap.data();
+    const dataParaMostrar = dataEscolhida || primeiraDataComJogos;
 
-    const agora = new Date();
-    const jogoComecou = agora >= new Date(jogo.kickoff);
-    const jogoFinalizado = jogo.status === "finished";
-    const jogoAoVivo = jogoComecou && !jogoFinalizado;
+    dataSelecionadaJogosAmanha = dataEscolhida;
 
-    let statusTexto = "Agendado";
-    let badgeClasse = "agendado";
-    let comparacao = "Aguardando o jogo acontecer.";
+    const topo = document.createElement("div");
+    topo.className = "topo-jogos-amanha";
 
-    if (jogoAoVivo) {
-      statusTexto = "AO VIVO";
-      badgeClasse = "ao-vivo";
-      comparacao = `Placar atual: ${jogo.homeScore ?? 0} x ${jogo.awayScore ?? 0}`;
+    const tituloData = document.createElement("p");
+    tituloData.innerHTML = `<strong>Jogos de ${formatarDataBR(dataParaMostrar)}</strong>`;
+
+    const botao = document.createElement("button");
+
+    if (dataParaMostrar === dataJogosSeguintes) {
+      botao.innerText = "Voltar aos próximos jogos";
+      botao.onclick = () => {
+        dataSelecionadaJogosAmanha = null;
+        carregarJogosAmanha();
+      };
+    } else {
+      botao.innerText = "Jogos seguintes";
+      botao.onclick = () => {
+        dataSelecionadaJogosAmanha = dataJogosSeguintes;
+        carregarJogosAmanha(dataJogosSeguintes);
+      };
     }
 
-    if (jogoFinalizado) {
-      statusTexto = "Encerrado";
-      badgeClasse = "finalizado";
-      comparacao = textoResultadoPalpite(
-        palpite.homeGuess,
-        palpite.awayGuess,
-        jogo.homeScore,
-        jogo.awayScore
-      );
+    topo.appendChild(tituloData);
+    topo.appendChild(botao);
+    jogosAmanhaDiv.appendChild(topo);
+
+    const jogos = todosJogos
+      .filter((jogo) => jogo.status === "scheduled")
+      .filter((jogo) => jogo.date === dataParaMostrar)
+      .filter((jogo) => jogoDeveAparecerAmanha(jogo))
+      .sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
+
+    if (jogos.length === 0) {
+      jogosAmanhaDiv.innerHTML += "<p>Nenhum jogo bloqueado para esta data.</p>";
+      alvoContagemAmanha = null;
+      return;
     }
 
-    const div = document.createElement("div");
-    div.className = "linha-info";
-    div.innerHTML = `
-      <strong>${jogo.homeTeam} x ${jogo.awayTeam}</strong>
-      <span>Seu palpite: ${palpite.homeGuess} x ${palpite.awayGuess}</span>
-      <br>
-      <span>${comparacao}</span>
-      <br>
-      <span class="badge ${badgeClasse}">${statusTexto}</span>
-    `;
+    const proximoJogoBloqueado = jogos[0];
+    const aberturaProximoJogo = new Date(proximoJogoBloqueado.kickoff).getTime() - 4 * 60 * 60 * 1000;
+    const agora = Date.now();
 
-    painel.appendChild(div);
+    alvoContagemAmanha = new Date(aberturaProximoJogo);
+
+    const aviso = document.createElement("p");
+
+    if (agora >= aberturaProximoJogo) {
+      aviso.innerHTML = `<strong>O próximo jogo já está dentro da janela de abertura.</strong>`;
+    } else {
+      aviso.innerHTML = `<strong>Próximo jogo abre em <span id="contadorAmanha">${formatarContagem(aberturaProximoJogo - agora)}</span></strong>`;
+    }
+
+    jogosAmanhaDiv.appendChild(aviso);
+
+    jogos.forEach((jogo) => {
+      const item = document.createElement("div");
+      item.className = "jogo-mini";
+      item.innerHTML = `
+        <span>${formatarHora(jogo.kickoff)}</span>
+        <strong>${jogo.homeTeam} x ${jogo.awayTeam}</strong>
+        <span class="status-fechado">Bloqueado</span>
+      `;
+
+      jogosAmanhaDiv.appendChild(item);
+    });
+  } catch (error) {
+    console.log("Erro ao carregar jogos de amanhã:", error);
+    jogosAmanhaDiv.innerHTML = `<p>Erro ao carregar jogos: ${error.code}</p>`;
   }
 }
 
@@ -1855,6 +1938,8 @@ function getResultado(casa, fora) {
 }
 
 function trocarAba(aba) {
+  window.usuarioVendoMeusPalpites = aba !== "resultados";
+  
   const btnResultados = document.getElementById("btnResultados");
   const btnMeusPalpites = document.getElementById("btnMeusPalpites");
   const painelResultados = document.getElementById("painelResultados");
