@@ -1,4 +1,4 @@
-// VERSÃO 70
+// VERSÃO 71
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -426,9 +426,7 @@ async function sincronizarApiAutomaticamente(mostrarLog = true) {
 
     await sincronizarFootballDataPeriodo(periodo.hoje, periodo.amanha);
 
-    if (usuarioAtualEhAdmin()) {
-  await recalcularRankingPorPalpites();
-}
+    await recalcularRankingPorPalpites();
 
 await carregarTudo();
     
@@ -2447,9 +2445,31 @@ function iniciarAtualizacaoAutomatica() {
   if (window.atualizacaoPorTempoLigada) return;
 
   window.atualizacaoPorTempoLigada = true;
+  window.ultimoRecarregamentoPorTempo = 0;
 
   setInterval(async () => {
     if (!usuarioAtual) return;
+
+    const agora = Date.now();
+
+    const contadorPrincipalZerou =
+      alvoContagem &&
+      alvoContagem.getTime &&
+      alvoContagem.getTime() <= agora;
+
+    const contadorAmanhaZerou =
+      alvoContagemAmanha &&
+      alvoContagemAmanha.getTime &&
+      alvoContagemAmanha.getTime() <= agora;
+
+    const algumContadorZerou = contadorPrincipalZerou || contadorAmanhaZerou;
+
+    if (!algumContadorZerou) return;
+
+    // Evita ficar recarregando várias vezes no mesmo minuto
+    if (agora - window.ultimoRecarregamentoPorTempo < 60000) return;
+
+    window.ultimoRecarregamentoPorTempo = agora;
 
     const campoAtivo = document.activeElement;
     const usuarioEstaDigitando =
@@ -2459,7 +2479,7 @@ function iniciarAtualizacaoAutomatica() {
     if (usuarioEstaDigitando) return;
 
     await carregarTudo();
-  }, 15000);
+  }, 5000);
 }
 
 function iniciarListenersTempoReal() {
