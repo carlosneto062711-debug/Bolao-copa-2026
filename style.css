@@ -505,3 +505,47 @@ input {
   border: 1px solid #22c55e;
   background: #064e3b;
 }
+
+.aviso-versao {
+  max-width: 720px;
+  margin: 12px auto;
+  padding: 12px;
+  background: #facc15;
+  color: #111827;
+  border-radius: 10px;
+  font-weight: bold;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.aviso-versao button {
+  background: #111827;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.botoes-datas-jogos {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.status-palpitar {
+  color: #22c55e;
+  font-weight: bold;
+}
+
+.jogo-mini-palpitar {
+  cursor: pointer;
+  border: 1px solid #22c55e;
+}
+
+.jogo-mini-palpitar:hover {
+  background: #064e3b;
+}
