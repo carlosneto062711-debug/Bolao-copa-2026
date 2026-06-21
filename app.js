@@ -1,4 +1,4 @@
-// VERSÃO 69
+// VERSÃO 70
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -1365,6 +1365,45 @@ function textoTempoDoJogo(jogo) {
   return "AO VIVO";
 }
 
+function removerJogosDuplicados(listaJogos) {
+  const mapa = new Map();
+
+  listaJogos.forEach((jogo) => {
+    const chave = jogo.apiMatchId
+      ? `api_${jogo.apiMatchId}`
+      : `${normalizarNomeTime(jogo.homeTeam)}_${normalizarNomeTime(jogo.awayTeam)}_${jogo.date}`;
+
+    const jogoExistente = mapa.get(chave);
+
+    if (!jogoExistente) {
+      mapa.set(chave, jogo);
+      return;
+    }
+
+    const existenteTemApi = !!jogoExistente.apiMatchId;
+    const novoTemApi = !!jogo.apiMatchId;
+
+    if (novoTemApi && !existenteTemApi) {
+      mapa.set(chave, jogo);
+      return;
+    }
+
+    const atualizadoExistente = new Date(
+      jogoExistente.updatedFromApiAt || jogoExistente.createdFromApiAt || 0
+    ).getTime();
+
+    const atualizadoNovo = new Date(
+      jogo.updatedFromApiAt || jogo.createdFromApiAt || 0
+    ).getTime();
+
+    if (atualizadoNovo > atualizadoExistente) {
+      mapa.set(chave, jogo);
+    }
+  });
+
+  return Array.from(mapa.values());
+}
+
 function jogoComecou(jogo) {
   return new Date(jogo.kickoff).getTime() <= Date.now();
 }
@@ -1428,39 +1467,38 @@ async function carregarJogosHoje() {
       });
     });
 
-    const jogos = todosJogos
-      .filter((jogo) => {
-        const dataJogo = jogo.date;
+    const jogosFiltrados = todosJogos.filter((jogo) => {
+      const dataJogo = jogo.date;
 
-        if (dataJogo === hoje) {
-          return jogoDeveAparecerHoje(jogo);
-        }
+      if (dataJogo === hoje) {
+        return jogoDeveAparecerHoje(jogo);
+      }
 
-        // Jogos de amanhã só entram em "hoje" se já abriram individualmente
-        if (dataJogo === amanha) {
-          return jogoLiberadoParaPalpite(jogo);
-        }
+      // Jogos de amanhã só entram em "hoje" se já abriram individualmente
+      if (dataJogo === amanha) {
+        return jogoLiberadoParaPalpite(jogo);
+      }
 
-        return false;
-      })
-      
-      .sort((a, b) => {
-  const pesoStatus = (jogo) => {
-    if (jogo.status === "live") return 1;
-    if (jogo.status === "scheduled") return 2;
-    if (jogo.status === "finished") return 3;
-    return 4;
-  };
+      return false;
+    });
 
-  const pesoA = pesoStatus(a);
-  const pesoB = pesoStatus(b);
+    const jogos = removerJogosDuplicados(jogosFiltrados).sort((a, b) => {
+      const pesoStatus = (jogo) => {
+        if (jogo.status === "live") return 1;
+        if (jogo.status === "scheduled") return 2;
+        if (jogo.status === "finished") return 3;
+        return 4;
+      };
 
-  if (pesoA !== pesoB) {
-    return pesoA - pesoB;
-  }
+      const pesoA = pesoStatus(a);
+      const pesoB = pesoStatus(b);
 
-  return new Date(a.kickoff) - new Date(b.kickoff);
-});
+      if (pesoA !== pesoB) {
+        return pesoA - pesoB;
+      }
+
+      return new Date(a.kickoff) - new Date(b.kickoff);
+    });
 
     if (jogos.length === 0) {
       statusRodada.innerText = "Nenhum jogo aberto no momento.";
@@ -1516,10 +1554,12 @@ async function carregarJogosAmanha(dataEscolhida = dataSelecionadaJogosAmanha) {
     const hoje = hojeISO();
     const dataJogosSeguintes = adicionarDiasISO(hoje, 1);
 
-    const jogosBloqueados = todosJogos
+    const jogosBloqueadosFiltrados = todosJogos
       .filter((jogo) => jogo.status === "scheduled")
       .filter((jogo) => jogo.date >= hoje)
-      .filter((jogo) => jogoDeveAparecerAmanha(jogo))
+      .filter((jogo) => jogoDeveAparecerAmanha(jogo));
+
+    const jogosBloqueados = removerJogosDuplicados(jogosBloqueadosFiltrados)
       .sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
 
     const primeiraDataComJogos = jogosBloqueados.length > 0
@@ -1556,10 +1596,12 @@ async function carregarJogosAmanha(dataEscolhida = dataSelecionadaJogosAmanha) {
     topo.appendChild(botao);
     jogosAmanhaDiv.appendChild(topo);
 
-    const jogos = todosJogos
+    const jogosFiltrados = todosJogos
       .filter((jogo) => jogo.status === "scheduled")
       .filter((jogo) => jogo.date === dataParaMostrar)
-      .filter((jogo) => jogoDeveAparecerAmanha(jogo))
+      .filter((jogo) => jogoDeveAparecerAmanha(jogo));
+
+    const jogos = removerJogosDuplicados(jogosFiltrados)
       .sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
 
     if (jogos.length === 0) {
