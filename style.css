@@ -370,6 +370,27 @@ input {
   background: #111827;
 }
 
+.filtro-resultados {
+  margin-bottom: 12px;
+  padding: 10px;
+  background: #111827;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.filtro-resultados label {
+  font-weight: bold;
+  color: #ffffff;
+}
+
+.filtro-resultados input {
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  font-weight: bold;
+}
 .finalizado-topo {
   display: flex;
   justify-content: flex-start;
