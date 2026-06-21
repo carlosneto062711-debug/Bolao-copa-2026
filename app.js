@@ -1,4 +1,4 @@
-// VERSÃO 57
+// VERSÃO 58
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -439,7 +439,11 @@ async function carregarTudo() {
   await carregarPainelTempo();
   await carregarJogosHoje();
   await carregarJogosAmanha();
-  await carregarResultadosAnteriores();
+
+  if (!window.usuarioMexendoEmFiltroResultados) {
+    await carregarResultadosAnteriores(dataSelecionadaResultados);
+  }
+
   await carregarMeusPalpites();
   await carregarRanking();
 }
@@ -1112,7 +1116,11 @@ async function carregarPainelTempo() {
   }
 }
 
-async function carregarResultadosAnteriores(dataFiltro = hojeISO()) {
+let dataSelecionadaResultados = hojeISO();
+
+async function carregarResultadosAnteriores(dataFiltro = dataSelecionadaResultados) {
+  dataSelecionadaResultados = dataFiltro;
+
   const painel = document.getElementById("painelResultados");
   painel.innerHTML = "";
 
@@ -1120,14 +1128,26 @@ async function carregarResultadosAnteriores(dataFiltro = hojeISO()) {
   blocoFiltro.className = "filtro-resultados";
   blocoFiltro.innerHTML = `
     <label for="dataResultados">📅 Ver resultados por data</label>
-    <input type="date" id="dataResultados" value="${dataFiltro}">
+    <input type="date" id="dataResultados" value="${dataSelecionadaResultados}">
   `;
 
   painel.appendChild(blocoFiltro);
 
   const inputData = blocoFiltro.querySelector("#dataResultados");
+
+  inputData.addEventListener("focus", () => {
+    window.usuarioMexendoEmFiltroResultados = true;
+  });
+
+  inputData.addEventListener("blur", () => {
+    setTimeout(() => {
+      window.usuarioMexendoEmFiltroResultados = false;
+    }, 500);
+  });
+
   inputData.addEventListener("change", () => {
-    carregarResultadosAnteriores(inputData.value);
+    dataSelecionadaResultados = inputData.value;
+    carregarResultadosAnteriores(dataSelecionadaResultados);
   });
 
   const snap = await getDocs(collection(db, "matches"));
@@ -1142,7 +1162,7 @@ async function carregarResultadosAnteriores(dataFiltro = hojeISO()) {
 
   const finalizados = jogos
     .filter((jogo) => jogo.status === "finished")
-    .filter((jogo) => jogo.date === dataFiltro)
+    .filter((jogo) => jogo.date === dataSelecionadaResultados)
     .sort((a, b) => new Date(b.kickoff) - new Date(a.kickoff));
 
   if (finalizados.length === 0) {
