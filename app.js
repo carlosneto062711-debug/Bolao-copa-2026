@@ -1,4 +1,4 @@
-// VERSÃO 53
+// VERSÃO 54
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -541,7 +541,24 @@ async function carregarJogosHoje() {
 
         return false;
       })
-      .sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
+      
+      .sort((a, b) => {
+  const pesoStatus = (jogo) => {
+    if (jogo.status === "live") return 1;
+    if (jogo.status === "scheduled") return 2;
+    if (jogo.status === "finished") return 3;
+    return 4;
+  };
+
+  const pesoA = pesoStatus(a);
+  const pesoB = pesoStatus(b);
+
+  if (pesoA !== pesoB) {
+    return pesoA - pesoB;
+  }
+
+  return new Date(a.kickoff) - new Date(b.kickoff);
+});
 
     if (jogos.length === 0) {
       statusRodada.innerText = "Nenhum jogo aberto no momento.";
