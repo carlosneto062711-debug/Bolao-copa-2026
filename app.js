@@ -1,4 +1,4 @@
-// VERSÃO 63
+// VERSÃO 64
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -996,8 +996,8 @@ async function carregarTudo() {
     await carregarResultadosAnteriores(dataSelecionadaResultados);
   }
 
- if (!window.usuarioVendoMeusPalpites) {
-  await carregarMeusPalpites();
+if (!window.usuarioVendoMeusPalpites && !window.usuarioMexendoEmFiltroPalpites) {
+  await carregarMeusPalpites(dataSelecionadaMeusPalpites);
 }
   await carregarRanking();
 }
@@ -1722,6 +1722,7 @@ async function carregarPainelTempo() {
 }
 
 let dataSelecionadaResultados = hojeISO();
+let dataSelecionadaMeusPalpites = hojeISO();
 
 async function carregarResultadosAnteriores(dataFiltro = dataSelecionadaResultados) {
   dataSelecionadaResultados = dataFiltro;
@@ -1791,9 +1792,37 @@ async function carregarResultadosAnteriores(dataFiltro = dataSelecionadaResultad
   });
 }
 
-async function carregarMeusPalpites() {
+async function carregarMeusPalpites(dataFiltro = dataSelecionadaMeusPalpites) {
+  dataSelecionadaMeusPalpites = dataFiltro;
+
   const painel = document.getElementById("painelMeusPalpites");
   painel.innerHTML = "";
+
+  const blocoFiltro = document.createElement("div");
+  blocoFiltro.className = "filtro-resultados";
+  blocoFiltro.innerHTML = `
+    <label for="dataMeusPalpites">📅 Ver seus palpites por data</label>
+    <input type="date" id="dataMeusPalpites" value="${dataSelecionadaMeusPalpites}">
+  `;
+
+  painel.appendChild(blocoFiltro);
+
+  const inputData = blocoFiltro.querySelector("#dataMeusPalpites");
+
+  inputData.addEventListener("focus", () => {
+    window.usuarioMexendoEmFiltroPalpites = true;
+  });
+
+  inputData.addEventListener("blur", () => {
+    setTimeout(() => {
+      window.usuarioMexendoEmFiltroPalpites = false;
+    }, 500);
+  });
+
+  inputData.addEventListener("change", () => {
+    dataSelecionadaMeusPalpites = inputData.value;
+    carregarMeusPalpites(dataSelecionadaMeusPalpites);
+  });
 
   const q = query(
     collection(db, "predictions"),
@@ -1811,7 +1840,9 @@ async function carregarMeusPalpites() {
   });
 
   if (palpites.length === 0) {
-    painel.innerHTML = "<p>Você ainda não fez nenhum palpite.</p>";
+    const vazio = document.createElement("p");
+    vazio.innerText = "Você ainda não fez nenhum palpite.";
+    painel.appendChild(vazio);
     return;
   }
 
@@ -1831,6 +1862,7 @@ async function carregarMeusPalpites() {
     const jogo = jogosPorId[palpite.matchId];
 
     if (!jogo) return;
+    if (jogo.date !== dataSelecionadaMeusPalpites) return;
 
     lista.push({
       palpite,
@@ -1838,21 +1870,16 @@ async function carregarMeusPalpites() {
     });
   });
 
-  lista.sort((a, b) => new Date(b.jogo.kickoff) - new Date(a.jogo.kickoff));
+  lista.sort((a, b) => new Date(a.jogo.kickoff) - new Date(b.jogo.kickoff));
 
-  let ultimaData = "";
+  if (lista.length === 0) {
+    const vazio = document.createElement("p");
+    vazio.innerText = "Nenhum palpite para esta data.";
+    painel.appendChild(vazio);
+    return;
+  }
 
   lista.forEach(({ palpite, jogo }) => {
-    if (jogo.date !== ultimaData) {
-      ultimaData = jogo.date;
-
-      const tituloData = document.createElement("h3");
-      tituloData.className = "data-grupo-palpites";
-      tituloData.innerText = formatarDataBR(jogo.date);
-
-      painel.appendChild(tituloData);
-    }
-
     const agora = new Date();
     const jogoComecouAgora = agora >= new Date(jogo.kickoff);
     const jogoFinalizado = jogo.status === "finished";
@@ -1977,7 +2004,7 @@ function trocarAba(aba) {
     painelMeusPalpites.classList.remove("escondido");
     painelResultados.classList.add("escondido");
 
-    carregarMeusPalpites();
+carregarMeusPalpites(dataSelecionadaMeusPalpites);  
   }
 }
 
