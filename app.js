@@ -1,4 +1,4 @@
-// VERSÃO 67
+// VERSÃO 68
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -349,7 +349,7 @@ let intervaloSincronizacaoApi = null;
 let sincronizacaoApiRodando = false;
 
 function usuarioAtualEhAdmin() {
-  return usuarioAtualDados && usuarioAtualDados.admin === true;
+  return dadosUsuarioAtual && dadosUsuarioAtual.admin === true;
 }
 
 function dataHojeEAmanhaParaApi() {
