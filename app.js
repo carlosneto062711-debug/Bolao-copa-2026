@@ -1,4 +1,4 @@
-// VERSÃO 75
+// VERSÃO 76
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -1480,10 +1480,6 @@ const qHoje = query(
   where("date", "==", hoje)
 );
 
-    const jogosFiltrados = todosJogos.filter((jogo) => {
-  return jogoDeveAparecerHoje(jogo);
-});
-
     const snap = await getDocs(qHoje);
 
     const todosJogos = [];
@@ -1494,20 +1490,9 @@ const qHoje = query(
       });
     });
 
-    const jogosFiltrados = todosJogos.filter((jogo) => {
-      const dataJogo = jogo.date;
-
-      if (dataJogo === hoje) {
-        return jogoDeveAparecerHoje(jogo);
-      }
-
-      // Jogos de amanhã só entram em "hoje" se já abriram individualmente
-      if (dataJogo === amanha) {
-        return jogoLiberadoParaPalpite(jogo);
-      }
-
-      return false;
-    });
+const jogosFiltrados = todosJogos.filter((jogo) => {
+  return jogoDeveAparecerHoje(jogo);
+});
 
     const jogos = removerJogosDuplicados(jogosFiltrados).sort((a, b) => {
       const pesoStatus = (jogo) => {
