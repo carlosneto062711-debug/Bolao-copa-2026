@@ -451,3 +451,52 @@ input {
   color: #22c55e;
   font-weight: bold;
 }
+
+.cabecalho-ranking {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cabecalho-ranking h2 {
+  margin: 0;
+}
+
+.btn-palpite-adversario {
+  background: #22c55e;
+  color: #000;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.card-palpites-adversarios {
+  margin-top: 12px;
+  padding: 12px;
+  background: #111827;
+  border-radius: 10px;
+}
+
+.card-palpites-adversarios strong,
+.card-palpites-adversarios span {
+  display: block;
+}
+
+.linha-palpite-adversario {
+  margin-top: 8px;
+  padding: 8px;
+  background: #1f2937;
+  border-radius: 8px;
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.linha-palpite-adversario span,
+.linha-palpite-adversario strong {
+  display: inline;
+}
