@@ -1,4 +1,4 @@
-// VERSÃO 51
+// VERSÃO 52
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -180,8 +180,22 @@ function statusFootballDataParaFirestore(statusApi) {
   return "scheduled";
 }
 
-function dataISODeUTC(utcDate) {
-  return new Date(utcDate).toISOString().slice(0, 10);
+function dadosHorarioBrasil(utcDate) {
+  const dataUtc = new Date(utcDate);
+
+  // Brasil/Bahia = UTC-3
+  const dataBrasil = new Date(dataUtc.getTime() - 3 * 60 * 60 * 1000);
+
+  const ano = dataBrasil.getUTCFullYear();
+  const mes = String(dataBrasil.getUTCMonth() + 1).padStart(2, "0");
+  const dia = String(dataBrasil.getUTCDate()).padStart(2, "0");
+  const hora = String(dataBrasil.getUTCHours()).padStart(2, "0");
+  const minuto = String(dataBrasil.getUTCMinutes()).padStart(2, "0");
+
+  return {
+    date: `${ano}-${mes}-${dia}`,
+    kickoff: `${ano}-${mes}-${dia}T${hora}:${minuto}:00`
+  };
 }
 
 async function buscarFootballDataPorPeriodo(dataInicioISO, dataFimISO) {
@@ -225,12 +239,19 @@ async function sincronizarFootballDataPeriodo(dataInicioISO, dataFimISO) {
     for (const jogoApi of jogosApi) {
       const casaApi = traduzirTimeFootballData(jogoApi.homeTeam?.name);
       const foraApi = traduzirTimeFootballData(jogoApi.awayTeam?.name);
-      const dataApi = dataISODeUTC(jogoApi.utcDate);
+      const horarioBrasil = dadosHorarioBrasil(jogoApi.utcDate);
+const dataApi = horarioBrasil.date;
+const kickoffApi = horarioBrasil.kickoff;
 
       const casaNormalizada = normalizarNomeTime(casaApi);
       const foraNormalizada = normalizarNomeTime(foraApi);
 
       const jogoFirestore = jogosFirestore.find((jogo) => {
+  if (jogo.apiMatchId && Number(jogo.apiMatchId) === Number(jogoApi.id)) {
+    return true;
+  }
+
+  const dataFirestore = jogo.date;
        const dataFirestore = jogo.date;
 const dataAnteriorApi = new Date(new Date(jogoApi.utcDate).getTime() - 3 * 60 * 60 * 1000)
   .toISOString()
@@ -256,8 +277,8 @@ const mesmaData =
   const novoJogo = {
     homeTeam: casaApi,
     awayTeam: foraApi,
-    date: dataApi,
-    kickoff: jogoApi.utcDate.slice(0, 19),
+   date: dataApi,
+kickoff: kickoffApi,
     status: novoStatus,
     apiProvider: "football-data",
     apiMatchId: jogoApi.id,
@@ -281,11 +302,11 @@ const mesmaData =
 
       const novoStatus = statusFootballDataParaFirestore(jogoApi.status);
 
-      const novosDados = {
+    const novosDados = {
   homeTeam: casaApi,
   awayTeam: foraApi,
   date: dataApi,
-  kickoff: jogoApi.utcDate.slice(0, 19),
+  kickoff: kickoffApi,
   status: novoStatus,
   apiProvider: "football-data",
   apiMatchId: jogoApi.id,
