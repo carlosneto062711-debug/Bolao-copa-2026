@@ -410,3 +410,44 @@ input {
 .score-live.final {
   color: #facc15;
 }
+
+.topo-jogos-amanha {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.topo-jogos-amanha p {
+  margin: 0;
+}
+
+.topo-jogos-amanha button {
+  background: #22c55e;
+  color: #000;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.data-grupo-palpites {
+  margin: 16px 0 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #374151;
+  color: #ffffff;
+  font-size: 16px;
+}
+
+.linha-resultado-real {
+  color: #facc15;
+  font-weight: bold;
+}
+
+.pontos-palpite {
+  color: #22c55e;
+  font-weight: bold;
+}
