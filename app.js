@@ -1,4 +1,4 @@
-// VERSÃO 58
+// VERSÃO 59
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -344,6 +344,553 @@ async function sincronizarFootballDataHoje() {
 
 window.sincronizarFootballDataHoje = sincronizarFootballDataHoje;
 window.sincronizarFootballDataPeriodo = sincronizarFootballDataPeriodo;
+
+// ===============================
+// IMPORTAR PALPITES HISTÓRICOS
+// ===============================
+
+const PALPITES_HISTORICOS_TEXTO = `
+Usuário: Andresa
+
+México 2 x 1 África do Sul
+Coreia 3 x 0 Tchéquia
+Canadá 3 x 1 Bósnia
+EUA 2 x 2 Paraguai
+Catar 1 x 3 Suíça
+Brasil 2 x 0 Marrocos
+Haiti 0 x 1 Escócia
+Austrália 1 x 2 Turquia
+Alemanha 4 x 0 Curaçao
+Holanda 2 x 2 Japão
+Costa do Marfim 0 x 1 Equador
+Suécia 2 x 0 Tunisia
+Espanha 5 x 0 Cabo Verde
+Bélgica 2 x 1 Egito
+Arábia Saudita 0 x 1 Uruguai
+Ira 2 x 1 Nova Zelândia
+França 2 x 1 Senegal
+Iraque 0 x 3 Noruega
+Argentina 2 x 0 Argélia
+Áustria 1 x 1 Jordânia
+Portugal 2 x 0 RD Congo
+Inglaterra 1 x 0 Croácia
+Gana 2 x 1 Panamá
+Uzbequistão 0 x 2 Colômbia
+Tchéquia 2 x 1 África do Sul
+Suíça 2 x 0 Bósnia
+Canadá 2 x 1 Catar
+México 2 x 1 Coreia do Sul
+Estados Unidos 2 x 1 Austrália
+Escócia 1 x 1 Marrocos
+Brasil 2 x 1 Haiti
+Turquia 2 x 2 Paraguai
+Holanda 2 x 1 Suécia
+Alemanha 4 x 0 Costa do Marfim
+Equador 2 x 0 Curaçau
+Tunísia 1 x 3 Japão
+
+Usuário: Carlos
+
+México 3 x 0 África do Sul
+Coreia 3 x 0 Tchéquia
+Canadá 2 x 0 Bósnia
+EUA 2 x 1 Paraguai
+Catar 0 x 2 Suíça
+Brasil 2 x 1 Marrocos
+Haiti 0 x 3 Escócia
+Austrália 1 x 1 Turquia
+Alemanha 3 x 0 Curaçao
+Holanda 2 x 1 Japão
+Costa do Marfim 1 x 2 Equador
+Suécia 3 x 0 Tunisia
+Espanha 3 x 1 Cabo Verde
+Bélgica 3 x 1 Egito
+Arábia Saudita 1 x 2 Uruguai
+Ira 2 x 0 Nova Zelândia
+França 2 x 1 Senegal
+Iraque 0 x 2 Noruega
+Argentina 2 x 1 Argélia
+Áustria 2 x 1 Jordânia
+Portugal 3 x 1 RD Congo
+Inglaterra 2 x 1 Croácia
+Gana 2 x 1 Panamá
+Uzbequistão 0 x 2 Colômbia
+Tchéquia 1 x 2 África do Sul
+Suíça 2 x 1 Bósnia
+Canadá 1 x 2 Catar
+México 2 x 2 Coreia do Sul
+Estados Unidos 2 x 1 Austrália
+Escócia 1 x 2 Marrocos
+Brasil 3 x 1 Haiti
+Turquia 2 x 1 Paraguai
+Holanda 3 x 2 Suécia
+Alemanha 5 x 2 Costa do Marfim
+Equador 2 x 1 Curaçau
+Tunísia 1 x 3 Japão
+
+Usuário: Irá
+
+México 2 x 0 África do Sul
+Coreia 3 x 2 Tchéquia
+Canadá 3 x 2 Bósnia
+EUA 2 x 2 Paraguai
+Catar 1 x 1 Suíça
+Brasil 3 x 1 Marrocos
+Haiti 0 x 2 Escócia
+Austrália 2 x 1 Turquia
+Alemanha 4 x 0 Curaçao
+Holanda 3 x 2 Japão
+Costa do Marfim 2 x 1 Equador
+Suécia 2 x 1 Tunisia
+Espanha 2 x 1 Cabo Verde
+Bélgica 3 x 1 Egito
+Arábia Saudita 1 x 1 Uruguai
+Ira 1 x 2 Nova Zelândia
+França 3 x 2 Senegal
+Iraque 1 x 3 Noruega
+Argentina 3 x 1 Argélia
+Áustria 3 x 2 Jordânia
+Portugal 3 x 1 RD Congo
+Inglaterra 4 x 1 Croácia
+Gana 3 x 2 Panamá
+Uzbequistão 1 x 1 Colômbia
+Tchéquia 2 x 3 África do Sul
+Suíça 1 x 1 Bósnia
+Canadá 3 x 1 Catar
+México 4 x 2 Coreia do Sul
+Estados Unidos 3 x 2 Austrália
+Escócia 1 x 3 Marrocos
+Brasil 4 x 1 Haiti
+Turquia 1 x 2 Paraguai
+Holanda 3 x 1 Suécia
+Alemanha 6 x 1 Costa do Marfim
+Equador 2 x 1 Curaçau
+Tunísia 1 x 3 Japão
+
+Usuário: Demma
+
+México 1 x 1 África do Sul
+Coreia 1 x 2 Tchéquia
+Canadá 1 x 1 Bósnia
+EUA 2 x 1 Paraguai
+Catar 0 x 2 Suíça
+Brasil 3 x 1 Marrocos
+Haiti 0 x 3 Escócia
+Austrália 1 x 2 Turquia
+Alemanha 2 x 0 Curaçao
+Holanda 1 x 0 Japão
+Costa do Marfim 2 x 1 Equador
+Suécia 2 x 0 Tunisia
+Espanha 3 x 0 Cabo Verde
+Bélgica 2 x 0 Egito
+Arábia Saudita 2 x 1 Uruguai
+Ira 2 x 1 Nova Zelândia
+França 2 x 0 Senegal
+Iraque 1 x 3 Noruega
+Argentina 2 x 1 Argélia
+Áustria 2 x 0 Jordânia
+Portugal 2 x 0 RD Congo
+Inglaterra 2 x 0 Croácia
+Gana 3 x 0 Panamá
+Uzbequistão 0 x 3 Colômbia
+Tchéquia 2 x 1 África do Sul
+Suíça 1 x 1 Bósnia
+Canadá 1 x 0 Catar
+México 2 x 1 Coreia do Sul
+Estados Unidos 2 x 0 Austrália
+Escócia 0 x 2 Marrocos
+Brasil 3 x 0 Haiti
+Turquia 1 x 1 Paraguai
+Holanda 1 x 1 Suécia
+Alemanha 3 x 0 Costa do Marfim
+Equador 2 x 0 Curaçau
+Tunísia 0 x 2 Japão
+`;
+
+function normalizarTexto(valor) {
+  return String(valor || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase()
+    .trim();
+}
+
+function nomeCanonicoTime(nome) {
+  const n = normalizarTexto(nome);
+
+  const aliases = {
+    "MEXICO": "MEXICO",
+    "AFRICA DO SUL": "AFRICA DO SUL",
+    "SOUTH AFRICA": "AFRICA DO SUL",
+
+    "COREIA": "COREIA DO SUL",
+    "COREIA DO SUL": "COREIA DO SUL",
+    "SOUTH KOREA": "COREIA DO SUL",
+
+    "TCHEQUIA": "TCHEQUIA",
+    "CZECHIA": "TCHEQUIA",
+
+    "CANADA": "CANADA",
+
+    "BOSNIA": "BOSNIA-HERZEGOVINA",
+    "BOSNIA-HERZEGOVINA": "BOSNIA-HERZEGOVINA",
+    "BOSNIA AND HERZEGOVINA": "BOSNIA-HERZEGOVINA",
+
+    "EUA": "ESTADOS UNIDOS",
+    "ESTADOS UNIDOS": "ESTADOS UNIDOS",
+    "UNITED STATES": "ESTADOS UNIDOS",
+
+    "PARAGUAI": "PARAGUAI",
+    "PARAGUAY": "PARAGUAI",
+
+    "CATAR": "QATAR",
+    "QATAR": "QATAR",
+
+    "SUICA": "SUICA",
+    "SWITZERLAND": "SUICA",
+
+    "BRASIL": "BRASIL",
+    "BRAZIL": "BRASIL",
+
+    "MARROCOS": "MARROCOS",
+    "MOROCCO": "MARROCOS",
+
+    "HAITI": "HAITI",
+
+    "ESCOCIA": "ESCOCIA",
+    "SCOTLAND": "ESCOCIA",
+
+    "AUSTRALIA": "AUSTRALIA",
+
+    "TURQUIA": "TURQUIA",
+    "TURKEY": "TURQUIA",
+
+    "ALEMANHA": "ALEMANHA",
+    "GERMANY": "ALEMANHA",
+
+    "CURACAO": "CURACAO",
+
+    "HOLANDA": "HOLANDA",
+    "NETHERLANDS": "HOLANDA",
+
+    "JAPAO": "JAPAO",
+    "JAPAN": "JAPAO",
+
+    "COSTA DO MARFIM": "COSTA DO MARFIM",
+    "IVORY COAST": "COSTA DO MARFIM",
+
+    "EQUADOR": "EQUADOR",
+    "ECUADOR": "EQUADOR",
+
+    "SUECIA": "SUECIA",
+    "SWEDEN": "SUECIA",
+
+    "TUNISIA": "TUNISIA",
+    "TUNISIA": "TUNISIA",
+
+    "ESPANHA": "ESPANHA",
+    "SPAIN": "ESPANHA",
+
+    "CABO VERDE": "CABO VERDE",
+    "CAPE VERDE": "CABO VERDE",
+
+    "BELGICA": "BELGICA",
+    "BELGIUM": "BELGICA",
+
+    "EGITO": "EGITO",
+    "EGYPT": "EGITO",
+
+    "ARABIA SAUDITA": "ARABIA SAUDITA",
+    "SAUDI ARABIA": "ARABIA SAUDITA",
+
+    "URUGUAI": "URUGUAI",
+    "URUGUAY": "URUGUAI",
+
+    "IRA": "IRA",
+    "IRAN": "IRA",
+
+    "NOVA ZELANDIA": "NOVA ZELANDIA",
+    "NEW ZEALAND": "NOVA ZELANDIA",
+
+    "FRANCA": "FRANCA",
+    "FRANCE": "FRANCA",
+
+    "SENEGAL": "SENEGAL",
+
+    "IRAQUE": "IRAQUE",
+    "IRAQ": "IRAQUE",
+
+    "NORUEGA": "NORUEGA",
+    "NORWAY": "NORUEGA",
+
+    "ARGENTINA": "ARGENTINA",
+
+    "ARGELIA": "ARGELIA",
+    "ALGERIA": "ARGELIA",
+
+    "AUSTRIA": "AUSTRIA",
+
+    "JORDANIA": "JORDANIA",
+    "JORDAN": "JORDANIA",
+
+    "PORTUGAL": "PORTUGAL",
+
+    "RD CONGO": "CONGO DR",
+    "DR CONGO": "CONGO DR",
+    "CONGO DR": "CONGO DR",
+    "CONGO": "CONGO DR",
+
+    "INGLATERRA": "INGLATERRA",
+    "ENGLAND": "INGLATERRA",
+
+    "CROACIA": "CROACIA",
+    "CROATIA": "CROACIA",
+
+    "GANA": "GANA",
+    "GHANA": "GANA",
+
+    "PANAMA": "PANAMA",
+
+    "UZBEQUISTAO": "UZBEQUISTAO",
+    "UZBEKISTAN": "UZBEQUISTAO",
+
+    "COLOMBIA": "COLOMBIA"
+  };
+
+  return aliases[n] || n;
+}
+
+function analisarTextoPalpites() {
+  const linhas = PALPITES_HISTORICOS_TEXTO.split("\n");
+  const palpites = [];
+  let usuario = null;
+
+  for (const linhaOriginal of linhas) {
+    const linha = linhaOriginal.trim();
+
+    if (!linha) continue;
+
+    const matchUsuario = linha.match(/^Usuário:\s*(.+)$/i);
+    if (matchUsuario) {
+      usuario = matchUsuario[1].trim();
+      continue;
+    }
+
+    const matchPalpite = linha.match(/^(.+?)\s+(\d+)\s+x\s+(\d+)\s+(.+)$/i);
+
+    if (!matchPalpite || !usuario) {
+      console.warn("Linha não reconhecida:", linha);
+      continue;
+    }
+
+    palpites.push({
+      usuario,
+      homeTeam: matchPalpite[1].trim(),
+      homeGuess: Number(matchPalpite[2]),
+      awayGuess: Number(matchPalpite[3]),
+      awayTeam: matchPalpite[4].trim()
+    });
+  }
+
+  return palpites;
+}
+
+function resultadoDoPlacar(casa, fora) {
+  casa = Number(casa);
+  fora = Number(fora);
+
+  if (casa > fora) return "CASA";
+  if (fora > casa) return "FORA";
+  return "EMPATE";
+}
+
+function pontosDoPalpite(palpiteCasa, palpiteFora, realCasa, realFora) {
+  palpiteCasa = Number(palpiteCasa);
+  palpiteFora = Number(palpiteFora);
+  realCasa = Number(realCasa);
+  realFora = Number(realFora);
+
+  if (palpiteCasa === realCasa && palpiteFora === realFora) {
+    return 3;
+  }
+
+  if (resultadoDoPlacar(palpiteCasa, palpiteFora) === resultadoDoPlacar(realCasa, realFora)) {
+    return 1;
+  }
+
+  return 0;
+}
+
+function encontrarUsuarioPorNome(usuarios, nome) {
+  const alvo = normalizarTexto(nome);
+
+  return usuarios.find((usuario) => {
+    const nomeUsuario = normalizarTexto(usuario.nome || usuario.name || usuario.displayName || "");
+    const emailUsuario = normalizarTexto(usuario.email || "");
+
+    return (
+      nomeUsuario === alvo ||
+      emailUsuario.includes(alvo)
+    );
+  });
+}
+
+function encontrarJogoPorTimes(jogos, casa, fora) {
+  const casaAlvo = nomeCanonicoTime(casa);
+  const foraAlvo = nomeCanonicoTime(fora);
+
+  const encontrados = jogos.filter((jogo) => {
+    const casaJogo = nomeCanonicoTime(jogo.homeTeam);
+    const foraJogo = nomeCanonicoTime(jogo.awayTeam);
+
+    return casaJogo === casaAlvo && foraJogo === foraAlvo;
+  });
+
+  encontrados.sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
+
+  return encontrados[0] || null;
+}
+
+async function recalcularRankingPorPalpites() {
+  const snapUsers = await getDocs(collection(db, "users"));
+  const usuarios = [];
+  snapUsers.forEach((docSnap) => {
+    usuarios.push({
+      id: docSnap.id,
+      ...docSnap.data()
+    });
+  });
+
+  const snapMatches = await getDocs(collection(db, "matches"));
+  const jogos = {};
+  snapMatches.forEach((docSnap) => {
+    jogos[docSnap.id] = {
+      id: docSnap.id,
+      ...docSnap.data()
+    };
+  });
+
+  const snapPredictions = await getDocs(collection(db, "predictions"));
+
+  const pontosPorUsuario = {};
+  usuarios.forEach((usuario) => {
+    pontosPorUsuario[usuario.id] = 0;
+  });
+
+  snapPredictions.forEach((docSnap) => {
+    const palpite = docSnap.data();
+    const jogo = jogos[palpite.matchId];
+
+    if (!jogo) return;
+    if (jogo.status !== "finished") return;
+
+    const temPlacar =
+      jogo.homeScore !== undefined &&
+      jogo.awayScore !== undefined &&
+      jogo.homeScore !== null &&
+      jogo.awayScore !== null;
+
+    if (!temPlacar) return;
+
+    const pontos = pontosDoPalpite(
+      palpite.homeGuess,
+      palpite.awayGuess,
+      jogo.homeScore,
+      jogo.awayScore
+    );
+
+    pontosPorUsuario[palpite.userId] = (pontosPorUsuario[palpite.userId] || 0) + pontos;
+  });
+
+  for (const usuario of usuarios) {
+    await updateDoc(doc(db, "users", usuario.id), {
+      pontos: pontosPorUsuario[usuario.id] || 0
+    });
+  }
+
+  console.log("Ranking recalculado:", pontosPorUsuario);
+}
+
+async function importarPalpitesHistoricos() {
+  try {
+    const palpites = analisarTextoPalpites();
+
+    const snapUsers = await getDocs(collection(db, "users"));
+    const usuarios = [];
+    snapUsers.forEach((docSnap) => {
+      usuarios.push({
+        id: docSnap.id,
+        ...docSnap.data()
+      });
+    });
+
+    const snapMatches = await getDocs(collection(db, "matches"));
+    const jogos = [];
+    snapMatches.forEach((docSnap) => {
+      jogos.push({
+        id: docSnap.id,
+        ...docSnap.data()
+      });
+    });
+
+    let criados = 0;
+    const problemas = [];
+
+    for (const palpite of palpites) {
+      const usuario = encontrarUsuarioPorNome(usuarios, palpite.usuario);
+
+      if (!usuario) {
+        problemas.push({
+          tipo: "usuário não encontrado",
+          usuario: palpite.usuario
+        });
+        continue;
+      }
+
+      const jogo = encontrarJogoPorTimes(jogos, palpite.homeTeam, palpite.awayTeam);
+
+      if (!jogo) {
+        problemas.push({
+          tipo: "jogo não encontrado",
+          usuario: palpite.usuario,
+          jogo: `${palpite.homeTeam} x ${palpite.awayTeam}`
+        });
+        continue;
+      }
+
+      const predictionId = `${usuario.id}_${jogo.id}`;
+
+      await setDoc(doc(db, "predictions", predictionId), {
+        userId: usuario.id,
+        matchId: jogo.id,
+        homeGuess: palpite.homeGuess,
+        awayGuess: palpite.awayGuess,
+        editCount: 0,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        imported: true
+      });
+
+      criados++;
+    }
+
+    await recalcularRankingPorPalpites();
+
+    console.log("Palpites importados/atualizados:", criados);
+    console.table(problemas);
+
+    alert(`Importação finalizada. Palpites salvos: ${criados}. Problemas: ${problemas.length}.`);
+
+    await carregarTudo();
+
+  } catch (error) {
+    console.error("Erro ao importar palpites:", error);
+    alert("Erro ao importar palpites. Veja o console.");
+  }
+}
+
+window.importarPalpitesHistoricos = importarPalpitesHistoricos;
+window.recalcularRankingPorPalpites = recalcularRankingPorPalpites;
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
