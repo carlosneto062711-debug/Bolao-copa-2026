@@ -1,4 +1,4 @@
-// VERSÃO 49
+// VERSÃO 50
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -210,14 +210,33 @@ const mesmaData =
       });
 
       if (!jogoFirestore) {
-        naoEncontrados.push({
-          data: dataApi,
-          casa: casaApi,
-          fora: foraApi,
-          status: jogoApi.status
-        });
-        continue;
-      }
+  const novoStatus = statusFootballDataParaFirestore(jogoApi.status);
+
+  const novoJogo = {
+    homeTeam: casaApi,
+    awayTeam: foraApi,
+    date: dataApi,
+    kickoff: jogoApi.utcDate.slice(0, 19),
+    status: novoStatus,
+    apiProvider: "football-data",
+    apiMatchId: jogoApi.id,
+    createdFromApiAt: new Date().toISOString(),
+    updatedFromApiAt: new Date().toISOString()
+  };
+
+  if (jogoApi.score?.fullTime?.home !== null && jogoApi.score?.fullTime?.home !== undefined) {
+    novoJogo.homeScore = Number(jogoApi.score.fullTime.home);
+  }
+
+  if (jogoApi.score?.fullTime?.away !== null && jogoApi.score?.fullTime?.away !== undefined) {
+    novoJogo.awayScore = Number(jogoApi.score.fullTime.away);
+  }
+
+  await addDoc(collection(db, "matches"), novoJogo);
+
+  atualizados++;
+  continue;
+}
 
       const novoStatus = statusFootballDataParaFirestore(jogoApi.status);
 
