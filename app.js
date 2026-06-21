@@ -1,4 +1,4 @@
-// VERSÃO 62
+// VERSÃO 63
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -1791,6 +1791,128 @@ async function carregarResultadosAnteriores(dataFiltro = dataSelecionadaResultad
   });
 }
 
+async function carregarMeusPalpites() {
+  const painel = document.getElementById("painelMeusPalpites");
+  painel.innerHTML = "";
+
+  const q = query(
+    collection(db, "predictions"),
+    where("userId", "==", usuarioAtual.uid)
+  );
+
+  const snap = await getDocs(q);
+
+  const palpites = [];
+  snap.forEach((docSnap) => {
+    palpites.push({
+      id: docSnap.id,
+      ...docSnap.data()
+    });
+  });
+
+  if (palpites.length === 0) {
+    painel.innerHTML = "<p>Você ainda não fez nenhum palpite.</p>";
+    return;
+  }
+
+  const snapJogos = await getDocs(collection(db, "matches"));
+  const jogosPorId = {};
+
+  snapJogos.forEach((docSnap) => {
+    jogosPorId[docSnap.id] = {
+      id: docSnap.id,
+      ...docSnap.data()
+    };
+  });
+
+  const lista = [];
+
+  palpites.forEach((palpite) => {
+    const jogo = jogosPorId[palpite.matchId];
+
+    if (!jogo) return;
+
+    lista.push({
+      palpite,
+      jogo
+    });
+  });
+
+  lista.sort((a, b) => new Date(b.jogo.kickoff) - new Date(a.jogo.kickoff));
+
+  let ultimaData = "";
+
+  lista.forEach(({ palpite, jogo }) => {
+    if (jogo.date !== ultimaData) {
+      ultimaData = jogo.date;
+
+      const tituloData = document.createElement("h3");
+      tituloData.className = "data-grupo-palpites";
+      tituloData.innerText = formatarDataBR(jogo.date);
+
+      painel.appendChild(tituloData);
+    }
+
+    const agora = new Date();
+    const jogoComecouAgora = agora >= new Date(jogo.kickoff);
+    const jogoFinalizado = jogo.status === "finished";
+    const jogoAoVivo = jogo.status === "live" || (jogoComecouAgora && !jogoFinalizado);
+
+    let statusTexto = "Agendado";
+    let badgeClasse = "agendado";
+    let comparacao = "Aguardando o jogo acontecer.";
+    let resultadoLinha = "Resultado: ainda não disponível.";
+    let pontosLinha = "";
+
+    if (jogoAoVivo) {
+      statusTexto = "AO VIVO";
+      badgeClasse = "ao-vivo";
+      resultadoLinha = `Placar atual: ${jogo.homeScore ?? 0} x ${jogo.awayScore ?? 0}`;
+      comparacao = "Jogo em andamento.";
+    }
+
+    if (jogoFinalizado) {
+      statusTexto = "Encerrado";
+      badgeClasse = "finalizado";
+
+      const pontos = calcularPontos(
+        palpite.homeGuess,
+        palpite.awayGuess,
+        jogo.homeScore,
+        jogo.awayScore
+      );
+
+      resultadoLinha = `Resultado final: ${jogo.homeScore} x ${jogo.awayScore}`;
+      pontosLinha = `Você fez: ${pontos} ${pontos === 1 ? "ponto" : "pontos"}`;
+
+      comparacao = textoResultadoPalpite(
+        palpite.homeGuess,
+        palpite.awayGuess,
+        jogo.homeScore,
+        jogo.awayScore
+      );
+    }
+
+    const div = document.createElement("div");
+    div.className = "linha-info";
+    div.innerHTML = `
+      <strong>${jogo.homeTeam} x ${jogo.awayTeam}</strong>
+      <span>Data: ${formatarDataBR(jogo.date)} — ${formatarHora(jogo.kickoff)}</span>
+      <br>
+      <span>Seu palpite: ${palpite.homeGuess} x ${palpite.awayGuess}</span>
+      <br>
+      <span class="linha-resultado-real">${resultadoLinha}</span>
+      <br>
+      ${pontosLinha ? `<span class="pontos-palpite">${pontosLinha}</span><br>` : ""}
+      <span>${comparacao}</span>
+      <br>
+      <span class="badge ${badgeClasse}">${statusTexto}</span>
+    `;
+
+    painel.appendChild(div);
+  });
+}
+
 function textoResultadoPalpite(palpiteCasa, palpiteFora, realCasa, realFora) {
   const pontos = calcularPontos(palpiteCasa, palpiteFora, realCasa, realFora);
 
@@ -1848,12 +1970,14 @@ function trocarAba(aba) {
 
     painelResultados.classList.remove("escondido");
     painelMeusPalpites.classList.add("escondido");
-  } else {
+   } else {
     btnMeusPalpites.classList.add("ativa");
     btnResultados.classList.remove("ativa");
 
     painelMeusPalpites.classList.remove("escondido");
     painelResultados.classList.add("escondido");
+
+    carregarMeusPalpites();
   }
 }
 
