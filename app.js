@@ -1,4 +1,4 @@
-// VERSÃO 47
+// VERSÃO 48
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -370,6 +370,44 @@ function amanhaISO() {
   return amanha.toISOString().slice(0, 10);
 }
 
+function jogoComecou(jogo) {
+  return new Date(jogo.kickoff).getTime() <= Date.now();
+}
+
+function jogoLiberadoParaPalpite(jogo) {
+  if (jogo.status !== "scheduled") return false;
+
+  const agora = Date.now();
+  const inicio = new Date(jogo.kickoff).getTime();
+  const abre = inicio - 4 * 60 * 60 * 1000;
+
+  return agora >= abre && agora < inicio;
+}
+
+function jogoEncerradoAindaFicaHoje(jogo) {
+  if (jogo.status !== "finished") return false;
+
+  const agora = Date.now();
+  const inicio = new Date(jogo.kickoff).getTime();
+
+  // 2h de jogo + 2h de tolerância = 4h após o kickoff
+  const limite = inicio + 4 * 60 * 60 * 1000;
+
+  return agora <= limite;
+}
+
+function jogoDeveAparecerHoje(jogo) {
+  if (jogo.status === "live") return true;
+  if (jogo.status === "finished") return jogoEncerradoAindaFicaHoje(jogo);
+  if (jogo.status === "scheduled") return jogoLiberadoParaPalpite(jogo) || jogoComecou(jogo);
+
+  return false;
+}
+
+function jogoDeveAparecerAmanha(jogo) {
+  return jogo.status === "scheduled" && !jogoLiberadoParaPalpite(jogo) && !jogoComecou(jogo);
+}
+
 async function carregarJogosHoje() {
   const jogosHojeDiv = document.getElementById("jogosHoje");
   const statusRodada = document.getElementById("statusRodada");
@@ -377,71 +415,58 @@ async function carregarJogosHoje() {
   jogosHojeDiv.innerHTML = "";
 
   try {
-    const q = query(
+    const hoje = hojeISO();
+    const amanha = amanhaISO();
+
+    const qHoje = query(
       collection(db, "matches"),
-      where("date", "==", hojeISO())
+      where("date", "in", [hoje, amanha])
     );
 
-    const snap = await getDocs(q);
+    const snap = await getDocs(qHoje);
 
-    const jogos = [];
+    const todosJogos = [];
     snap.forEach((docSnap) => {
-      jogos.push({
+      todosJogos.push({
         id: docSnap.id,
         ...docSnap.data()
       });
     });
 
-    jogos.sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
+    const jogos = todosJogos
+      .filter((jogo) => {
+        const dataJogo = jogo.date;
+
+        if (dataJogo === hoje) {
+          return jogoDeveAparecerHoje(jogo);
+        }
+
+        // Jogos de amanhã só entram em "hoje" se já abriram individualmente
+        if (dataJogo === amanha) {
+          return jogoLiberadoParaPalpite(jogo);
+        }
+
+        return false;
+      })
+      .sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
 
     if (jogos.length === 0) {
-      statusRodada.innerText = "Nenhum jogo cadastrado para hoje.";
+      statusRodada.innerText = "Nenhum jogo aberto no momento.";
       return;
     }
 
-    const rodadaAberta = rodadaEstaAberta(jogos);
+    const existeAbertoParaPalpite = jogos.some((jogo) => jogoLiberadoParaPalpite(jogo));
 
-    statusRodada.innerText = rodadaAberta
+    statusRodada.innerText = existeAbertoParaPalpite
       ? "Rodada aberta para palpites."
-      : "Rodada ainda fechada. Abre 4 horas antes do primeiro jogo.";
+      : "Nenhum palpite aberto no momento.";
 
-    if (rodadaAberta) {
-      for (const jogo of jogos) {
-        const card = await criarCardJogo(jogo, rodadaAberta);
-        jogosHojeDiv.appendChild(card);
-      }
-
-      return;
+    for (const jogo of jogos) {
+      const podePalpitarEsteJogo = jogoLiberadoParaPalpite(jogo);
+      const card = await criarCardJogo(jogo, podePalpitarEsteJogo);
+      jogosHojeDiv.appendChild(card);
     }
 
-    const primeiroJogo = jogos[0];
-    const outrosJogos = jogos.slice(1);
-
-    const cardPrincipal = await criarCardJogo(primeiroJogo, rodadaAberta);
-    cardPrincipal.classList.add("jogo-principal");
-    jogosHojeDiv.appendChild(cardPrincipal);
-
-    if (outrosJogos.length > 0) {
-      const listaMenor = document.createElement("div");
-      listaMenor.className = "jogos-menores";
-      listaMenor.innerHTML = "<h3>Próximos jogos de hoje</h3>";
-
-      for (const jogo of outrosJogos) {
-        const status = statusDoJogo(jogo, rodadaAberta);
-
-        const item = document.createElement("div");
-        item.className = "jogo-mini";
-        item.innerHTML = `
-          <span>${formatarHora(jogo.kickoff)}</span>
-          <strong>${jogo.homeTeam} x ${jogo.awayTeam}</strong>
-          <span class="${status.classe}">${status.texto}</span>
-        `;
-
-        listaMenor.appendChild(item);
-      }
-
-      jogosHojeDiv.appendChild(listaMenor);
-    }
   } catch (error) {
     console.log("Erro ao carregar jogos de hoje:", error);
     statusRodada.innerText = `Erro ao carregar jogos: ${error.code}`;
@@ -462,34 +487,39 @@ async function carregarJogosAmanha() {
 
     const jogos = [];
     snap.forEach((docSnap) => {
-      jogos.push({
+      const jogo = {
         id: docSnap.id,
         ...docSnap.data()
-      });
+      };
+
+      if (jogoDeveAparecerAmanha(jogo)) {
+        jogos.push(jogo);
+      }
     });
 
- jogos.sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
+    jogos.sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
 
-if (jogos.length === 0) {
-  jogosAmanhaDiv.innerHTML = "<p>Nenhum jogo cadastrado para amanhã.</p>";
-  alvoContagemAmanha = null;
-  return;
-}
+    if (jogos.length === 0) {
+      jogosAmanhaDiv.innerHTML = "<p>Nenhum jogo bloqueado para amanhã.</p>";
+      alvoContagemAmanha = null;
+      return;
+    }
 
-const aberturaAmanha = horarioAberturaRodada(jogos);
-const agora = new Date();
+    const proximoJogoBloqueado = jogos[0];
+    const aberturaProximoJogo = new Date(proximoJogoBloqueado.kickoff).getTime() - 4 * 60 * 60 * 1000;
+    const agora = Date.now();
 
-alvoContagemAmanha = aberturaAmanha;
-    
-const aviso = document.createElement("p");
+    alvoContagemAmanha = new Date(aberturaProximoJogo);
 
-if (agora >= aberturaAmanha) {
-  aviso.innerHTML = `<strong>Rodada de amanhã já está dentro da janela de abertura.</strong>`;
-} else {
-  aviso.innerHTML = `<strong>Abre em <span id="contadorAmanha">${formatarContagem(aberturaAmanha - agora)}</span></strong>`;
-}
+    const aviso = document.createElement("p");
 
-jogosAmanhaDiv.appendChild(aviso);
+    if (agora >= aberturaProximoJogo) {
+      aviso.innerHTML = `<strong>O próximo jogo já está dentro da janela de abertura.</strong>`;
+    } else {
+      aviso.innerHTML = `<strong>Próximo jogo abre em <span id="contadorAmanha">${formatarContagem(aberturaProximoJogo - agora)}</span></strong>`;
+    }
+
+    jogosAmanhaDiv.appendChild(aviso);
 
     jogos.forEach((jogo) => {
       const item = document.createElement("div");
