@@ -1,4 +1,4 @@
-// VERSÃO 56
+// VERSÃO 57
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -1112,9 +1112,23 @@ async function carregarPainelTempo() {
   }
 }
 
-async function carregarResultadosAnteriores() {
+async function carregarResultadosAnteriores(dataFiltro = hojeISO()) {
   const painel = document.getElementById("painelResultados");
   painel.innerHTML = "";
+
+  const blocoFiltro = document.createElement("div");
+  blocoFiltro.className = "filtro-resultados";
+  blocoFiltro.innerHTML = `
+    <label for="dataResultados">📅 Ver resultados por data</label>
+    <input type="date" id="dataResultados" value="${dataFiltro}">
+  `;
+
+  painel.appendChild(blocoFiltro);
+
+  const inputData = blocoFiltro.querySelector("#dataResultados");
+  inputData.addEventListener("change", () => {
+    carregarResultadosAnteriores(inputData.value);
+  });
 
   const snap = await getDocs(collection(db, "matches"));
 
@@ -1127,11 +1141,14 @@ async function carregarResultadosAnteriores() {
   });
 
   const finalizados = jogos
-    .filter(jogo => jogo.status === "finished")
+    .filter((jogo) => jogo.status === "finished")
+    .filter((jogo) => jogo.date === dataFiltro)
     .sort((a, b) => new Date(b.kickoff) - new Date(a.kickoff));
 
   if (finalizados.length === 0) {
-    painel.innerHTML = "<p>Nenhum resultado anterior ainda.</p>";
+    const vazio = document.createElement("p");
+    vazio.innerText = "Nenhum resultado para esta data.";
+    painel.appendChild(vazio);
     return;
   }
 
