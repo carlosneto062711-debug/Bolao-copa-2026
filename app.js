@@ -1,4 +1,4 @@
-// VERSÃO 71
+// VERSÃO 72
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -428,7 +428,10 @@ async function sincronizarApiAutomaticamente(mostrarLog = true) {
 
     await recalcularRankingPorPalpites();
 
-await carregarTudo();
+await recalcularRankingPorPalpites();
+
+// Não chama carregarTudo aqui.
+// O Firestore/onSnapshot já atualiza a tela automaticamente.
     
   } catch (error) {
     console.error("Erro na sincronização automática da API:", error);
