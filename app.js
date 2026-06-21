@@ -1,4 +1,4 @@
-// VERSÃO 79
+// VERSÃO 80
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -23,6 +23,8 @@ import {
   orderBy,
   onSnapshot
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+
+const APP_VERSION = "80";
 
 // TROQUE ESTES DADOS PELOS DADOS DO SEU FIREBASE
 const firebaseConfig = {
@@ -1081,6 +1083,14 @@ onAuthStateChanged(auth, async (user) => {
 iniciarContagemEmTempoReal();
 iniciarAtualizacaoAutomatica();
     iniciarSincronizacaoApiAutomatica();
+
+    configurarBotaoAtualizarSite();
+verificarNovaVersao();
+
+setInterval(() => {
+  verificarNovaVersao();
+}, 60000);
+    
   } else {
     usuarioAtual = null;
     dadosUsuarioAtual = null;
@@ -1321,6 +1331,33 @@ async function carregarTudo() {
   if (painelAdversariosAberto) {
     await carregarPalpitesAdversarios(dataSelecionadaAdversarios);
   }
+}
+
+async function verificarNovaVersao() {
+  try {
+    const resposta = await fetch(`version.json?cache=${Date.now()}`);
+    const dados = await resposta.json();
+
+    if (dados.version && dados.version !== APP_VERSION) {
+      const aviso = document.getElementById("avisoNovaVersao");
+
+      if (aviso) {
+        aviso.classList.remove("escondido");
+      }
+    }
+  } catch (error) {
+    console.log("Não foi possível verificar nova versão:", error);
+  }
+}
+
+function configurarBotaoAtualizarSite() {
+  const botao = document.getElementById("btnAtualizarSite");
+
+  if (!botao) return;
+
+  botao.addEventListener("click", () => {
+    window.location.reload();
+  });
 }
 
 function formatarDataLocalISO(data) {
@@ -1566,9 +1603,7 @@ async function carregarJogosAmanha(dataEscolhida = dataSelecionadaJogosAmanha) {
       });
     });
 
-    const hoje = hojeISO();
     const amanha = amanhaISO();
-    const dataPosterior = adicionarDiasISO(dataEscolhida || amanha, 1);
 
     const jogosFuturos = removerJogosDuplicados(
       todosJogos
@@ -1576,49 +1611,55 @@ async function carregarJogosAmanha(dataEscolhida = dataSelecionadaJogosAmanha) {
         .filter((jogo) => jogo.date >= amanha)
     ).sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
 
-    const primeiraDataComJogos = jogosFuturos.length > 0
-      ? jogosFuturos[0].date
+    const datasDisponiveis = [...new Set(jogosFuturos.map((jogo) => jogo.date))].sort();
+
+    const primeiraDataComJogos = datasDisponiveis.length > 0
+      ? datasDisponiveis[0]
       : amanha;
 
     const dataParaMostrar = dataEscolhida || primeiraDataComJogos;
 
-dataSelecionadaJogosAmanha = dataEscolhida || null;
-    
+    dataSelecionadaJogosAmanha = dataEscolhida || null;
+
+    const proximaData = datasDisponiveis.find((data) => data > dataParaMostrar);
+
     const topo = document.createElement("div");
     topo.className = "topo-jogos-amanha";
 
     const tituloData = document.createElement("p");
     tituloData.innerHTML = `<strong>Jogos de ${formatarDataBR(dataParaMostrar)}</strong>`;
 
-    const botao = document.createElement("button");
+    const areaBotoes = document.createElement("div");
+    areaBotoes.className = "botoes-datas-jogos";
 
-    const botaoVoltar = document.createElement("button");
-botaoVoltar.innerText = "Voltar";
-botaoVoltar.onclick = () => {
-  dataSelecionadaJogosAmanha = null;
-  carregarJogosAmanha();
-};
-
-    const existeDataPosterior = jogosFuturos.some((jogo) => jogo.date === dataPosterior);
-
-    if (existeDataPosterior) {
-      botao.innerText = formatarDataBR(dataPosterior);
-      botao.onclick = () => {
-        dataSelecionadaJogosAmanha = dataPosterior;
-        carregarJogosAmanha(dataPosterior);
+    if (dataEscolhida) {
+      const botaoVoltar = document.createElement("button");
+      botaoVoltar.innerText = "Voltar";
+      botaoVoltar.onclick = () => {
+        dataSelecionadaJogosAmanha = null;
+        carregarJogosAmanha();
       };
-    } else {
-      botao.innerText = "Fim da fase";
-      botao.disabled = true;
+
+      areaBotoes.appendChild(botaoVoltar);
     }
 
-   topo.appendChild(tituloData);
+    const botaoProximaData = document.createElement("button");
 
-if (dataSelecionadaJogosAmanha) {
-  topo.appendChild(botaoVoltar);
-}
+    if (proximaData) {
+      botaoProximaData.innerText = formatarDataBR(proximaData);
+      botaoProximaData.onclick = () => {
+        dataSelecionadaJogosAmanha = proximaData;
+        carregarJogosAmanha(proximaData);
+      };
+    } else {
+      botaoProximaData.innerText = "Fim da fase";
+      botaoProximaData.disabled = true;
+    }
 
-topo.appendChild(botao);
+    areaBotoes.appendChild(botaoProximaData);
+
+    topo.appendChild(tituloData);
+    topo.appendChild(areaBotoes);
     jogosAmanhaDiv.appendChild(topo);
 
     const jogosFiltrados = todosJogos
@@ -1649,17 +1690,31 @@ topo.appendChild(botao);
 
     jogosAmanhaDiv.appendChild(aviso);
 
-    jogos.forEach((jogo) => {
+    for (const jogo of jogos) {
+      const abertoParaPalpite = jogoLiberadoParaPalpite(jogo);
+
       const item = document.createElement("div");
-      item.className = "jogo-mini";
+      item.className = abertoParaPalpite
+        ? "jogo-mini jogo-mini-palpitar"
+        : "jogo-mini";
+
       item.innerHTML = `
         <span>${formatarHora(jogo.kickoff)}</span>
         <strong>${jogo.homeTeam} x ${jogo.awayTeam}</strong>
-        <span class="status-fechado">Bloqueado</span>
+        <span class="${abertoParaPalpite ? "status-palpitar" : "status-fechado"}">
+          ${abertoParaPalpite ? "Palpitar" : "Bloqueado"}
+        </span>
       `;
 
+      if (abertoParaPalpite) {
+        item.addEventListener("click", async () => {
+          const card = await criarCardJogo(jogo, true);
+          item.replaceWith(card);
+        });
+      }
+
       jogosAmanhaDiv.appendChild(item);
-    });
+    }
   } catch (error) {
     console.log("Erro ao carregar jogos seguintes:", error);
     jogosAmanhaDiv.innerHTML = `<p>Erro ao carregar jogos: ${error.code}</p>`;
