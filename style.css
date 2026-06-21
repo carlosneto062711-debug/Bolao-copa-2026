@@ -500,3 +500,8 @@ input {
 .linha-palpite-adversario strong {
   display: inline;
 }
+
+.meu-palpite-adversario {
+  border: 1px solid #22c55e;
+  background: #064e3b;
+}
