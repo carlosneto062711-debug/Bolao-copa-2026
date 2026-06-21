@@ -1,4 +1,4 @@
-// VERSÃO 66
+// VERSÃO 67
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -329,21 +329,122 @@ kickoff: kickoffApi,
     console.log("Jogos atualizados:", atualizados);
     console.table(naoEncontrados);
 
-    alert(`Sincronização concluída. Atualizados: ${atualizados}. Não encontrados: ${naoEncontrados.length}`);
-
+console.log(`Sincronização concluída. Atualizados: ${atualizados}. Não encontrados: ${naoEncontrados.length}`);
+    
   } catch (error) {
     console.error("Erro ao sincronizar football-data:", error);
-    alert("Erro ao sincronizar API com Firestore. Veja o console.");
+console.log("Erro ao sincronizar API com Firestore. Veja o console.");
   }
 }
 
 async function sincronizarFootballDataHoje() {
-  const hojeISO = new Date().toISOString().slice(0, 10);
-  await sincronizarFootballDataPeriodo(hojeISO, hojeISO);
+  const hoje = hojeISO();
+  await sincronizarFootballDataPeriodo(hoje, hoje);
 }
 
 window.sincronizarFootballDataHoje = sincronizarFootballDataHoje;
 window.sincronizarFootballDataPeriodo = sincronizarFootballDataPeriodo;
+
+let intervaloSincronizacaoApi = null;
+let sincronizacaoApiRodando = false;
+
+function usuarioAtualEhAdmin() {
+  return usuarioAtualDados && usuarioAtualDados.admin === true;
+}
+
+function dataHojeEAmanhaParaApi() {
+  const hoje = hojeISO();
+  const amanha = adicionarDiasISO(hoje, 1);
+
+  return {
+    hoje,
+    amanha
+  };
+}
+
+async function existeJogoAtivoOuProximo() {
+  const snap = await getDocs(collection(db, "matches"));
+  const agora = Date.now();
+
+  let existe = false;
+
+  snap.forEach((docSnap) => {
+    const jogo = docSnap.data();
+
+    if (jogo.status === "live") {
+      existe = true;
+      return;
+    }
+
+    if (jogo.status !== "scheduled") return;
+
+    const inicio = new Date(jogo.kickoff).getTime();
+    const abre = inicio - 4 * 60 * 60 * 1000;
+    const fechaMonitoramento = inicio + 3 * 60 * 60 * 1000;
+
+    if (agora >= abre && agora <= fechaMonitoramento) {
+      existe = true;
+    }
+  });
+
+  return existe;
+}
+
+async function sincronizarApiAutomaticamente(mostrarLog = true) {
+  if (!usuarioAtualEhAdmin()) {
+    if (mostrarLog) console.log("Sincronização automática ignorada: usuário não é admin.");
+    return;
+  }
+
+  if (sincronizacaoApiRodando) {
+    if (mostrarLog) console.log("Sincronização automática já está rodando.");
+    return;
+  }
+
+  sincronizacaoApiRodando = true;
+
+  try {
+    const periodo = dataHojeEAmanhaParaApi();
+
+    if (mostrarLog) {
+      console.log(`Sincronização automática: ${periodo.hoje} até ${periodo.amanha}`);
+    }
+
+    await sincronizarFootballDataPeriodo(periodo.hoje, periodo.amanha);
+
+    await recalcularRankingPorPalpites();
+    await carregarTudo();
+
+  } catch (error) {
+    console.error("Erro na sincronização automática da API:", error);
+  } finally {
+    sincronizacaoApiRodando = false;
+  }
+}
+
+async function iniciarSincronizacaoApiAutomatica() {
+  if (!usuarioAtualEhAdmin()) return;
+
+  await sincronizarApiAutomaticamente(false);
+
+  if (intervaloSincronizacaoApi) {
+    clearInterval(intervaloSincronizacaoApi);
+  }
+
+  intervaloSincronizacaoApi = setInterval(async () => {
+    const deveSincronizar = await existeJogoAtivoOuProximo();
+
+    if (!deveSincronizar) {
+      console.log("Sem jogo ativo ou próximo. API não foi chamada.");
+      return;
+    }
+
+    await sincronizarApiAutomaticamente(true);
+  }, 3 * 60 * 1000);
+}
+
+window.sincronizarApiAutomaticamente = sincronizarApiAutomaticamente;
+window.iniciarSincronizacaoApiAutomatica = iniciarSincronizacaoApiAutomatica;
 
 // ===============================
 // IMPORTAR PALPITES HISTÓRICOS
@@ -958,6 +1059,7 @@ onAuthStateChanged(auth, async (user) => {
  await carregarTudo();
 iniciarContagemEmTempoReal();
 iniciarAtualizacaoAutomatica();
+    iniciarSincronizacaoApiAutomatica();
   } else {
     usuarioAtual = null;
     dadosUsuarioAtual = null;
