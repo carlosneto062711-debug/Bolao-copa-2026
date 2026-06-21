@@ -1,4 +1,4 @@
-// VERSÃO 54
+// VERSÃO 55
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -1022,30 +1022,95 @@ async function carregarPainelTempo() {
   const texto = document.getElementById("textoContagem");
   const contador = document.getElementById("contadorPrincipal");
 
-  const q = query(
-    collection(db, "matches"),
-    where("date", "==", hojeISO())
-  );
+  try {
+    const snap = await getDocs(collection(db, "matches"));
 
-  const snap = await getDocs(q);
-
-  const jogos = [];
-  snap.forEach((docSnap) => {
-    jogos.push({
-      id: docSnap.id,
-      ...docSnap.data()
+    const jogos = [];
+    snap.forEach((docSnap) => {
+      jogos.push({
+        id: docSnap.id,
+        ...docSnap.data()
+      });
     });
-  });
 
-  jogos.sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
+    if (jogos.length === 0) {
+      titulo.innerText = "Nenhum jogo cadastrado";
+      texto.innerText = "Quando houver jogos cadastrados, a contagem aparecerá aqui.";
+      contador.innerText = "--:--:--";
+      alvoContagem = null;
+      return;
+    }
 
-  if (jogos.length === 0) {
-    titulo.innerText = "Nenhum jogo hoje";
-    texto.innerText = "Quando houver jogos cadastrados, a contagem aparecerá aqui.";
+    const agora = Date.now();
+
+    jogos.sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
+
+    const jogosAgendados = jogos.filter((jogo) => jogo.status === "scheduled");
+    const jogosAoVivo = jogos.filter((jogo) => jogo.status === "live");
+
+    const jogosAbertosParaPalpite = jogosAgendados.filter((jogo) => {
+      const inicio = new Date(jogo.kickoff).getTime();
+      const abre = inicio - 4 * 60 * 60 * 1000;
+
+      return agora >= abre && agora < inicio;
+    });
+
+    if (jogosAbertosParaPalpite.length > 0) {
+      const jogoAlvo = jogosAbertosParaPalpite[0];
+      const inicio = new Date(jogoAlvo.kickoff).getTime();
+
+      titulo.innerText = `${jogoAlvo.homeTeam} x ${jogoAlvo.awayTeam}`;
+      texto.innerText = "Rodada aberta";
+      alvoContagem = new Date(inicio);
+      contador.innerText = formatarContagem(inicio - agora);
+
+      return;
+    }
+
+    const proximosJogosFechados = jogosAgendados.filter((jogo) => {
+      const inicio = new Date(jogo.kickoff).getTime();
+      const abre = inicio - 4 * 60 * 60 * 1000;
+
+      return abre > agora;
+    });
+
+    if (proximosJogosFechados.length > 0) {
+      const jogoAlvo = proximosJogosFechados[0];
+      const inicio = new Date(jogoAlvo.kickoff).getTime();
+      const abertura = inicio - 4 * 60 * 60 * 1000;
+
+      titulo.innerText = `${jogoAlvo.homeTeam} x ${jogoAlvo.awayTeam}`;
+      texto.innerText = "Palpites abrem 4 horas antes do jogo";
+      alvoContagem = new Date(abertura);
+      contador.innerText = formatarContagem(abertura - agora);
+
+      return;
+    }
+
+    if (jogosAoVivo.length > 0) {
+      const jogoAlvo = jogosAoVivo[0];
+
+      titulo.innerText = `${jogoAlvo.homeTeam} x ${jogoAlvo.awayTeam}`;
+      texto.innerText = "Jogo em andamento";
+      contador.innerText = "00h 00m 00s";
+      alvoContagem = null;
+
+      return;
+    }
+
+    titulo.innerText = "Jogos do dia em andamento ou encerrados";
+    texto.innerText = "Os palpites dos jogos de hoje já foram travados.";
+    contador.innerText = "00h 00m 00s";
+    alvoContagem = null;
+
+  } catch (error) {
+    console.log("Erro ao carregar painel de tempo:", error);
+    titulo.innerText = "Erro ao carregar contagem";
+    texto.innerText = "Tente atualizar a página.";
     contador.innerText = "--:--:--";
     alvoContagem = null;
-    return;
   }
+}
 
   const agora = new Date();
   const abertura = horarioAberturaRodada(jogos);
