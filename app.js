@@ -1,4 +1,4 @@
-// VERSÃO 72
+// VERSÃO 73
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -2491,22 +2491,50 @@ function iniciarListenersTempoReal() {
   window.listenersTempoRealLigados = true;
 
   let timeoutAtualizacao = null;
+  let atualizacaoEmAndamento = false;
+  let atualizacaoPendente = false;
+
+  async function executarAtualizacao() {
+    if (!usuarioAtual) return;
+
+    const campoAtivo = document.activeElement;
+    const usuarioEstaDigitando =
+      campoAtivo &&
+      (campoAtivo.tagName === "INPUT" || campoAtivo.tagName === "TEXTAREA");
+
+    if (usuarioEstaDigitando) return;
+
+    if (atualizacaoEmAndamento) {
+      atualizacaoPendente = true;
+      return;
+    }
+
+    atualizacaoEmAndamento = true;
+
+    try {
+      await carregarTudo();
+    } catch (error) {
+      console.log("Erro na atualização em tempo real:", error);
+    } finally {
+      atualizacaoEmAndamento = false;
+
+      if (atualizacaoPendente) {
+        atualizacaoPendente = false;
+
+        clearTimeout(timeoutAtualizacao);
+        timeoutAtualizacao = setTimeout(() => {
+          executarAtualizacao();
+        }, 1500);
+      }
+    }
+  }
 
   function atualizarComDebounce() {
     clearTimeout(timeoutAtualizacao);
 
-    timeoutAtualizacao = setTimeout(async () => {
-      if (!usuarioAtual) return;
-
-      const campoAtivo = document.activeElement;
-      const usuarioEstaDigitando =
-        campoAtivo &&
-        (campoAtivo.tagName === "INPUT" || campoAtivo.tagName === "TEXTAREA");
-
-      if (usuarioEstaDigitando) return;
-
-      await carregarTudo();
-    }, 400);
+    timeoutAtualizacao = setTimeout(() => {
+      executarAtualizacao();
+    }, 1500);
   }
 
   onSnapshot(collection(db, "matches"), atualizarComDebounce);
