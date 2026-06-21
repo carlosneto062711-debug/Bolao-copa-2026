@@ -1,4 +1,4 @@
-// VERSÃO 78
+// VERSÃO 79
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -1582,8 +1582,8 @@ async function carregarJogosAmanha(dataEscolhida = dataSelecionadaJogosAmanha) {
 
     const dataParaMostrar = dataEscolhida || primeiraDataComJogos;
 
-    dataSelecionadaJogosAmanha = dataParaMostrar;
-
+dataSelecionadaJogosAmanha = dataEscolhida || null;
+    
     const topo = document.createElement("div");
     topo.className = "topo-jogos-amanha";
 
@@ -1614,7 +1614,7 @@ botaoVoltar.onclick = () => {
 
    topo.appendChild(tituloData);
 
-if (dataEscolhida) {
+if (dataSelecionadaJogosAmanha) {
   topo.appendChild(botaoVoltar);
 }
 
