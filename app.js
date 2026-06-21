@@ -1,4 +1,4 @@
-// VERSÃO 50
+// VERSÃO 51
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -98,27 +98,68 @@ window.testarFootballDataHoje = testarFootballDataHoje;
 // ===============================
 
 const MAPA_TIMES_FOOTBALL_DATA = {
+  "Mexico": "MÉXICO",
+  "South Africa": "ÁFRICA DO SUL",
+  "South Korea": "COREIA DO SUL",
+  "Czechia": "TCHEQUIA",
+
+  "Canada": "CANADÁ",
+  "Bosnia-Herzegovina": "BÓSNIA-HERZEGOVINA",
+  "Bosnia and Herzegovina": "BÓSNIA-HERZEGOVINA",
+  "Qatar": "QATAR",
+  "Switzerland": "SUÍÇA",
+
   "Brazil": "BRASIL",
   "Haiti": "HAITI",
+  "Scotland": "ESCÓCIA",
+  "Morocco": "MARROCOS",
+
+  "United States": "ESTADOS UNIDOS",
+  "Australia": "AUSTRÁLIA",
   "Turkey": "TURQUIA",
   "Paraguay": "PARAGUAI",
-  "Netherlands": "HOLANDA",
-  "Sweden": "SUÉCIA",
+
   "Germany": "ALEMANHA",
-  "Ivory Coast": "COSTA DO MARFIM",
-  "Ecuador": "EQUADOR",
   "Curaçao": "CURAÇAU",
   "Curacao": "CURAÇAU",
+  "Ivory Coast": "COSTA DO MARFIM",
+  "Ecuador": "EQUADOR",
+
+  "Netherlands": "HOLANDA",
+  "Sweden": "SUÉCIA",
   "Tunisia": "TUNÍSIA",
   "Japan": "JAPÃO",
-  "Spain": "ESPANHA",
-  "Saudi Arabia": "ARÁBIA SAUDITA",
+
   "Belgium": "BÉLGICA",
+  "Egypt": "EGITO",
   "Iran": "IRÃ",
-  "Uruguay": "URUGUAI",
-  "Cape Verde": "CABO VERDE",
   "New Zealand": "NOVA ZELÂNDIA",
-  "Egypt": "EGITO"
+
+  "Spain": "ESPANHA",
+  "Cape Verde": "CABO VERDE",
+  "Saudi Arabia": "ARÁBIA SAUDITA",
+  "Uruguay": "URUGUAI",
+
+  "France": "FRANÇA",
+  "Senegal": "SENEGAL",
+  "Iraq": "IRAQUE",
+  "Norway": "NORUEGA",
+
+  "Argentina": "ARGENTINA",
+  "Algeria": "ARGÉLIA",
+  "Austria": "ÁUSTRIA",
+  "Jordan": "JORDÂNIA",
+
+  "Portugal": "PORTUGAL",
+  "Congo DR": "CONGO DR",
+  "DR Congo": "CONGO DR",
+  "Uzbekistan": "UZBEQUISTÃO",
+  "Colombia": "COLÔMBIA",
+
+  "England": "INGLATERRA",
+  "Croatia": "CROÁCIA",
+  "Ghana": "GANA",
+  "Panama": "PANAMÁ"
 };
 
 function normalizarNomeTime(nome) {
@@ -241,11 +282,15 @@ const mesmaData =
       const novoStatus = statusFootballDataParaFirestore(jogoApi.status);
 
       const novosDados = {
-        status: novoStatus,
-        apiProvider: "football-data",
-        apiMatchId: jogoApi.id,
-        updatedFromApiAt: new Date().toISOString()
-      };
+  homeTeam: casaApi,
+  awayTeam: foraApi,
+  date: dataApi,
+  kickoff: jogoApi.utcDate.slice(0, 19),
+  status: novoStatus,
+  apiProvider: "football-data",
+  apiMatchId: jogoApi.id,
+  updatedFromApiAt: new Date().toISOString()
+};
 
       if (jogoApi.score?.fullTime?.home !== null && jogoApi.score?.fullTime?.home !== undefined) {
         novosDados.homeScore = Number(jogoApi.score.fullTime.home);
