@@ -1,4 +1,4 @@
-// VERSÃO 80
+// VERSÃO 81
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -24,7 +24,7 @@ import {
   onSnapshot
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
-const APP_VERSION = "80";
+const APP_VERSION = "81";
 
 // TROQUE ESTES DADOS PELOS DADOS DO SEU FIREBASE
 const firebaseConfig = {
@@ -1338,7 +1338,13 @@ async function verificarNovaVersao() {
     const resposta = await fetch(`version.json?cache=${Date.now()}`);
     const dados = await resposta.json();
 
-    if (dados.version && dados.version !== APP_VERSION) {
+    const ultimaVersaoVista = localStorage.getItem("ultimaVersaoVista");
+
+    if (
+      dados.version &&
+      dados.version !== APP_VERSION &&
+      dados.version !== ultimaVersaoVista
+    ) {
       const aviso = document.getElementById("avisoNovaVersao");
 
       if (aviso) {
@@ -1356,8 +1362,9 @@ function configurarBotaoAtualizarSite() {
   if (!botao) return;
 
   botao.addEventListener("click", () => {
-    window.location.reload();
-  });
+  localStorage.setItem("ultimaVersaoVista", APP_VERSION);
+  window.location.reload();
+});
 }
 
 function formatarDataLocalISO(data) {
