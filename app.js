@@ -1,4 +1,4 @@
-// VERSÃO 52
+// VERSÃO 53
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -246,30 +246,30 @@ const kickoffApi = horarioBrasil.kickoff;
       const casaNormalizada = normalizarNomeTime(casaApi);
       const foraNormalizada = normalizarNomeTime(foraApi);
 
-      const jogoFirestore = jogosFirestore.find((jogo) => {
+  const jogoFirestore = jogosFirestore.find((jogo) => {
   if (jogo.apiMatchId && Number(jogo.apiMatchId) === Number(jogoApi.id)) {
     return true;
   }
 
   const dataFirestore = jogo.date;
-       const dataFirestore = jogo.date;
-const dataAnteriorApi = new Date(new Date(jogoApi.utcDate).getTime() - 3 * 60 * 60 * 1000)
-  .toISOString()
-  .slice(0, 10);
 
-const mesmaData =
-  dataFirestore === dataApi ||
-  dataFirestore === dataAnteriorApi;
+  const dataAnteriorApi = new Date(new Date(jogoApi.utcDate).getTime() - 3 * 60 * 60 * 1000)
+    .toISOString()
+    .slice(0, 10);
 
-        const casaFirestore = normalizarNomeTime(jogo.homeTeam);
-        const foraFirestore = normalizarNomeTime(jogo.awayTeam);
+  const mesmaData =
+    dataFirestore === dataApi ||
+    dataFirestore === dataAnteriorApi;
 
-        const mesmosTimes =
-          casaFirestore === casaNormalizada &&
-          foraFirestore === foraNormalizada;
+  const casaFirestore = normalizarNomeTime(jogo.homeTeam);
+  const foraFirestore = normalizarNomeTime(jogo.awayTeam);
 
-        return mesmaData && mesmosTimes;
-      });
+  const mesmosTimes =
+    casaFirestore === casaNormalizada &&
+    foraFirestore === foraNormalizada;
+
+  return mesmaData && mesmosTimes;
+});
 
       if (!jogoFirestore) {
   const novoStatus = statusFootballDataParaFirestore(jogoApi.status);
