@@ -1,4 +1,4 @@
-// VERSÃO 64
+// VERSÃO 65
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -985,6 +985,185 @@ async function entrar() {
 }
 async function sair() {
   await signOut(auth);
+}
+
+let dataSelecionadaAdversarios = hojeISO();
+let painelAdversariosAberto = false;
+
+async function carregarPalpitesAdversarios(dataFiltro = dataSelecionadaAdversarios) {
+  dataSelecionadaAdversarios = dataFiltro;
+
+  const painel = document.getElementById("painelPalpitesAdversarios");
+  painel.innerHTML = "";
+
+  const blocoFiltro = document.createElement("div");
+  blocoFiltro.className = "filtro-resultados";
+  blocoFiltro.innerHTML = `
+    <label for="dataPalpitesAdversarios">📅 Ver palpites adversários por data</label>
+    <input type="date" id="dataPalpitesAdversarios" value="${dataSelecionadaAdversarios}">
+  `;
+
+  painel.appendChild(blocoFiltro);
+
+  const inputData = blocoFiltro.querySelector("#dataPalpitesAdversarios");
+  inputData.addEventListener("change", () => {
+    carregarPalpitesAdversarios(inputData.value);
+  });
+
+  const snapJogos = await getDocs(collection(db, "matches"));
+  const jogos = [];
+
+  snapJogos.forEach((docSnap) => {
+    jogos.push({
+      id: docSnap.id,
+      ...docSnap.data()
+    });
+  });
+
+  const jogosDaData = jogos
+    .filter((jogo) => jogo.date === dataSelecionadaAdversarios)
+    .sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
+
+  if (jogosDaData.length === 0) {
+    const vazio = document.createElement("p");
+    vazio.innerText = "Nenhum jogo encontrado para esta data.";
+    painel.appendChild(vazio);
+    return;
+  }
+
+  const snapUsers = await getDocs(collection(db, "users"));
+  const usuariosPorId = {};
+
+  snapUsers.forEach((docSnap) => {
+    usuariosPorId[docSnap.id] = {
+      id: docSnap.id,
+      ...docSnap.data()
+    };
+  });
+
+  const snapPredictions = await getDocs(collection(db, "predictions"));
+  const palpites = [];
+
+  snapPredictions.forEach((docSnap) => {
+    palpites.push({
+      id: docSnap.id,
+      ...docSnap.data()
+    });
+  });
+
+  let mostrouAlgum = false;
+
+  jogosDaData.forEach((jogo) => {
+    const inicio = new Date(jogo.kickoff).getTime();
+    const agora = Date.now();
+    const jogoComecou = agora >= inicio;
+    const jogoFinalizado = jogo.status === "finished";
+    const jogoAoVivo = jogo.status === "live" || (jogoComecou && !jogoFinalizado);
+
+    const cardJogo = document.createElement("div");
+    cardJogo.className = "card-palpites-adversarios";
+
+    let statusJogo = "Bloqueado";
+    let resultadoJogo = "Os palpites serão liberados quando o jogo começar.";
+
+    if (jogoAoVivo) {
+      statusJogo = "AO VIVO";
+      resultadoJogo = `Placar atual: ${jogo.homeScore ?? 0} x ${jogo.awayScore ?? 0}`;
+    }
+
+    if (jogoFinalizado) {
+      statusJogo = "Encerrado";
+      resultadoJogo = `Resultado final: ${jogo.homeScore} x ${jogo.awayScore}`;
+    }
+
+    cardJogo.innerHTML = `
+      <strong>${jogo.homeTeam} x ${jogo.awayTeam}</strong>
+      <span>${formatarDataBR(jogo.date)} — ${formatarHora(jogo.kickoff)}</span>
+      <br>
+      <span class="linha-resultado-real">${resultadoJogo}</span>
+      <br>
+      <span class="badge ${jogoFinalizado ? "finalizado" : jogoAoVivo ? "ao-vivo" : "agendado"}">${statusJogo}</span>
+    `;
+
+    if (!jogoComecou) {
+      painel.appendChild(cardJogo);
+      return;
+    }
+
+    const palpitesDoJogo = palpites
+      .filter((palpite) => palpite.matchId === jogo.id)
+      .filter((palpite) => palpite.userId !== usuarioAtual.uid);
+
+    if (palpitesDoJogo.length === 0) {
+      const semPalpites = document.createElement("p");
+      semPalpites.innerText = "Nenhum adversário palpitou neste jogo.";
+      cardJogo.appendChild(semPalpites);
+      painel.appendChild(cardJogo);
+      mostrouAlgum = true;
+      return;
+    }
+
+    palpitesDoJogo.forEach((palpite) => {
+      const usuario = usuariosPorId[palpite.userId];
+      const nomeUsuario = usuario?.nome || usuario?.name || usuario?.displayName || "Usuário";
+
+      let bolinha = "⚪";
+      let textoPontos = "";
+
+      if (jogoFinalizado) {
+        const pontos = calcularPontos(
+          palpite.homeGuess,
+          palpite.awayGuess,
+          jogo.homeScore,
+          jogo.awayScore
+        );
+
+        bolinha = pontos > 0 ? "🟢" : "🔴";
+        textoPontos = ` — ${pontos} ${pontos === 1 ? "ponto" : "pontos"}`;
+      }
+
+      const linha = document.createElement("div");
+      linha.className = "linha-palpite-adversario";
+      linha.innerHTML = `
+        <span>${bolinha}</span>
+        <strong>${nomeUsuario}</strong>
+        <span>${palpite.homeGuess} x ${palpite.awayGuess}${textoPontos}</span>
+      `;
+
+      cardJogo.appendChild(linha);
+    });
+
+    painel.appendChild(cardJogo);
+    mostrouAlgum = true;
+  });
+
+  if (!mostrouAlgum) {
+    const aviso = document.createElement("p");
+    aviso.innerText = "Os palpites desta data ainda estão bloqueados.";
+    painel.appendChild(aviso);
+  }
+}
+
+function alternarPalpitesAdversarios() {
+  const painel = document.getElementById("painelPalpitesAdversarios");
+  const botao = document.getElementById("btnPalpitesAdversarios");
+
+  painelAdversariosAberto = !painelAdversariosAberto;
+
+  if (painelAdversariosAberto) {
+    painel.classList.remove("escondido");
+    botao.innerText = "Ocultar palpites";
+    carregarPalpitesAdversarios(dataSelecionadaAdversarios);
+  } else {
+    painel.classList.add("escondido");
+    botao.innerText = "Palpites adversários";
+  }
+}
+
+const btnPalpitesAdversarios = document.getElementById("btnPalpitesAdversarios");
+
+if (btnPalpitesAdversarios) {
+  btnPalpitesAdversarios.addEventListener("click", alternarPalpitesAdversarios);
 }
 
 async function carregarTudo() {
