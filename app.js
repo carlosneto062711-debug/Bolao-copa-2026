@@ -1,4 +1,4 @@
-// VERSÃO 55
+// VERSÃO 56
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -1110,65 +1110,6 @@ async function carregarPainelTempo() {
     contador.innerText = "--:--:--";
     alvoContagem = null;
   }
-}
-
-  const agora = new Date();
-  const abertura = horarioAberturaRodada(jogos);
-  const rodadaAberta = agora >= abertura;
-
-  const proximosJogos = jogos.filter(jogo => new Date(jogo.kickoff) > agora);
-
-  if (!rodadaAberta) {
-    titulo.innerText = "Rodada fechada";
-    texto.innerText = "Palpites abrem 4 horas antes do primeiro jogo.";
-    alvoContagem = abertura;
-    contador.innerText = formatarContagem(alvoContagem - agora);
-    return;
-  }
-
- if (proximosJogos.length > 0) {
-  let jogoAlvo = null;
-  let aindaPodePalpitar = false;
-
-  for (const jogo of proximosJogos) {
-    const palpite = await obterPalpiteDoUsuario(jogo.id);
-
-    if (!palpite) {
-      jogoAlvo = jogo;
-      aindaPodePalpitar = true;
-      break;
-    }
-
-    const editCount = palpite.editCount ?? 0;
-
-    if (editCount < 2) {
-      jogoAlvo = jogo;
-      aindaPodePalpitar = true;
-      break;
-    }
-  }
-
-  if (!jogoAlvo) {
-    jogoAlvo = proximosJogos[0];
-  }
-
-  titulo.innerText = `${jogoAlvo.homeTeam} x ${jogoAlvo.awayTeam}`;
-
-  if (aindaPodePalpitar) {
-    texto.innerText = "Rodada aberta";
-  } else {
-    texto.innerText = "Jogo inicia";
-  }
-
-  alvoContagem = new Date(jogoAlvo.kickoff);
-  contador.innerText = formatarContagem(alvoContagem - agora);
-  return;
-}
-
-  titulo.innerText = "Jogos do dia em andamento ou encerrados";
-  texto.innerText = "Os palpites dos jogos de hoje já foram travados.";
-  contador.innerText = "00h 00m 00s";
-  alvoContagem = null;
 }
 
 async function carregarResultadosAnteriores() {
