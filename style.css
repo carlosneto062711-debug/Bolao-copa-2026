@@ -549,3 +549,14 @@ input {
 .jogo-mini-palpitar:hover {
   background: #064e3b;
 }
+
+.btn-voltar-card-palpite {
+  margin: 8px 0;
+  background: #374151;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-weight: bold;
+  cursor: pointer;
+}
