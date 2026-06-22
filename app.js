@@ -1,4 +1,4 @@
-// VERSÃO 83
+// VERSÃO 84
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -1528,10 +1528,10 @@ async function carregarJogosHoje() {
   try {
     const hoje = hojeISO();
 
-const qHoje = query(
-  collection(db, "matches"),
-  where("date", "==", hoje)
-);
+    const qHoje = query(
+      collection(db, "matches"),
+      where("date", "==", hoje)
+    );
 
     const snap = await getDocs(qHoje);
 
@@ -1543,9 +1543,17 @@ const qHoje = query(
       });
     });
 
-const jogosFiltrados = todosJogos.filter((jogo) => {
-  return jogoDeveAparecerHoje(jogo);
-});
+    const jogosFiltrados = todosJogos.filter((jogo) => {
+      if (jogo.status === "live") return true;
+      if (jogo.status === "finished") return jogoEncerradoAindaFicaHoje(jogo);
+
+      if (jogo.status === "scheduled") {
+        const inicio = new Date(jogo.kickoff).getTime();
+        return Date.now() < inicio && jogoLiberadoParaPalpite(jogo);
+      }
+
+      return false;
+    });
 
     const jogos = removerJogosDuplicados(jogosFiltrados).sort((a, b) => {
       const pesoStatus = (jogo) => {
@@ -1570,11 +1578,34 @@ const jogosFiltrados = todosJogos.filter((jogo) => {
       return;
     }
 
-    const existeAbertoParaPalpite = jogos.some((jogo) => jogoLiberadoParaPalpite(jogo));
+    const jogosComPalpitePossivel = jogos.filter((jogo) => {
+      return jogo.status === "scheduled" && jogoLiberadoParaPalpite(jogo);
+    });
 
-    statusRodada.innerText = existeAbertoParaPalpite
-      ? "Rodada aberta para palpites."
-      : "Nenhum palpite aberto no momento.";
+    if (jogosComPalpitePossivel.length === 0) {
+      statusRodada.innerText = "Nenhum palpite aberto no momento.";
+    } else {
+      const todosJaTravados = [];
+
+      for (const jogo of jogosComPalpitePossivel) {
+        const palpiteId = `${usuarioAtual.uid}_${jogo.id}`;
+        const palpiteSnap = await getDoc(doc(db, "predictions", palpiteId));
+
+        if (!palpiteSnap.exists()) {
+          todosJaTravados.push(false);
+          continue;
+        }
+
+        const palpite = palpiteSnap.data();
+        todosJaTravados.push(Number(palpite.editCount || 0) >= 2);
+      }
+
+      const usuarioJaTravouTodos = todosJaTravados.every((valor) => valor === true);
+
+      statusRodada.innerText = usuarioJaTravouTodos
+        ? "Você já palpitou em todos palpites. Aguarde a próxima abertura."
+        : "Rodada aberta para palpites.";
+    }
 
     for (const jogo of jogos) {
       const podePalpitarEsteJogo = jogoLiberadoParaPalpite(jogo);
@@ -1583,7 +1614,7 @@ const jogosFiltrados = todosJogos.filter((jogo) => {
     }
 
   } catch (error) {
-    console.log("Erro ao carregar jogos de hoje:", error);
+    console.log("Erro ao carregar jogos do dia:", error);
     statusRodada.innerText = `Erro ao carregar jogos: ${error.code}`;
   }
 }
@@ -1634,6 +1665,10 @@ async function carregarJogosAmanha(dataEscolhida = dataSelecionadaJogosAmanha) {
 
     dataSelecionadaJogosAmanha = dataEscolhida || null;
 
+    const dataAnterior = [...datasDisponiveis]
+      .reverse()
+      .find((data) => data < dataParaMostrar);
+
     const proximaData = datasDisponiveis.find((data) => data > dataParaMostrar);
 
     const topo = document.createElement("div");
@@ -1644,6 +1679,17 @@ async function carregarJogosAmanha(dataEscolhida = dataSelecionadaJogosAmanha) {
 
     const areaBotoes = document.createElement("div");
     areaBotoes.className = "botoes-datas-jogos";
+
+    if (dataAnterior) {
+      const botaoAnterior = document.createElement("button");
+      botaoAnterior.innerText = formatarDataBR(dataAnterior);
+      botaoAnterior.onclick = () => {
+        dataSelecionadaJogosAmanha = dataAnterior;
+        carregarJogosAmanha(dataAnterior);
+      };
+
+      areaBotoes.appendChild(botaoAnterior);
+    }
 
     const botaoProximaData = document.createElement("button");
 
@@ -1677,24 +1723,24 @@ async function carregarJogosAmanha(dataEscolhida = dataSelecionadaJogosAmanha) {
       return;
     }
 
-   const aberturaJogos = dataHoraAberturaPalpites(jogos[0]);
-const agora = Date.now();
+    const aberturaJogos = dataHoraAberturaPalpites(jogos[0]);
+    const agora = Date.now();
 
-alvoContagemAmanha = new Date(aberturaJogos);
+    alvoContagemAmanha = new Date(aberturaJogos);
 
-const textoJogosSeguintes = document.getElementById("textoJogosSeguintes");
-const aviso = document.createElement("p");
+    const textoJogosSeguintes = document.getElementById("textoJogosSeguintes");
+    const aviso = document.createElement("p");
 
-if (textoJogosSeguintes) {
-  textoJogosSeguintes.classList.remove("escondido");
-  textoJogosSeguintes.innerText = "Palpites bloqueados. Abre todos os dias, às 20 horas.";
-}
+    if (textoJogosSeguintes) {
+      textoJogosSeguintes.classList.remove("escondido");
+      textoJogosSeguintes.innerText = "Palpites bloqueados. Abre todos os dias, às 20 horas.";
+    }
 
-if (agora >= aberturaJogos) {
-  aviso.innerHTML = `<strong>Palpites desta data já estão abertos.</strong>`;
-} else {
-  aviso.innerHTML = `<strong>Palpites abrem em <span id="contadorAmanha">${formatarContagem(aberturaJogos - agora)}</span></strong>`;
-}
+    if (agora >= aberturaJogos) {
+      aviso.innerHTML = `<strong>Palpites desta data já estão abertos.</strong>`;
+    } else {
+      aviso.innerHTML = `<strong>Palpites abrem em <span id="contadorAmanha">${formatarContagem(aberturaJogos - agora)}</span></strong>`;
+    }
 
     jogosAmanhaDiv.appendChild(aviso);
 
@@ -1714,28 +1760,29 @@ if (agora >= aberturaJogos) {
         </span>
       `;
 
-     if (abertoParaPalpite) {
-  item.addEventListener("click", async () => {
-    window.usuarioMexendoEmJogosSeguintes = true;
-    const container = document.createElement("div");
+      if (abertoParaPalpite) {
+        item.addEventListener("click", async () => {
+          window.usuarioMexendoEmJogosSeguintes = true;
 
-    const botaoVoltarCard = document.createElement("button");
-    botaoVoltarCard.innerText = "Voltar aos jogos";
-    botaoVoltarCard.className = "btn-voltar-card-palpite";
+          const container = document.createElement("div");
 
-    botaoVoltarCard.onclick = () => {
-  window.usuarioMexendoEmJogosSeguintes = false;
-  carregarJogosAmanha(dataParaMostrar);
-};
+          const botaoVoltarCard = document.createElement("button");
+          botaoVoltarCard.innerText = "Voltar aos jogos";
+          botaoVoltarCard.className = "btn-voltar-card-palpite";
 
-    const card = await criarCardJogo(jogo, true);
+          botaoVoltarCard.onclick = () => {
+            window.usuarioMexendoEmJogosSeguintes = false;
+            carregarJogosAmanha(dataParaMostrar);
+          };
 
-    container.appendChild(botaoVoltarCard);
-    container.appendChild(card);
+          const card = await criarCardJogo(jogo, true);
 
-    item.replaceWith(container);
-  });
-}
+          container.appendChild(botaoVoltarCard);
+          container.appendChild(card);
+
+          item.replaceWith(container);
+        });
+      }
 
       jogosAmanhaDiv.appendChild(item);
     }
