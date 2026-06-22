@@ -1,4 +1,4 @@
-// VERSÃO 81
+// VERSÃO 82
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -24,7 +24,7 @@ import {
   onSnapshot
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
-const APP_VERSION = "81";
+const APP_VERSION = "82";
 
 // TROQUE ESTES DADOS PELOS DADOS DO SEU FIREBASE
 const firebaseConfig = {
@@ -1338,18 +1338,21 @@ async function verificarNovaVersao() {
     const resposta = await fetch(`version.json?cache=${Date.now()}`);
     const dados = await resposta.json();
 
+    window.versaoDisponivel = dados.version;
+
+    const aviso = document.getElementById("avisoNovaVersao");
     const ultimaVersaoVista = localStorage.getItem("ultimaVersaoVista");
+
+    if (!aviso) return;
 
     if (
       dados.version &&
       dados.version !== APP_VERSION &&
       dados.version !== ultimaVersaoVista
     ) {
-      const aviso = document.getElementById("avisoNovaVersao");
-
-      if (aviso) {
-        aviso.classList.remove("escondido");
-      }
+      aviso.classList.remove("escondido");
+    } else {
+      aviso.classList.add("escondido");
     }
   } catch (error) {
     console.log("Não foi possível verificar nova versão:", error);
@@ -1362,9 +1365,16 @@ function configurarBotaoAtualizarSite() {
   if (!botao) return;
 
   botao.addEventListener("click", () => {
-  localStorage.setItem("ultimaVersaoVista", APP_VERSION);
-  window.location.reload();
-});
+    const aviso = document.getElementById("avisoNovaVersao");
+
+    localStorage.setItem("ultimaVersaoVista", window.versaoDisponivel || APP_VERSION);
+
+    if (aviso) {
+      aviso.classList.add("escondido");
+    }
+
+    window.location.reload();
+  });
 }
 
 function formatarDataLocalISO(data) {
@@ -1682,18 +1692,28 @@ async function carregarJogosAmanha(dataEscolhida = dataSelecionadaJogosAmanha) {
       return;
     }
 
-    const aberturaJogos = dataHoraAberturaPalpites(jogos[0]);
-    const agora = Date.now();
+   const aberturaJogos = dataHoraAberturaPalpites(jogos[0]);
+const agora = Date.now();
 
-    alvoContagemAmanha = new Date(aberturaJogos);
+alvoContagemAmanha = new Date(aberturaJogos);
 
-    const aviso = document.createElement("p");
+const textoJogosSeguintes = document.getElementById("textoJogosSeguintes");
+const aviso = document.createElement("p");
 
-    if (agora >= aberturaJogos) {
-      aviso.innerHTML = `<strong>Palpites desta data já estão abertos.</strong>`;
-    } else {
-      aviso.innerHTML = `<strong>Palpites abrem em <span id="contadorAmanha">${formatarContagem(aberturaJogos - agora)}</span></strong>`;
-    }
+if (agora >= aberturaJogos) {
+  if (textoJogosSeguintes) {
+    textoJogosSeguintes.classList.add("escondido");
+  }
+
+  aviso.innerHTML = `<strong>Palpites desta data já estão abertos.</strong>`;
+} else {
+  if (textoJogosSeguintes) {
+    textoJogosSeguintes.classList.remove("escondido");
+    textoJogosSeguintes.innerText = "Palpites bloqueados. Abre hoje, às 20 horas.";
+  }
+
+  aviso.innerHTML = `<strong>Palpites abrem em <span id="contadorAmanha">${formatarContagem(aberturaJogos - agora)}</span></strong>`;
+}
 
     jogosAmanhaDiv.appendChild(aviso);
 
@@ -1713,12 +1733,26 @@ async function carregarJogosAmanha(dataEscolhida = dataSelecionadaJogosAmanha) {
         </span>
       `;
 
-      if (abertoParaPalpite) {
-        item.addEventListener("click", async () => {
-          const card = await criarCardJogo(jogo, true);
-          item.replaceWith(card);
-        });
-      }
+     if (abertoParaPalpite) {
+  item.addEventListener("click", async () => {
+    const container = document.createElement("div");
+
+    const botaoVoltarCard = document.createElement("button");
+    botaoVoltarCard.innerText = "Voltar aos jogos";
+    botaoVoltarCard.className = "btn-voltar-card-palpite";
+
+    botaoVoltarCard.onclick = () => {
+      carregarJogosAmanha(dataParaMostrar);
+    };
+
+    const card = await criarCardJogo(jogo, true);
+
+    container.appendChild(botaoVoltarCard);
+    container.appendChild(card);
+
+    item.replaceWith(container);
+  });
+}
 
       jogosAmanhaDiv.appendChild(item);
     }
