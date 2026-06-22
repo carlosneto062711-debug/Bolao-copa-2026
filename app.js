@@ -1,4 +1,4 @@
-// VERSÃO 84
+// VERSÃO 85
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -1731,16 +1731,20 @@ async function carregarJogosAmanha(dataEscolhida = dataSelecionadaJogosAmanha) {
     const textoJogosSeguintes = document.getElementById("textoJogosSeguintes");
     const aviso = document.createElement("p");
 
-    if (textoJogosSeguintes) {
-      textoJogosSeguintes.classList.remove("escondido");
-      textoJogosSeguintes.innerText = "Palpites bloqueados. Abre todos os dias, às 20 horas.";
-    }
+  if (agora >= aberturaJogos) {
+  if (textoJogosSeguintes) {
+    textoJogosSeguintes.classList.add("escondido");
+  }
 
-    if (agora >= aberturaJogos) {
-      aviso.innerHTML = `<strong>Palpites desta data já estão abertos.</strong>`;
-    } else {
-      aviso.innerHTML = `<strong>Palpites abrem em <span id="contadorAmanha">${formatarContagem(aberturaJogos - agora)}</span></strong>`;
-    }
+  aviso.innerHTML = `<strong>Palpites desta data já estão abertos.</strong>`;
+} else {
+  if (textoJogosSeguintes) {
+    textoJogosSeguintes.classList.remove("escondido");
+    textoJogosSeguintes.innerText = "Palpites bloqueados. Abre todos os dias, às 20 horas.";
+  }
+
+  aviso.innerHTML = `<strong>Palpites abrem em <span id="contadorAmanha">${formatarContagem(aberturaJogos - agora)}</span></strong>`;
+}
 
     jogosAmanhaDiv.appendChild(aviso);
 
