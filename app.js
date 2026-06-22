@@ -1,4 +1,4 @@
-// VERSÃO 85
+// VERSÃO 86
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -1527,14 +1527,15 @@ async function carregarJogosHoje() {
 
   try {
     const hoje = hojeISO();
+const ontem = adicionarDiasISO(hoje, -1);
 
-    const qHoje = query(
-      collection(db, "matches"),
-      where("date", "==", hoje)
-    );
+const qHoje = query(
+  collection(db, "matches"),
+  where("date", "in", [ontem, hoje])
+);
 
-    const snap = await getDocs(qHoje);
-
+const snap = await getDocs(qHoje);
+    
     const todosJogos = [];
     snap.forEach((docSnap) => {
       todosJogos.push({
@@ -1544,16 +1545,24 @@ async function carregarJogosHoje() {
     });
 
     const jogosFiltrados = todosJogos.filter((jogo) => {
-      if (jogo.status === "live") return true;
-      if (jogo.status === "finished") return jogoEncerradoAindaFicaHoje(jogo);
+  if (jogo.date === ontem) {
+    return jogo.status === "finished" && jogoEncerradoAindaFicaHoje(jogo);
+  }
 
-      if (jogo.status === "scheduled") {
-        const inicio = new Date(jogo.kickoff).getTime();
-        return Date.now() < inicio && jogoLiberadoParaPalpite(jogo);
-      }
+  if (jogo.date !== hoje) {
+    return false;
+  }
 
-      return false;
-    });
+  if (jogo.status === "live") return true;
+  if (jogo.status === "finished") return jogoEncerradoAindaFicaHoje(jogo);
+
+  if (jogo.status === "scheduled") {
+    const inicio = new Date(jogo.kickoff).getTime();
+    return Date.now() < inicio && jogoLiberadoParaPalpite(jogo);
+  }
+
+  return false;
+});
 
     const jogos = removerJogosDuplicados(jogosFiltrados).sort((a, b) => {
       const pesoStatus = (jogo) => {
