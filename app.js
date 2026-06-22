@@ -1,4 +1,4 @@
-// VERSÃO 82
+// VERSÃO 83
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -1083,13 +1083,6 @@ onAuthStateChanged(auth, async (user) => {
 iniciarContagemEmTempoReal();
 iniciarAtualizacaoAutomatica();
     iniciarSincronizacaoApiAutomatica();
-
-    configurarBotaoAtualizarSite();
-verificarNovaVersao();
-
-setInterval(() => {
-  verificarNovaVersao();
-}, 60000);
     
   } else {
     usuarioAtual = null;
@@ -1316,7 +1309,10 @@ if (btnPalpitesAdversarios) {
 async function carregarTudo() {
   await carregarPainelTempo();
   await carregarJogosHoje();
+  
+ if (!window.usuarioMexendoEmJogosSeguintes) {
   await carregarJogosAmanha(dataSelecionadaJogosAmanha);
+}
 
   if (!window.usuarioMexendoEmFiltroResultados) {
     await carregarResultadosAnteriores(dataSelecionadaResultados);
@@ -1649,17 +1645,6 @@ async function carregarJogosAmanha(dataEscolhida = dataSelecionadaJogosAmanha) {
     const areaBotoes = document.createElement("div");
     areaBotoes.className = "botoes-datas-jogos";
 
-    if (dataEscolhida) {
-      const botaoVoltar = document.createElement("button");
-      botaoVoltar.innerText = "Voltar";
-      botaoVoltar.onclick = () => {
-        dataSelecionadaJogosAmanha = null;
-        carregarJogosAmanha();
-      };
-
-      areaBotoes.appendChild(botaoVoltar);
-    }
-
     const botaoProximaData = document.createElement("button");
 
     if (proximaData) {
@@ -1700,18 +1685,14 @@ alvoContagemAmanha = new Date(aberturaJogos);
 const textoJogosSeguintes = document.getElementById("textoJogosSeguintes");
 const aviso = document.createElement("p");
 
-if (agora >= aberturaJogos) {
-  if (textoJogosSeguintes) {
-    textoJogosSeguintes.classList.add("escondido");
-  }
+if (textoJogosSeguintes) {
+  textoJogosSeguintes.classList.remove("escondido");
+  textoJogosSeguintes.innerText = "Palpites bloqueados. Abre todos os dias, às 20 horas.";
+}
 
+if (agora >= aberturaJogos) {
   aviso.innerHTML = `<strong>Palpites desta data já estão abertos.</strong>`;
 } else {
-  if (textoJogosSeguintes) {
-    textoJogosSeguintes.classList.remove("escondido");
-    textoJogosSeguintes.innerText = "Palpites bloqueados. Abre hoje, às 20 horas.";
-  }
-
   aviso.innerHTML = `<strong>Palpites abrem em <span id="contadorAmanha">${formatarContagem(aberturaJogos - agora)}</span></strong>`;
 }
 
@@ -1735,6 +1716,7 @@ if (agora >= aberturaJogos) {
 
      if (abertoParaPalpite) {
   item.addEventListener("click", async () => {
+    window.usuarioMexendoEmJogosSeguintes = true;
     const container = document.createElement("div");
 
     const botaoVoltarCard = document.createElement("button");
@@ -1742,8 +1724,9 @@ if (agora >= aberturaJogos) {
     botaoVoltarCard.className = "btn-voltar-card-palpite";
 
     botaoVoltarCard.onclick = () => {
-      carregarJogosAmanha(dataParaMostrar);
-    };
+  window.usuarioMexendoEmJogosSeguintes = false;
+  carregarJogosAmanha(dataParaMostrar);
+};
 
     const card = await criarCardJogo(jogo, true);
 
@@ -2197,16 +2180,25 @@ async function carregarPainelTempo() {
     });
 
     if (jogosAbertosSemPalpiteLivre.length > 0) {
-      const jogoAlvo = jogosAbertosSemPalpiteLivre[0];
-      const inicio = new Date(jogoAlvo.kickoff).getTime();
+  const jogoAlvo = jogosAbertosSemPalpiteLivre[0];
+  const inicio = new Date(jogoAlvo.kickoff).getTime();
+  const restante = inicio - agora;
 
-      titulo.innerText = `${jogoAlvo.homeTeam} x ${jogoAlvo.awayTeam}`;
-      texto.innerText = "Rodada aberta";
-      alvoContagem = new Date(inicio);
-      contador.innerText = formatarContagem(inicio - agora);
+  titulo.innerText = `${jogoAlvo.homeTeam} x ${jogoAlvo.awayTeam}`;
 
-      return;
-    }
+  if (restante <= 30 * 60 * 1000) {
+    texto.innerText = "Jogo inicia em";
+    contador.classList.add("alerta");
+  } else {
+    texto.innerText = "Rodada aberta";
+    contador.classList.remove("alerta");
+  }
+
+  alvoContagem = new Date(inicio);
+  contador.innerText = formatarContagem(restante);
+
+  return;
+}
 
     const proximoJogoAberto = jogosAbertos[0];
 
