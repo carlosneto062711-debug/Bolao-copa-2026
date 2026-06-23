@@ -294,10 +294,14 @@ const jogoExistente = jogoExistenteSnap.exists() ? jogoExistenteSnap.data() : nu
 
 const novoStatus = converterStatusFootballData(jogoApi.status);
 
+const jogoJaEstavaFinalizado = jogoExistente?.status === "finished";
+
 const finishedAt =
-  novoStatus === "finished"
-    ? jogoExistente?.finishedAt || new Date().toISOString()
-    : null;
+  novoStatus === "finished" && jogoExistente?.finishedAt
+    ? jogoExistente.finishedAt
+    : novoStatus === "finished" && !jogoJaEstavaFinalizado
+      ? new Date().toISOString()
+      : null;
         
   const novoJogo = {
   homeTeam: casaApi,
@@ -315,7 +319,7 @@ const finishedAt =
   updatedFromApiAt: new Date().toISOString()
 };
 
-if (novoStatus === "finished") {
+if (finishedAt) {
   novoJogo.finishedAt = finishedAt;
 }
 
@@ -1533,11 +1537,11 @@ function jogoEncerradoAindaFicaHoje(jogo) {
 
   if (jogo.finishedAt) {
     horarioFim = new Date(jogo.finishedAt).getTime();
-  } else if (jogo.updatedFromApiAt) {
-    horarioFim = new Date(jogo.updatedFromApiAt).getTime();
   } else {
     const inicio = new Date(jogo.kickoff).getTime();
-    horarioFim = inicio + 2 * 60 * 60 * 1000;
+
+    // fallback para jogos antigos que ainda não tinham finishedAt
+    horarioFim = inicio + 3 * 60 * 60 * 1000;
   }
 
   const limite = horarioFim + 60 * 60 * 1000;
