@@ -1,4 +1,4 @@
-// VERSÃO 86
+// VERSÃO 87
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -1025,6 +1025,9 @@ const db = getFirestore(app);
 let usuarioAtual = null;
 let dadosUsuarioAtual = null;
 
+let carregamentoGeralEmAndamento = false;
+let carregamentoGeralPendente = false;
+
 let dataSelecionadaResultados = hojeISO();
 let dataSelecionadaMeusPalpites = hojeISO();
 
@@ -1307,51 +1310,47 @@ if (btnPalpitesAdversarios) {
 }
 
 async function carregarTudo() {
-  await carregarPainelTempo();
-  await carregarJogosHoje();
-  
- if (!window.usuarioMexendoEmJogosSeguintes) {
-  await carregarJogosAmanha(dataSelecionadaJogosAmanha);
-}
-
-  if (!window.usuarioMexendoEmFiltroResultados) {
-    await carregarResultadosAnteriores(dataSelecionadaResultados);
+  if (carregamentoGeralEmAndamento) {
+    carregamentoGeralPendente = true;
+    return;
   }
 
-  if (!window.usuarioMexendoEmFiltroPalpites) {
-    await carregarMeusPalpites(dataSelecionadaMeusPalpites);
-  }
+  carregamentoGeralEmAndamento = true;
 
-  await carregarRanking();
-
-  if (painelAdversariosAberto) {
-    await carregarPalpitesAdversarios(dataSelecionadaAdversarios);
-  }
-}
-
-async function verificarNovaVersao() {
   try {
-    const resposta = await fetch(`version.json?cache=${Date.now()}`);
-    const dados = await resposta.json();
+    await carregarPainelTempo();
+    await carregarJogosHoje();
 
-    window.versaoDisponivel = dados.version;
-
-    const aviso = document.getElementById("avisoNovaVersao");
-    const ultimaVersaoVista = localStorage.getItem("ultimaVersaoVista");
-
-    if (!aviso) return;
-
-    if (
-      dados.version &&
-      dados.version !== APP_VERSION &&
-      dados.version !== ultimaVersaoVista
-    ) {
-      aviso.classList.remove("escondido");
-    } else {
-      aviso.classList.add("escondido");
+    if (!window.usuarioMexendoEmJogosSeguintes) {
+      await carregarJogosAmanha(dataSelecionadaJogosAmanha);
     }
+
+    if (!window.usuarioMexendoEmFiltroResultados) {
+      await carregarResultadosAnteriores(dataSelecionadaResultados);
+    }
+
+    if (!window.usuarioMexendoEmFiltroPalpites) {
+      await carregarMeusPalpites(dataSelecionadaMeusPalpites);
+    }
+
+    await carregarRanking();
+
+    if (painelAdversariosAberto) {
+      await carregarPalpitesAdversarios(dataSelecionadaAdversarios);
+    }
+
   } catch (error) {
-    console.log("Não foi possível verificar nova versão:", error);
+    console.log("Erro ao carregar tudo:", error);
+  } finally {
+    carregamentoGeralEmAndamento = false;
+
+    if (carregamentoGeralPendente) {
+      carregamentoGeralPendente = false;
+
+      setTimeout(() => {
+        carregarTudo();
+      }, 1000);
+    }
   }
 }
 
@@ -1397,17 +1396,14 @@ function textoTempoDoJogo(jogo) {
     return "ENCERRADO";
   }
 
-  if (jogo.status !== "live") {
-    return "";
-  }
-
   const agora = Date.now();
   const inicio = new Date(jogo.kickoff).getTime();
-  const minutosCorridos = Math.floor((agora - inicio) / 60000);
 
-  if (minutosCorridos < 0) {
+  if (agora < inicio) {
     return "";
   }
+
+  const minutosCorridos = Math.floor((agora - inicio) / 60000);
 
   if (minutosCorridos <= 45) {
     const minutoJogo = Math.max(1, minutosCorridos + 1);
@@ -1418,12 +1414,8 @@ function textoTempoDoJogo(jogo) {
     return "INTERVALO";
   }
 
-  if (minutosCorridos > 60) {
-    const minutoJogo = Math.min(90, minutosCorridos - 15);
-    return `2º TEMPO - ${minutoJogo}'`;
-  }
-
-  return "AO VIVO";
+  const minutoJogo = Math.min(90, minutosCorridos - 15);
+  return `2º TEMPO - ${minutoJogo}'`;
 }
 
 function removerJogosDuplicados(listaJogos) {
@@ -1510,7 +1502,10 @@ function jogoDeveAparecerHoje(jogo) {
 
   if (jogo.status === "live") return true;
   if (jogo.status === "finished") return jogoEncerradoAindaFicaHoje(jogo);
-  if (jogo.status === "scheduled") return jogoLiberadoParaPalpite(jogo);
+
+  if (jogo.status === "scheduled") {
+    return jogoLiberadoParaPalpite(jogo) || jogoComecou(jogo);
+  }
 
   return false;
 }
@@ -1874,13 +1869,15 @@ if (estaFinalizado) {
   const tempoJogo = textoTempoDoJogo(jogo);
 
   div.classList.add("jogo-ao-vivo");
+    div.dataset.kickoff = jogo.kickoff;
+div.dataset.status = "live";
 
   div.innerHTML = `
     <div class="ao-vivo-topo">
       <div class="ao-vivo-label">
         <span class="bolinha-ao-vivo"></span>
-        ${tempoJogo || "AO VIVO"}
-      </div>
+<span class="tempo-jogo-ao-vivo">${tempoJogo || "AO VIVO"}</span>     
+</div>
     </div>
 
     <div class="placar-live">
@@ -1976,6 +1973,7 @@ ${estaAoVivo ? `
   const botao = div.querySelector("button");
 
   botao.addEventListener("click", async () => {
+    window.usuarioSalvandoPalpite = true;
     const casa = Number(inputs[0].value);
     const fora = Number(inputs[1].value);
 
@@ -2007,8 +2005,9 @@ ${estaAoVivo ? `
     botao.innerText = "Palpite salvo!";
 
     setTimeout(async () => {
-      await carregarTudo();
-    }, 1000);
+  window.usuarioSalvandoPalpite = false;
+  await carregarTudo();
+}, 1000);
   });
 
   return div;
@@ -2599,6 +2598,28 @@ carregarMeusPalpites(dataSelecionadaMeusPalpites);
   }
 }
 
+function atualizarTempoDosJogosAoVivo() {
+  const elementos = document.querySelectorAll(".jogo-ao-vivo");
+
+  elementos.forEach((card) => {
+    const kickoff = card.dataset.kickoff;
+
+    if (!kickoff) return;
+
+    const jogoTemporario = {
+      kickoff,
+      status: "live"
+    };
+
+    const tempo = textoTempoDoJogo(jogoTemporario);
+    const textoTempo = card.querySelector(".tempo-jogo-ao-vivo");
+
+    if (textoTempo) {
+      textoTempo.innerText = tempo || "AO VIVO";
+    }
+  });
+}
+
 function iniciarContagemEmTempoReal() {
   if (intervaloContagem) return;
 
@@ -2629,6 +2650,7 @@ function iniciarContagemEmTempoReal() {
         contadorAmanha.classList.remove("alerta");
       }
     }
+    atualizarTempoDosJogosAoVivo();
   }, 1000);
 }
 
@@ -2671,9 +2693,9 @@ function iniciarAtualizacaoAutomatica() {
 
     if (!algumContadorZerou) return;
 
-    // Evita ficar recarregando várias vezes no mesmo minuto
-    if (agora - window.ultimoRecarregamentoPorTempo < 60000) return;
-
+// Evita ficar recarregando várias vezes seguidas
+    if (agora - window.ultimoRecarregamentoPorTempo < 10000) return;
+    
     window.ultimoRecarregamentoPorTempo = agora;
 
     const campoAtivo = document.activeElement;
@@ -2704,7 +2726,10 @@ function iniciarListenersTempoReal() {
       campoAtivo &&
       (campoAtivo.tagName === "INPUT" || campoAtivo.tagName === "TEXTAREA");
 
-    if (usuarioEstaDigitando) return;
+    if (usuarioEstaDigitando || window.usuarioSalvandoPalpite) {
+  atualizacaoPendente = true;
+  return;
+}
 
     if (atualizacaoEmAndamento) {
       atualizacaoPendente = true;
