@@ -1,4 +1,4 @@
-// VERSÃO 87
+// VERSÃO 88
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -223,6 +223,20 @@ async function buscarFootballDataPorPeriodo(dataInicioISO, dataFimISO) {
   return data.matches || [];
 }
 
+function converterStatusFootballData(statusApi) {
+  if (statusApi === "FINISHED") return "finished";
+
+  if (
+    statusApi === "IN_PLAY" ||
+    statusApi === "PAUSED" ||
+    statusApi === "SUSPENDED"
+  ) {
+    return "live";
+  }
+
+  return "scheduled";
+}
+
 async function sincronizarFootballDataPeriodo(dataInicioISO, dataFimISO) {
   try {
     console.log(`Sincronizando jogos de ${dataInicioISO} até ${dataFimISO}...`);
@@ -276,17 +290,36 @@ const kickoffApi = horarioBrasil.kickoff;
       if (!jogoFirestore) {
   const novoStatus = statusFootballDataParaFirestore(jogoApi.status);
 
+        const jogoDocRef = doc(db, "matches", `football_data_${jogoApi.id}`);
+const jogoExistenteSnap = await getDoc(jogoDocRef);
+const jogoExistente = jogoExistenteSnap.exists() ? jogoExistenteSnap.data() : null;
+
+const novoStatus = converterStatusFootballData(jogoApi.status);
+
+const finishedAt =
+  novoStatus === "finished"
+    ? jogoExistente?.finishedAt || new Date().toISOString()
+    : null;
+        
   const novoJogo = {
-    homeTeam: casaApi,
-    awayTeam: foraApi,
-   date: dataApi,
-kickoff: kickoffApi,
-    status: novoStatus,
-    apiProvider: "football-data",
-    apiMatchId: jogoApi.id,
-    createdFromApiAt: new Date().toISOString(),
-    updatedFromApiAt: new Date().toISOString()
-  };
+  homeTeam: casaApi,
+  awayTeam: foraApi,
+  date: dataApi,
+  kickoff: kickoffApi,
+
+  status: novoStatus,
+  apiStatus: jogoApi.status,
+
+  apiProvider: "football-data",
+  apiMatchId: jogoApi.id,
+
+  createdFromApiAt: jogoExistente?.createdFromApiAt || new Date().toISOString(),
+  updatedFromApiAt: new Date().toISOString()
+};
+
+if (novoStatus === "finished") {
+  novoJogo.finishedAt = finishedAt;
+}
 
   if (jogoApi.score?.fullTime?.home !== null && jogoApi.score?.fullTime?.home !== undefined) {
     novoJogo.homeScore = Number(jogoApi.score.fullTime.home);
@@ -298,8 +331,8 @@ kickoff: kickoffApi,
 
  const idDocumentoApi = `football_data_${jogoApi.id}`;
 
-await setDoc(doc(db, "matches", idDocumentoApi), novoJogo, { merge: true });
-
+await setDoc(jogoDocRef, novoJogo, { merge: true });
+        
 atualizados++;
 continue;
 }
@@ -1396,6 +1429,14 @@ function textoTempoDoJogo(jogo) {
     return "ENCERRADO";
   }
 
+  if (jogo.apiStatus === "PAUSED") {
+    return "JOGO PAUSADO";
+  }
+
+  if (jogo.apiStatus === "SUSPENDED") {
+    return "SUSPENSO";
+  }
+
   const agora = Date.now();
   const inicio = new Date(jogo.kickoff).getTime();
 
@@ -1489,10 +1530,19 @@ function jogoEncerradoAindaFicaHoje(jogo) {
   if (jogo.status !== "finished") return false;
 
   const agora = Date.now();
-  const inicio = new Date(jogo.kickoff).getTime();
 
-  // Jogo estimado em 2h + 1h aparecendo após o fim estimado
-  const limite = inicio + 3 * 60 * 60 * 1000;
+  let horarioFim = null;
+
+  if (jogo.finishedAt) {
+    horarioFim = new Date(jogo.finishedAt).getTime();
+  } else if (jogo.updatedFromApiAt) {
+    horarioFim = new Date(jogo.updatedFromApiAt).getTime();
+  } else {
+    const inicio = new Date(jogo.kickoff).getTime();
+    horarioFim = inicio + 2 * 60 * 60 * 1000;
+  }
+
+  const limite = horarioFim + 60 * 60 * 1000;
 
   return agora <= limite;
 }
@@ -1553,6 +1603,9 @@ const snap = await getDocs(qHoje);
 
   if (jogo.status === "scheduled") {
     const inicio = new Date(jogo.kickoff).getTime();
+
+    if (jogoComecou(jogo)) return true;
+
     return Date.now() < inicio && jogoLiberadoParaPalpite(jogo);
   }
 
@@ -1868,9 +1921,10 @@ if (estaFinalizado) {
   if (estaAoVivo) {
   const tempoJogo = textoTempoDoJogo(jogo);
 
-  div.classList.add("jogo-ao-vivo");
-    div.dataset.kickoff = jogo.kickoff;
+ div.classList.add("jogo-ao-vivo");
+div.dataset.kickoff = jogo.kickoff;
 div.dataset.status = "live";
+div.dataset.apiStatus = jogo.apiStatus || "";
 
   div.innerHTML = `
     <div class="ao-vivo-topo">
@@ -2004,7 +2058,7 @@ ${estaAoVivo ? `
 
     botao.innerText = "Palpite salvo!";
 
-    setTimeout(async () => {
+   setTimeout(async () => {
   window.usuarioSalvandoPalpite = false;
   await carregarTudo();
 }, 1000);
