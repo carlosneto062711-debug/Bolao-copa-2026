@@ -1,4 +1,4 @@
-// VERSÃO 88
+// VERSÃO 89
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -288,8 +288,6 @@ const kickoffApi = horarioBrasil.kickoff;
 });
 
       if (!jogoFirestore) {
-  const novoStatus = statusFootballDataParaFirestore(jogoApi.status);
-
         const jogoDocRef = doc(db, "matches", `football_data_${jogoApi.id}`);
 const jogoExistenteSnap = await getDoc(jogoDocRef);
 const jogoExistente = jogoExistenteSnap.exists() ? jogoExistenteSnap.data() : null;
