@@ -1,4 +1,4 @@
-// VERSÃO 90
+// VERSÃO 91
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -1063,6 +1063,14 @@ let dadosUsuarioAtual = null;
 let carregamentoGeralEmAndamento = false;
 let carregamentoGeralPendente = false;
 
+window.usuarioSalvandoPalpite = false;
+window.usuarioInteragindoNoSite = false;
+window.timeoutInteracaoUsuario = null;
+window.ignorarAtualizacaoFirestoreAte = 0;
+
+window.cardAbertoJogosSeguintes = null;
+window.jogoAbertoJogosSeguintes = null;
+
 let dataSelecionadaResultados = hojeISO();
 let dataSelecionadaMeusPalpites = hojeISO();
 
@@ -1118,6 +1126,7 @@ onAuthStateChanged(auth, async (user) => {
     }
 
  await carregarTudo();
+    iniciarProtecaoMobile();
 iniciarContagemEmTempoReal();
 iniciarAtualizacaoAutomatica();
     iniciarSincronizacaoApiAutomatica();
@@ -1343,8 +1352,62 @@ const btnPalpitesAdversarios = document.getElementById("btnPalpitesAdversarios")
 if (btnPalpitesAdversarios) {
   btnPalpitesAdversarios.addEventListener("click", alternarPalpitesAdversarios);
 }
+function pausarAtualizacoesPorInteracao(tempo = 4000) {
+  window.usuarioInteragindoNoSite = true;
+
+  clearTimeout(window.timeoutInteracaoUsuario);
+
+  window.timeoutInteracaoUsuario = setTimeout(() => {
+    window.usuarioInteragindoNoSite = false;
+
+    if (carregamentoGeralPendente && usuarioAtual) {
+      carregamentoGeralPendente = false;
+      carregarTudo();
+    }
+  }, tempo);
+}
+
+function iniciarProtecaoMobile() {
+  if (window.protecaoMobileLigada) return;
+
+  window.protecaoMobileLigada = true;
+
+  window.addEventListener("scroll", () => {
+    pausarAtualizacoesPorInteracao(2500);
+  }, { passive: true });
+
+  window.addEventListener("touchstart", () => {
+    pausarAtualizacoesPorInteracao(4000);
+  }, { passive: true });
+
+  window.addEventListener("touchmove", () => {
+    pausarAtualizacoesPorInteracao(4000);
+  }, { passive: true });
+
+  document.addEventListener("input", () => {
+    pausarAtualizacoesPorInteracao(6000);
+  });
+
+  document.addEventListener("focusin", (event) => {
+    if (
+      event.target &&
+      (event.target.tagName === "INPUT" || event.target.tagName === "TEXTAREA")
+    ) {
+      pausarAtualizacoesPorInteracao(8000);
+    }
+  });
+}
 
 async function carregarTudo() {
+  if (
+    window.usuarioSalvandoPalpite ||
+    window.usuarioInteragindoNoSite ||
+    Date.now() < window.ignorarAtualizacaoFirestoreAte
+  ) {
+    carregamentoGeralPendente = true;
+    return;
+  }
+
   if (carregamentoGeralEmAndamento) {
     carregamentoGeralPendente = true;
     return;
@@ -1379,7 +1442,12 @@ async function carregarTudo() {
   } finally {
     carregamentoGeralEmAndamento = false;
 
-    if (carregamentoGeralPendente) {
+    if (
+      carregamentoGeralPendente &&
+      !window.usuarioSalvandoPalpite &&
+      !window.usuarioInteragindoNoSite &&
+      Date.now() >= window.ignorarAtualizacaoFirestoreAte
+    ) {
       carregamentoGeralPendente = false;
 
       setTimeout(() => {
@@ -1453,11 +1521,11 @@ function textoTempoDoJogo(jogo) {
     return `1º TEMPO - ${minutoJogo}'`;
   }
 
-  if (minutosCorridos > 45 && minutosCorridos <= 60) {
+  if (minutosCorridos > 45 && minutosCorridos <= 65) {
     return "INTERVALO";
   }
 
-  const minutoJogo = Math.min(90, minutosCorridos - 15);
+  const minutoJogo = Math.min(90, minutosCorridos - 20);
   return `2º TEMPO - ${minutoJogo}'`;
 }
 
@@ -1833,17 +1901,22 @@ async function carregarJogosAmanha(dataEscolhida = dataSelecionadaJogosAmanha) {
           botaoVoltarCard.innerText = "Voltar aos jogos";
           botaoVoltarCard.className = "btn-voltar-card-palpite";
 
-          botaoVoltarCard.onclick = () => {
-            window.usuarioMexendoEmJogosSeguintes = false;
-            carregarJogosAmanha(dataParaMostrar);
-          };
+botaoVoltarCard.onclick = () => {
+  window.usuarioMexendoEmJogosSeguintes = false;
+  window.cardAbertoJogosSeguintes = null;
+  window.jogoAbertoJogosSeguintes = null;
+  carregarJogosAmanha(dataParaMostrar);
+};
 
-          const card = await criarCardJogo(jogo, true);
+         const card = await criarCardJogo(jogo, true);
 
-          container.appendChild(botaoVoltarCard);
-          container.appendChild(card);
+container.appendChild(botaoVoltarCard);
+container.appendChild(card);
 
-          item.replaceWith(container);
+item.replaceWith(container);
+
+window.cardAbertoJogosSeguintes = container;
+window.jogoAbertoJogosSeguintes = jogo;
         });
       }
 
@@ -1852,6 +1925,64 @@ async function carregarJogosAmanha(dataEscolhida = dataSelecionadaJogosAmanha) {
   } catch (error) {
     console.log("Erro ao carregar jogos seguintes:", error);
     jogosAmanhaDiv.innerHTML = `<p>Erro ao carregar jogos: ${error.code}</p>`;
+  }
+}
+
+async function atualizarCardDepoisDoPalpite(card, jogo) {
+  try {
+    const ehCardAbertoDosJogosSeguintes =
+      window.cardAbertoJogosSeguintes &&
+      window.jogoAbertoJogosSeguintes &&
+      window.jogoAbertoJogosSeguintes.id === jogo.id &&
+      card &&
+      window.cardAbertoJogosSeguintes.contains(card);
+
+    if (ehCardAbertoDosJogosSeguintes) {
+      const novoCard = await criarCardJogo(jogo, jogoLiberadoParaPalpite(jogo));
+
+      const botaoVoltarCard = document.createElement("button");
+      botaoVoltarCard.innerText = "Voltar aos jogos";
+      botaoVoltarCard.className = "btn-voltar-card-palpite";
+
+      botaoVoltarCard.onclick = () => {
+        window.usuarioMexendoEmJogosSeguintes = false;
+        window.cardAbertoJogosSeguintes = null;
+        window.jogoAbertoJogosSeguintes = null;
+        carregarJogosAmanha(dataSelecionadaJogosAmanha);
+      };
+
+      const novoContainer = document.createElement("div");
+      novoContainer.appendChild(botaoVoltarCard);
+      novoContainer.appendChild(novoCard);
+
+      window.cardAbertoJogosSeguintes.replaceWith(novoContainer);
+      window.cardAbertoJogosSeguintes = novoContainer;
+      window.jogoAbertoJogosSeguintes = jogo;
+
+    } else {
+      const novoCard = await criarCardJogo(jogo, jogoLiberadoParaPalpite(jogo));
+
+      if (card && card.parentNode) {
+        card.replaceWith(novoCard);
+      }
+    }
+
+  } catch (error) {
+    console.log("Erro ao atualizar card depois do palpite:", error);
+  }
+
+  try {
+    await carregarRanking();
+  } catch (error) {
+    console.log("Erro ao atualizar ranking depois do palpite:", error);
+  }
+
+  try {
+    if (!window.usuarioMexendoEmFiltroPalpites) {
+      await carregarMeusPalpites(dataSelecionadaMeusPalpites);
+    }
+  } catch (error) {
+    console.log("Erro ao atualizar meus palpites depois do palpite:", error);
   }
 }
 
@@ -2030,6 +2161,13 @@ ${estaAoVivo ? `
 
   botao.addEventListener("click", async () => {
     window.usuarioSalvandoPalpite = true;
+window.ignorarAtualizacaoFirestoreAte = Date.now() + 5000;
+
+pausarAtualizacoesPorInteracao(8000);
+
+botao.disabled = true;
+botao.innerText = "Salvando...";
+    window.usuarioSalvandoPalpite = true;
     const casa = Number(inputs[0].value);
     const fora = Number(inputs[1].value);
 
@@ -2060,10 +2198,15 @@ ${estaAoVivo ? `
 
     botao.innerText = "Palpite salvo!";
 
-   setTimeout(async () => {
+  setTimeout(async () => {
+  await atualizarCardDepoisDoPalpite(div, jogo);
+
   window.usuarioSalvandoPalpite = false;
-  await carregarTudo();
-}, 1000);
+  window.usuarioInteragindoNoSite = false;
+  window.ignorarAtualizacaoFirestoreAte = Date.now() + 3000;
+
+  carregamentoGeralPendente = false;
+}, 800);
   });
 
   return div;
@@ -2777,13 +2920,23 @@ function iniciarListenersTempoReal() {
   async function executarAtualizacao() {
     if (!usuarioAtual) return;
 
+    if (Date.now() < window.ignorarAtualizacaoFirestoreAte) {
+  carregamentoGeralPendente = false;
+  return;
+}
+    
     const campoAtivo = document.activeElement;
     const usuarioEstaDigitando =
       campoAtivo &&
       (campoAtivo.tagName === "INPUT" || campoAtivo.tagName === "TEXTAREA");
 
-    if (usuarioEstaDigitando || window.usuarioSalvandoPalpite) {
+    if (
+  usuarioEstaDigitando ||
+  window.usuarioSalvandoPalpite ||
+  window.usuarioInteragindoNoSite
+) {
   atualizacaoPendente = true;
+  carregamentoGeralPendente = true;
   return;
 }
 
