@@ -1,4 +1,4 @@
-// VERSÃO 99 - Mata-mata em dois lados
+// VERSÃO 100 - Mata-mata responsivo
 
 const jogosMataMata = [
   // LADO ESQUERDO - Segunda rodada / 32 seleções
