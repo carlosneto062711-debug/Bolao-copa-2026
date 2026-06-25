@@ -536,3 +536,21 @@ input {
   font-weight: bold;
   cursor: pointer;
 }
+
+.btn-mata-mata {
+  display: block;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto 16px;
+  padding: 12px;
+  text-align: center;
+  background: #facc15;
+  color: #111827;
+  text-decoration: none;
+  border-radius: 10px;
+  font-weight: bold;
+}
+
+.btn-mata-mata:hover {
+  background: #fde047;
+}
