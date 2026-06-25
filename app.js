@@ -1,4 +1,4 @@
-// VERSÃO 91
+// VERSÃO 92
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -1078,6 +1078,9 @@ let alvoContagem = null;
 let alvoContagemAmanha = null;
 let intervaloContagem = null;
 
+window.painelContagemTipo = null;
+window.painelContagemJogo = null;
+
 const loginBox = document.getElementById("loginBox");
 const conteudo = document.getElementById("conteudo");
 const saudacao = document.getElementById("saudacao");
@@ -1240,8 +1243,8 @@ async function carregarPalpitesAdversarios(dataFiltro = dataSelecionadaAdversari
     let resultadoJogo = "Os palpites serão liberados quando o jogo começar.";
 
     if (jogoAoVivo) {
-  statusJogo = textoTempoDoJogo(jogo) || "AO VIVO";
-  resultadoJogo = `Placar atual: ${jogo.homeScore ?? 0} x ${jogo.awayScore ?? 0}`;
+statusJogo = htmlTempoJogoDinamico(jogo);
+      resultadoJogo = `Placar atual: ${jogo.homeScore ?? 0} x ${jogo.awayScore ?? 0}`;
 }
 
     if (jogoFinalizado) {
@@ -2452,10 +2455,12 @@ async function carregarPainelTempo() {
     contador.classList.remove("alerta");
   }
 
-  alvoContagem = new Date(inicio);
-  contador.innerText = formatarContagem(restante);
+ alvoContagem = new Date(inicio);
+configurarPainelContagem("jogo_aberto", jogoAlvo);
+contador.innerText = formatarContagem(restante);
+atualizarPainelContagemPrincipal();
 
-  return;
+return;
 }
 
     const proximoJogoAberto = jogosAbertos[0];
@@ -2465,10 +2470,12 @@ async function carregarPainelTempo() {
 
       titulo.innerText = `${proximoJogoAberto.homeTeam} x ${proximoJogoAberto.awayTeam}`;
       texto.innerText = "Jogo inicia em";
-      alvoContagem = new Date(inicio);
-      contador.innerText = formatarContagem(inicio - agora);
+alvoContagem = new Date(inicio);
+configurarPainelContagem("jogo_aberto", proximoJogoAberto);
+contador.innerText = formatarContagem(inicio - agora);
+atualizarPainelContagemPrincipal();
 
-      return;
+return;
     }
 
     const proximosJogosFechados = jogosAgendados.filter((jogo) => {
@@ -2483,8 +2490,8 @@ async function carregarPainelTempo() {
       titulo.innerText = `${jogoAlvo.homeTeam} x ${jogoAlvo.awayTeam}`;
       texto.innerText = "Palpites abrem às 20h do dia anterior";
       alvoContagem = new Date(abertura);
-      contador.innerText = formatarContagem(abertura - agora);
-
+configurarPainelContagem("abertura_palpites", jogoAlvo);
+      
       return;
     }
 
@@ -2494,8 +2501,8 @@ async function carregarPainelTempo() {
       titulo.innerText = `${jogoAlvo.homeTeam} x ${jogoAlvo.awayTeam}`;
       texto.innerText = textoTempoDoJogo(jogoAlvo) || "Jogo em andamento";
       contador.innerText = "00h 00m 00s";
-      alvoContagem = null;
-
+configurarPainelContagem(null, null);
+      
       return;
     }
 
@@ -2579,6 +2586,19 @@ async function carregarResultadosAnteriores(dataFiltro = dataSelecionadaResultad
 
     painel.appendChild(div);
   });
+}
+
+function htmlTempoJogoDinamico(jogo, textoPadrao = "AO VIVO") {
+  return `
+    <span
+      class="tempo-jogo-dinamico"
+      data-kickoff="${jogo.kickoff}"
+      data-status="${jogo.status}"
+      data-api-status="${jogo.apiStatus || ""}"
+    >
+      ${textoTempoDoJogo(jogo) || textoPadrao}
+    </span>
+  `;
 }
 
 async function carregarMeusPalpites(dataFiltro = dataSelecionadaMeusPalpites) {
@@ -2681,8 +2701,8 @@ async function carregarMeusPalpites(dataFiltro = dataSelecionadaMeusPalpites) {
     let pontosLinha = "";
 
     if (jogoAoVivo) {
-  statusTexto = textoTempoDoJogo(jogo) || "AO VIVO";
-  badgeClasse = "ao-vivo";
+statusTexto = htmlTempoJogoDinamico(jogo);
+      badgeClasse = "ao-vivo";
   resultadoLinha = `Placar atual: ${jogo.homeScore ?? 0} x ${jogo.awayScore ?? 0}`;
   comparacao = "Jogo em andamento.";
 }
@@ -2722,8 +2742,8 @@ async function carregarMeusPalpites(dataFiltro = dataSelecionadaMeusPalpites) {
       ${pontosLinha ? `<span class="pontos-palpite">${pontosLinha}</span><br>` : ""}
       <span>${comparacao}</span>
       <br>
-      <span class="badge ${badgeClasse}">${statusTexto}</span>
-    `;
+<span class="badge ${badgeClasse}">${statusTexto}</span>
+`;
 
     painel.appendChild(div);
   });
@@ -2798,16 +2818,18 @@ carregarMeusPalpites(dataSelecionadaMeusPalpites);
 }
 
 function atualizarTempoDosJogosAoVivo() {
-  const elementos = document.querySelectorAll(".jogo-ao-vivo");
+  const cardsAoVivo = document.querySelectorAll(".jogo-ao-vivo");
 
-  elementos.forEach((card) => {
+  cardsAoVivo.forEach((card) => {
     const kickoff = card.dataset.kickoff;
+    const apiStatus = card.dataset.apiStatus;
 
     if (!kickoff) return;
 
     const jogoTemporario = {
       kickoff,
-      status: "live"
+      status: "live",
+      apiStatus
     };
 
     const tempo = textoTempoDoJogo(jogoTemporario);
@@ -2817,6 +2839,64 @@ function atualizarTempoDosJogosAoVivo() {
       textoTempo.innerText = tempo || "AO VIVO";
     }
   });
+
+  const temposDinamicos = document.querySelectorAll(".tempo-jogo-dinamico");
+
+  temposDinamicos.forEach((elemento) => {
+    const kickoff = elemento.dataset.kickoff;
+    const status = elemento.dataset.status;
+    const apiStatus = elemento.dataset.apiStatus;
+
+    if (!kickoff) return;
+    if (status !== "live") return;
+
+    const jogoTemporario = {
+      kickoff,
+      status,
+      apiStatus
+    };
+
+    const tempo = textoTempoDoJogo(jogoTemporario);
+
+    if (tempo) {
+      elemento.innerText = tempo;
+    }
+  });
+
+  atualizarPainelContagemPrincipal();
+}
+
+function configurarPainelContagem(tipo, jogo = null) {
+  window.painelContagemTipo = tipo;
+  window.painelContagemJogo = jogo;
+}
+
+function atualizarPainelContagemPrincipal() {
+  const texto = document.getElementById("textoContagem");
+  const contador = document.getElementById("contadorPrincipal");
+
+  if (!texto || !contador) return;
+  if (!alvoContagem) return;
+
+  const agora = Date.now();
+  const restante = alvoContagem.getTime() - agora;
+
+  if (restante <= 0) return;
+
+  if (window.painelContagemTipo === "jogo_aberto") {
+    if (restante <= 30 * 60 * 1000) {
+      texto.innerText = "Jogo inicia em";
+      contador.classList.add("alerta");
+    } else {
+      texto.innerText = "Rodada aberta";
+      contador.classList.remove("alerta");
+    }
+  }
+
+  if (window.painelContagemTipo === "abertura_palpites") {
+    texto.innerText = "Palpites abrem às 20h do dia anterior";
+    contador.classList.remove("alerta");
+  }
 }
 
 function iniciarContagemEmTempoReal() {
