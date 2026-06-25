@@ -10,14 +10,14 @@ body {
 }
 
 .pagina-mata-mata {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 16px;
 }
 
 .topo-mata-mata {
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .topo-mata-mata h1 {
@@ -26,9 +26,9 @@ body {
 }
 
 .topo-mata-mata h2 {
-  margin: 8px 0 16px;
+  margin: 6px 0 12px;
   color: #facc15;
-  font-size: 26px;
+  font-size: 24px;
 }
 
 .btn-voltar-inicio {
@@ -36,7 +36,7 @@ body {
   background: #334155;
   color: white;
   text-decoration: none;
-  padding: 10px 18px;
+  padding: 9px 16px;
   border-radius: 8px;
   font-weight: bold;
 }
@@ -45,7 +45,7 @@ body {
   border: 1px solid #38bdf8;
   background: #1e293b;
   border-radius: 14px;
-  padding: 18px;
+  padding: 16px;
   text-align: center;
   margin-bottom: 24px;
 }
@@ -62,7 +62,7 @@ body {
 
 .painel-proximo-jogo strong {
   color: #22c55e;
-  font-size: 30px;
+  font-size: 28px;
 }
 
 .area-chaveamento {
@@ -71,24 +71,43 @@ body {
 }
 
 .chaveamento {
+  min-width: 1280px;
   display: grid;
-  grid-template-columns: repeat(5, 220px);
-  gap: 28px;
-  min-width: 1180px;
+  grid-template-columns: 210px 210px 210px 230px 210px 210px 210px;
+  gap: 18px;
   align-items: center;
 }
 
-.coluna-fase {
+.coluna-chave {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
-.coluna-fase h3 {
+.coluna-chave h3 {
   text-align: center;
   color: #facc15;
-  margin: 0 0 8px;
-  font-size: 16px;
+  font-size: 15px;
+  margin: 0 0 4px;
+}
+
+.coluna-centro {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.bloco-centro {
+  border: 1px solid #facc15;
+  background: #111827;
+  border-radius: 12px;
+  padding: 12px;
+  text-align: center;
+}
+
+.bloco-centro h3 {
+  margin: 0 0 10px;
+  color: #facc15;
 }
 
 .jogo-chave {
@@ -96,7 +115,7 @@ body {
   border: 1px solid #334155;
   border-radius: 10px;
   padding: 10px;
-  min-height: 105px;
+  min-height: 112px;
 }
 
 .jogo-chave.round32 {
@@ -119,7 +138,11 @@ body {
   border-color: #facc15;
 }
 
-.jogo-chave .codigo-jogo {
+.jogo-chave.terceiro {
+  border-color: #94a3b8;
+}
+
+.codigo-jogo {
   display: inline-block;
   background: #2563eb;
   color: white;
@@ -130,28 +153,31 @@ body {
   margin-bottom: 6px;
 }
 
-.jogo-chave .times {
+.times {
   font-weight: bold;
   font-size: 14px;
-  line-height: 1.3;
+  line-height: 1.35;
 }
 
-.jogo-chave .data {
-  margin-top: 6px;
+.time-linha {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.time-linha span {
+  display: inline-block;
+}
+
+.data {
+  margin-top: 7px;
   color: #cbd5e1;
   font-size: 12px;
 }
 
-.jogo-chave .status {
+.status {
   margin-top: 6px;
   font-size: 12px;
-  color: #facc15;
-  font-weight: bold;
-}
-
-.jogo-chave .placar {
-  margin-top: 6px;
-  font-size: 16px;
   color: #facc15;
   font-weight: bold;
 }
@@ -174,7 +200,23 @@ body {
   cursor: not-allowed;
 }
 
+.lado-esquerdo .jogo-chave {
+  text-align: left;
+}
+
+.lado-direito .jogo-chave {
+  text-align: right;
+}
+
+.lado-direito .time-linha {
+  justify-content: flex-end;
+}
+
 @media (max-width: 700px) {
+  .pagina-mata-mata {
+    padding: 10px;
+  }
+
   .topo-mata-mata h1 {
     font-size: 24px;
   }
@@ -184,16 +226,16 @@ body {
   }
 
   .painel-proximo-jogo strong {
-    font-size: 24px;
+    font-size: 22px;
   }
 
   .chaveamento {
-    grid-template-columns: repeat(5, 200px);
-    gap: 18px;
-    min-width: 1060px;
+    min-width: 1160px;
+    grid-template-columns: 190px 190px 190px 210px 190px 190px 190px;
+    gap: 14px;
   }
 
   .jogo-chave {
-    min-height: 110px;
+    min-height: 112px;
   }
 }
