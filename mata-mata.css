@@ -225,17 +225,87 @@ body {
     font-size: 22px;
   }
 
+  .btn-voltar-inicio {
+    width: 100%;
+    max-width: 280px;
+    text-align: center;
+  }
+
+  .painel-proximo-jogo {
+    padding: 14px;
+    margin-bottom: 18px;
+  }
+
+  .painel-proximo-jogo p {
+    font-size: 16px;
+  }
+
   .painel-proximo-jogo strong {
-    font-size: 22px;
+    font-size: 20px;
+    line-height: 1.4;
+  }
+
+  .area-chaveamento {
+    overflow-x: visible;
+    padding-bottom: 10px;
   }
 
   .chaveamento {
-    min-width: 1160px;
-    grid-template-columns: 190px 190px 190px 210px 190px 190px 190px;
-    gap: 14px;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    width: 100%;
+    gap: 18px;
+  }
+
+  .coluna-chave,
+  .coluna-centro {
+    width: 100%;
+    gap: 10px;
+  }
+
+  .coluna-chave h3,
+  .bloco-centro h3 {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 10px;
+    padding: 10px;
+    margin: 0 0 8px;
+    font-size: 16px;
+    text-align: center;
+  }
+
+  .bloco-centro {
+    width: 100%;
+    padding: 10px;
   }
 
   .jogo-chave {
-    min-height: 112px;
+    width: 100%;
+    min-height: auto;
+    padding: 12px;
+  }
+
+  .lado-direito .jogo-chave,
+  .lado-esquerdo .jogo-chave {
+    text-align: left;
+  }
+
+  .lado-direito .time-linha {
+    justify-content: flex-start;
+  }
+
+  .time-linha {
+    font-size: 15px;
+  }
+
+  .data,
+  .status {
+    font-size: 13px;
+  }
+
+  .jogo-chave button {
+    padding: 10px;
+    font-size: 14px;
   }
 }
