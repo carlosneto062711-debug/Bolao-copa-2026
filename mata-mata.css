@@ -1,0 +1,199 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #0f172a;
+  color: white;
+  font-family: Arial, sans-serif;
+}
+
+.pagina-mata-mata {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.topo-mata-mata {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.topo-mata-mata h1 {
+  margin: 0;
+  font-size: 28px;
+}
+
+.topo-mata-mata h2 {
+  margin: 8px 0 16px;
+  color: #facc15;
+  font-size: 26px;
+}
+
+.btn-voltar-inicio {
+  display: inline-block;
+  background: #334155;
+  color: white;
+  text-decoration: none;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-weight: bold;
+}
+
+.painel-proximo-jogo {
+  border: 1px solid #38bdf8;
+  background: #1e293b;
+  border-radius: 14px;
+  padding: 18px;
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.painel-proximo-jogo h3 {
+  margin: 0 0 8px;
+}
+
+.painel-proximo-jogo p {
+  margin: 8px 0;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.painel-proximo-jogo strong {
+  color: #22c55e;
+  font-size: 30px;
+}
+
+.area-chaveamento {
+  overflow-x: auto;
+  padding-bottom: 20px;
+}
+
+.chaveamento {
+  display: grid;
+  grid-template-columns: repeat(5, 220px);
+  gap: 28px;
+  min-width: 1180px;
+  align-items: center;
+}
+
+.coluna-fase {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.coluna-fase h3 {
+  text-align: center;
+  color: #facc15;
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+
+.jogo-chave {
+  background: #111827;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  padding: 10px;
+  min-height: 105px;
+}
+
+.jogo-chave.round32 {
+  border-color: #22c55e;
+}
+
+.jogo-chave.oitavas {
+  border-color: #38bdf8;
+}
+
+.jogo-chave.quartas {
+  border-color: #a855f7;
+}
+
+.jogo-chave.semi {
+  border-color: #f97316;
+}
+
+.jogo-chave.final {
+  border-color: #facc15;
+}
+
+.jogo-chave .codigo-jogo {
+  display: inline-block;
+  background: #2563eb;
+  color: white;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+
+.jogo-chave .times {
+  font-weight: bold;
+  font-size: 14px;
+  line-height: 1.3;
+}
+
+.jogo-chave .data {
+  margin-top: 6px;
+  color: #cbd5e1;
+  font-size: 12px;
+}
+
+.jogo-chave .status {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #facc15;
+  font-weight: bold;
+}
+
+.jogo-chave .placar {
+  margin-top: 6px;
+  font-size: 16px;
+  color: #facc15;
+  font-weight: bold;
+}
+
+.jogo-chave button {
+  width: 100%;
+  margin-top: 8px;
+  padding: 7px;
+  border: none;
+  border-radius: 7px;
+  background: #22c55e;
+  color: #111827;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.jogo-chave button:disabled {
+  background: #475569;
+  color: #cbd5e1;
+  cursor: not-allowed;
+}
+
+@media (max-width: 700px) {
+  .topo-mata-mata h1 {
+    font-size: 24px;
+  }
+
+  .topo-mata-mata h2 {
+    font-size: 22px;
+  }
+
+  .painel-proximo-jogo strong {
+    font-size: 24px;
+  }
+
+  .chaveamento {
+    grid-template-columns: repeat(5, 200px);
+    gap: 18px;
+    min-width: 1060px;
+  }
+
+  .jogo-chave {
+    min-height: 110px;
+  }
+}
