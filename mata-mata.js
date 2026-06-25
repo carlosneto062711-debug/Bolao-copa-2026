@@ -1,181 +1,321 @@
-// VERSÃO 98 - Mata-mata inicial
+// VERSÃO 99 - Mata-mata em dois lados
 
 const jogosMataMata = [
+  // LADO ESQUERDO - Segunda rodada / 32 seleções
   {
     id: "M101",
+    lado: "esquerdo",
     fase: "round32",
     codigo: "M101",
-    homeTeam: "2º Grupo A",
-    awayTeam: "2º Grupo B",
+    homeTeam: "A definir",
+    awayTeam: "Canadá",
+    homeFlag: "🛡️",
+    awayFlag: "🇨🇦",
     date: "2026-06-28",
     kickoff: "2026-06-28T16:00:00",
     status: "scheduled"
   },
   {
     id: "M102",
+    lado: "esquerdo",
     fase: "round32",
     codigo: "M102",
-    homeTeam: "A definir",
+    homeTeam: "Brasil",
     awayTeam: "A definir",
-    date: "2026-06-28",
-    kickoff: "2026-06-28T19:00:00",
+    homeFlag: "🇧🇷",
+    awayFlag: "🛡️",
+    date: "2026-06-29",
+    kickoff: "2026-06-29T14:00:00",
     status: "scheduled"
   },
   {
     id: "M103",
+    lado: "esquerdo",
     fase: "round32",
     codigo: "M103",
-    homeTeam: "A definir",
+    homeTeam: "Alemanha",
     awayTeam: "A definir",
+    homeFlag: "🇩🇪",
+    awayFlag: "🛡️",
     date: "2026-06-29",
-    kickoff: "2026-06-29T16:00:00",
+    kickoff: "2026-06-29T17:30:00",
     status: "scheduled"
   },
   {
     id: "M104",
+    lado: "esquerdo",
     fase: "round32",
     codigo: "M104",
     homeTeam: "A definir",
-    awayTeam: "A definir",
+    awayTeam: "Marrocos",
+    homeFlag: "🛡️",
+    awayFlag: "🇲🇦",
     date: "2026-06-29",
-    kickoff: "2026-06-29T19:00:00",
+    kickoff: "2026-06-29T22:00:00",
     status: "scheduled"
   },
   {
     id: "M105",
+    lado: "esquerdo",
     fase: "round32",
     codigo: "M105",
     homeTeam: "A definir",
     awayTeam: "A definir",
+    homeFlag: "🛡️",
+    awayFlag: "🛡️",
     date: "2026-06-30",
-    kickoff: "2026-06-30T16:00:00",
+    kickoff: "2026-06-30T14:00:00",
     status: "scheduled"
   },
   {
     id: "M106",
+    lado: "esquerdo",
     fase: "round32",
     codigo: "M106",
     homeTeam: "A definir",
     awayTeam: "A definir",
+    homeFlag: "🛡️",
+    awayFlag: "🛡️",
     date: "2026-06-30",
-    kickoff: "2026-06-30T19:00:00",
+    kickoff: "2026-06-30T18:00:00",
     status: "scheduled"
   },
   {
     id: "M107",
+    lado: "esquerdo",
     fase: "round32",
     codigo: "M107",
-    homeTeam: "A definir",
+    homeTeam: "México",
     awayTeam: "A definir",
-    date: "2026-07-01",
-    kickoff: "2026-07-01T16:00:00",
+    homeFlag: "🇲🇽",
+    awayFlag: "🛡️",
+    date: "2026-06-30",
+    kickoff: "2026-06-30T22:00:00",
     status: "scheduled"
   },
   {
     id: "M108",
+    lado: "esquerdo",
     fase: "round32",
     codigo: "M108",
     homeTeam: "A definir",
     awayTeam: "A definir",
+    homeFlag: "🛡️",
+    awayFlag: "🛡️",
     date: "2026-07-01",
-    kickoff: "2026-07-01T19:00:00",
+    kickoff: "2026-07-01T13:00:00",
     status: "scheduled"
   },
 
+  // LADO DIREITO - Segunda rodada / 32 seleções
   {
     id: "M109",
-    fase: "oitavas",
-    codigo: "O1",
+    lado: "direito",
+    fase: "round32",
+    codigo: "M109",
     homeTeam: "A definir",
     awayTeam: "A definir",
-    date: "2026-07-03",
-    kickoff: "2026-07-03T16:00:00",
+    homeFlag: "🛡️",
+    awayFlag: "🛡️",
+    date: "2026-07-01",
+    kickoff: "2026-07-01T17:00:00",
     status: "scheduled"
   },
   {
     id: "M110",
-    fase: "oitavas",
-    codigo: "O2",
+    lado: "direito",
+    fase: "round32",
+    codigo: "M110",
+    homeTeam: "Estados Unidos",
+    awayTeam: "A definir",
+    homeFlag: "🇺🇸",
+    awayFlag: "🛡️",
+    date: "2026-07-01",
+    kickoff: "2026-07-01T21:00:00",
+    status: "scheduled"
+  },
+  {
+    id: "M111",
+    lado: "direito",
+    fase: "round32",
+    codigo: "M111",
     homeTeam: "A definir",
     awayTeam: "A definir",
+    homeFlag: "🛡️",
+    awayFlag: "🛡️",
+    date: "2026-07-02",
+    kickoff: "2026-07-02T16:00:00",
+    status: "scheduled"
+  },
+  {
+    id: "M112",
+    lado: "direito",
+    fase: "round32",
+    codigo: "M112",
+    homeTeam: "A definir",
+    awayTeam: "A definir",
+    homeFlag: "🛡️",
+    awayFlag: "🛡️",
+    date: "2026-07-02",
+    kickoff: "2026-07-02T20:00:00",
+    status: "scheduled"
+  },
+  {
+    id: "M113",
+    lado: "direito",
+    fase: "round32",
+    codigo: "M113",
+    homeTeam: "Suíça",
+    awayTeam: "A definir",
+    homeFlag: "🇨🇭",
+    awayFlag: "🛡️",
+    date: "2026-07-03",
+    kickoff: "2026-07-03T00:00:00",
+    status: "scheduled"
+  },
+  {
+    id: "M114",
+    lado: "direito",
+    fase: "round32",
+    codigo: "M114",
+    homeTeam: "A definir",
+    awayTeam: "A definir",
+    homeFlag: "🛡️",
+    awayFlag: "🛡️",
+    date: "2026-07-03",
+    kickoff: "2026-07-03T15:00:00",
+    status: "scheduled"
+  },
+  {
+    id: "M115",
+    lado: "direito",
+    fase: "round32",
+    codigo: "M115",
+    homeTeam: "Argentina",
+    awayTeam: "A definir",
+    homeFlag: "🇦🇷",
+    awayFlag: "🛡️",
     date: "2026-07-03",
     kickoff: "2026-07-03T19:00:00",
     status: "scheduled"
   },
   {
-    id: "M111",
-    fase: "oitavas",
-    codigo: "O3",
+    id: "M116",
+    lado: "direito",
+    fase: "round32",
+    codigo: "M116",
     homeTeam: "A definir",
     awayTeam: "A definir",
-    date: "2026-07-04",
-    kickoff: "2026-07-04T16:00:00",
-    status: "scheduled"
-  },
-  {
-    id: "M112",
-    fase: "oitavas",
-    codigo: "O4",
-    homeTeam: "A definir",
-    awayTeam: "A definir",
-    date: "2026-07-04",
-    kickoff: "2026-07-04T19:00:00",
+    homeFlag: "🛡️",
+    awayFlag: "🛡️",
+    date: "2026-07-03",
+    kickoff: "2026-07-03T22:30:00",
     status: "scheduled"
   },
 
-  {
-    id: "M113",
-    fase: "quartas",
-    codigo: "Q1",
-    homeTeam: "A definir",
-    awayTeam: "A definir",
-    date: "2026-07-09",
-    kickoff: "2026-07-09T16:00:00",
-    status: "scheduled"
-  },
-  {
-    id: "M114",
-    fase: "quartas",
-    codigo: "Q2",
-    homeTeam: "A definir",
-    awayTeam: "A definir",
-    date: "2026-07-10",
-    kickoff: "2026-07-10T16:00:00",
-    status: "scheduled"
-  },
+  // OITAVAS
+  ...criarJogosGenericos("esquerdo", "oitavas", "O", 4, [
+    ["2026-07-04", "14:00"],
+    ["2026-07-05", "17:00"],
+    ["2026-07-06", "16:00"],
+    ["2026-07-07", "13:00"]
+  ]),
+  ...criarJogosGenericos("direito", "oitavas", "O", 4, [
+    ["2026-07-04", "18:00"],
+    ["2026-07-05", "21:00"],
+    ["2026-07-06", "21:00"],
+    ["2026-07-07", "17:00"]
+  ]),
 
+  // QUARTAS
+  ...criarJogosGenericos("esquerdo", "quartas", "Q", 2, [
+    ["2026-07-09", "17:00"],
+    ["2026-07-11", "18:00"]
+  ]),
+  ...criarJogosGenericos("direito", "quartas", "Q", 2, [
+    ["2026-07-10", "16:00"],
+    ["2026-07-11", "22:00"]
+  ]),
+
+  // SEMIFINAIS
   {
-    id: "M115",
+    id: "S1",
+    lado: "centro",
     fase: "semi",
     codigo: "S1",
     homeTeam: "A definir",
     awayTeam: "A definir",
+    homeFlag: "🛡️",
+    awayFlag: "🛡️",
     date: "2026-07-14",
     kickoff: "2026-07-14T16:00:00",
     status: "scheduled"
   },
   {
-    id: "M116",
+    id: "S2",
+    lado: "centro",
     fase: "semi",
     codigo: "S2",
     homeTeam: "A definir",
     awayTeam: "A definir",
+    homeFlag: "🛡️",
+    awayFlag: "🛡️",
     date: "2026-07-15",
     kickoff: "2026-07-15T16:00:00",
     status: "scheduled"
   },
 
+  // TERCEIRO LUGAR
   {
-    id: "M117",
+    id: "T3",
+    lado: "centro",
+    fase: "terceiro",
+    codigo: "3º",
+    homeTeam: "A definir",
+    awayTeam: "A definir",
+    homeFlag: "🛡️",
+    awayFlag: "🛡️",
+    date: "2026-07-18",
+    kickoff: "2026-07-18T18:00:00",
+    status: "scheduled"
+  },
+
+  // FINAL
+  {
+    id: "FINAL",
+    lado: "centro",
     fase: "final",
     codigo: "FINAL",
     homeTeam: "A definir",
     awayTeam: "A definir",
+    homeFlag: "🛡️",
+    awayFlag: "🛡️",
     date: "2026-07-19",
     kickoff: "2026-07-19T16:00:00",
     status: "scheduled"
   }
 ];
+
+function criarJogosGenericos(lado, fase, prefixo, quantidade, datas) {
+  return datas.map((item, index) => {
+    const numero = index + 1;
+    const [date, hora] = item;
+
+    return {
+      id: `${prefixo}${lado}${numero}`,
+      lado,
+      fase,
+      codigo: `${prefixo}${numero}`,
+      homeTeam: "A definir",
+      awayTeam: "A definir",
+      homeFlag: "🛡️",
+      awayFlag: "🛡️",
+      date,
+      kickoff: `${date}T${hora}:00`,
+      status: "scheduled"
+    };
+  });
+}
 
 function formatarDataBR(dataISO) {
   const [ano, mes, dia] = dataISO.split("-");
@@ -239,9 +379,15 @@ function criarCardJogoMataMata(jogo) {
     <span class="codigo-jogo">${jogo.codigo}</span>
 
     <div class="times">
-      ${jogo.homeTeam}<br>
-      x<br>
-      ${jogo.awayTeam}
+      <div class="time-linha">
+        <span>${jogo.homeFlag}</span>
+        <strong>${jogo.homeTeam}</strong>
+      </div>
+
+      <div class="time-linha">
+        <span>${jogo.awayFlag}</span>
+        <strong>${jogo.awayTeam}</strong>
+      </div>
     </div>
 
     <div class="data">
@@ -258,34 +404,68 @@ function criarCardJogoMataMata(jogo) {
   return div;
 }
 
+function criarColuna(titulo, jogos, ladoClasse) {
+  const coluna = document.createElement("div");
+  coluna.className = `coluna-chave ${ladoClasse}`;
+
+  const h3 = document.createElement("h3");
+  h3.innerText = titulo;
+  coluna.appendChild(h3);
+
+  jogos.forEach((jogo) => {
+    coluna.appendChild(criarCardJogoMataMata(jogo));
+  });
+
+  return coluna;
+}
+
 function carregarChaveamento() {
   const container = document.getElementById("chaveamentoMataMata");
   container.innerHTML = "";
 
-  const fases = [
-    { id: "round32", titulo: "32 seleções" },
-    { id: "oitavas", titulo: "Oitavas" },
-    { id: "quartas", titulo: "Quartas" },
-    { id: "semi", titulo: "Semifinal" },
-    { id: "final", titulo: "Final" }
-  ];
+  const round32Esq = jogosMataMata.filter(j => j.lado === "esquerdo" && j.fase === "round32");
+  const oitavasEsq = jogosMataMata.filter(j => j.lado === "esquerdo" && j.fase === "oitavas");
+  const quartasEsq = jogosMataMata.filter(j => j.lado === "esquerdo" && j.fase === "quartas");
 
-  fases.forEach((fase) => {
-    const coluna = document.createElement("div");
-    coluna.className = "coluna-fase";
+  const quartasDir = jogosMataMata.filter(j => j.lado === "direito" && j.fase === "quartas");
+  const oitavasDir = jogosMataMata.filter(j => j.lado === "direito" && j.fase === "oitavas");
+  const round32Dir = jogosMataMata.filter(j => j.lado === "direito" && j.fase === "round32");
 
-    const titulo = document.createElement("h3");
-    titulo.innerText = fase.titulo;
-    coluna.appendChild(titulo);
+  const semi = jogosMataMata.filter(j => j.fase === "semi");
+  const terceiro = jogosMataMata.filter(j => j.fase === "terceiro");
+  const final = jogosMataMata.filter(j => j.fase === "final");
 
-    const jogos = jogosMataMata.filter((jogo) => jogo.fase === fase.id);
+  container.appendChild(criarColuna("32 seleções", round32Esq, "lado-esquerdo"));
+  container.appendChild(criarColuna("Oitavas", oitavasEsq, "lado-esquerdo"));
+  container.appendChild(criarColuna("Quartas", quartasEsq, "lado-esquerdo"));
 
-    jogos.forEach((jogo) => {
-      coluna.appendChild(criarCardJogoMataMata(jogo));
-    });
+  const centro = document.createElement("div");
+  centro.className = "coluna-centro";
 
-    container.appendChild(coluna);
-  });
+  const blocoSemi = document.createElement("div");
+  blocoSemi.className = "bloco-centro";
+  blocoSemi.innerHTML = "<h3>Semifinais</h3>";
+  semi.forEach(jogo => blocoSemi.appendChild(criarCardJogoMataMata(jogo)));
+
+  const blocoTerceiro = document.createElement("div");
+  blocoTerceiro.className = "bloco-centro";
+  blocoTerceiro.innerHTML = "<h3>3º lugar</h3>";
+  terceiro.forEach(jogo => blocoTerceiro.appendChild(criarCardJogoMataMata(jogo)));
+
+  const blocoFinal = document.createElement("div");
+  blocoFinal.className = "bloco-centro";
+  blocoFinal.innerHTML = "<h3>Final</h3>";
+  final.forEach(jogo => blocoFinal.appendChild(criarCardJogoMataMata(jogo)));
+
+  centro.appendChild(blocoSemi);
+  centro.appendChild(blocoTerceiro);
+  centro.appendChild(blocoFinal);
+
+  container.appendChild(centro);
+
+  container.appendChild(criarColuna("Quartas", quartasDir, "lado-direito"));
+  container.appendChild(criarColuna("Oitavas", oitavasDir, "lado-direito"));
+  container.appendChild(criarColuna("32 seleções", round32Dir, "lado-direito"));
 }
 
 function carregarProximoJogo() {
