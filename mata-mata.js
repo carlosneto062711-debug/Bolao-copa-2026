@@ -1,4 +1,4 @@
-// VERSÃO 105 - Persistência login mata-mata
+// VERSÃO 106 - Login persistente mata-mata
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
