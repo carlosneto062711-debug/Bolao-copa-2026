@@ -1,4 +1,4 @@
-// VERSÃO 110 - Status ao vivo no mata-mata
+// VERSÃO 111 - Corrige fechamento JS
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -865,12 +865,12 @@ function iniciarContagem() {
   window.contagemMataMataLigada = true;
 
   setInterval(() => {
-  carregarProximoJogo();
+    carregarProximoJogo();
 
-  if (!window.usuarioSalvandoPalpiteMataMata && !window.usuarioInteragindoMataMata) {
-    carregarChaveamento();
-  }
-}, 1000);
+    if (!window.usuarioSalvandoPalpiteMataMata && !window.usuarioInteragindoMataMata) {
+      carregarChaveamento();
+    }
+  }, 1000);
 }
 
 function configurarLoginMataMata() {
