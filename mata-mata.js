@@ -1,4 +1,4 @@
-// VERSÃO 111 - Corrige fechamento JS
+// VERSÃO 112 - Corrige final do mata-mata
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -867,7 +867,10 @@ function iniciarContagem() {
   setInterval(() => {
     carregarProximoJogo();
 
-    if (!window.usuarioSalvandoPalpiteMataMata && !window.usuarioInteragindoMataMata) {
+    if (
+      !window.usuarioSalvandoPalpiteMataMata &&
+      !window.usuarioInteragindoMataMata
+    ) {
       carregarChaveamento();
     }
   }, 1000);
@@ -880,13 +883,13 @@ function configurarLoginMataMata() {
   const botaoEntrar = document.getElementById("btnEntrarMataMata");
   const erro = document.getElementById("erroLoginMataMata");
 
-  if (!loginBox || !emailInput || !senhaInput || !botaoEntrar) return;
+  if (!loginBox || !emailInput || !senhaInput || !botaoEntrar || !erro) return;
 
   botaoEntrar.onclick = async () => {
     erro.innerText = "";
 
     const email = emailInput.value.trim().toLowerCase();
-const senha = senhaInput.value;
+    const senha = senhaInput.value;
 
     if (!email || !senha) {
       erro.innerText = "Preencha e-mail e senha.";
@@ -898,21 +901,21 @@ const senha = senhaInput.value;
 
     try {
       await signInWithEmailAndPassword(auth, email, senha);
-   } catch (error) {
-  console.log("Erro login mata-mata:", error.code, error.message);
+    } catch (error) {
+      console.log("Erro login mata-mata:", error.code, error.message);
 
-  if (error.code === "auth/invalid-credential") {
-    erro.innerText = "Login recusado pelo Firebase. Confira se este usuário existe no Authentication.";
-  } else if (error.code === "auth/user-not-found") {
-    erro.innerText = "Usuário não encontrado no Authentication.";
-  } else if (error.code === "auth/wrong-password") {
-    erro.innerText = "Senha incorreta.";
-  } else if (error.code === "auth/too-many-requests") {
-    erro.innerText = "Muitas tentativas. Aguarde um pouco e tente novamente.";
-  } else {
-    erro.innerText = `Erro: ${error.code}`;
-  }
-} finally {
+      if (error.code === "auth/invalid-credential") {
+        erro.innerText = "Login recusado pelo Firebase. Confira se este usuário existe no Authentication.";
+      } else if (error.code === "auth/user-not-found") {
+        erro.innerText = "Usuário não encontrado no Authentication.";
+      } else if (error.code === "auth/wrong-password") {
+        erro.innerText = "Senha incorreta.";
+      } else if (error.code === "auth/too-many-requests") {
+        erro.innerText = "Muitas tentativas. Aguarde um pouco e tente novamente.";
+      } else {
+        erro.innerText = `Erro: ${error.code}`;
+      }
+    } finally {
       botaoEntrar.disabled = false;
       botaoEntrar.innerText = "Entrar";
     }
