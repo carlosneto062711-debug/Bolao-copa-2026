@@ -1,4 +1,4 @@
-// VERSÃO 103 - Teste palpite mata-mata
+// VERSÃO 104 - Corrige login mata-mata
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -580,13 +580,15 @@ function criarCardJogoMataMata(jogo) {
 
   let areaAcao = "";
 
-  if (jogo.status === "finished") {
-    areaAcao = `<button disabled>Encerrado</button>`;
-  } else if (!aberto) {
-    areaAcao = `<button disabled>Bloqueado</button>`;
-  } else if (travado) {
-    areaAcao = `<button disabled>Palpite travado</button>`;
-  } else {
+  if (!usuarioAtual && aberto) {
+  areaAcao = `<button disabled>Faça login para palpitar</button>`;
+} else if (jogo.status === "finished") {
+  areaAcao = `<button disabled>Encerrado</button>`;
+} else if (!aberto) {
+  areaAcao = `<button disabled>Bloqueado</button>`;
+} else if (travado) {
+  areaAcao = `<button disabled>Palpite travado</button>`;
+} else {
     areaAcao = `
       <div class="form-palpite-mata">
         <div class="linha-palpite-mata">
@@ -663,6 +665,8 @@ function criarColuna(titulo, jogos, ladoClasse) {
 }
 
 async function carregarMataMata() {
+  await carregarPalpitesMataMata();
+
   if (
     window.usuarioSalvandoPalpiteMataMata ||
     window.usuarioInteragindoMataMata ||
@@ -680,7 +684,6 @@ async function carregarMataMata() {
   carregamentoMataMataEmAndamento = true;
 
   try {
-    await carregarPalpitesMataMata();
     carregarChaveamento();
     carregarProximoJogo();
   } catch (error) {
@@ -793,12 +796,13 @@ function iniciarContagem() {
 }
 
 onAuthStateChanged(auth, async (user) => {
+  iniciarProtecaoMobileMataMata();
+
   if (!user) {
     usuarioAtual = null;
     dadosUsuarioAtual = null;
 
-    carregarChaveamento();
-    carregarProximoJogo();
+    await carregarMataMata();
     iniciarContagem();
 
     return;
@@ -811,8 +815,6 @@ onAuthStateChanged(auth, async (user) => {
   if (userSnap.exists()) {
     dadosUsuarioAtual = userSnap.data();
   }
-
-  iniciarProtecaoMobileMataMata();
 
   await carregarMataMata();
 
