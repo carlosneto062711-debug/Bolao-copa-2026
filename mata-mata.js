@@ -1,10 +1,12 @@
-// VERSÃO 104 - Corrige login mata-mata
+// VERSÃO 105 - Persistência login mata-mata
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
 import {
   getAuth,
-  onAuthStateChanged
+  onAuthStateChanged,
+  setPersistence,
+  browserLocalPersistence
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 
 import {
@@ -26,6 +28,8 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+
+await setPersistence(auth, browserLocalPersistence);
 
 let usuarioAtual = null;
 let dadosUsuarioAtual = null;
