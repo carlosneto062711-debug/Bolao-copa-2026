@@ -14,6 +14,78 @@ import {
   setDoc
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
+const firebaseConfig = {
+  apiKey: "AIzaSyAQszm5MRBszfFXrrPxJH1cSoOoLYo5A6g",
+  authDomain: "bolao-copa-2026-48fc2.firebaseapp.com",
+  projectId: "bolao-copa-2026-48fc2",
+  storageBucket: "bolao-copa-2026-48fc2.firebasestorage.app",
+  messagingSenderId: "866731236351",
+  appId: "1:866731236351:web:0bc6c58d7fd7da8224a5ca"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+let usuarioAtual = null;
+let dadosUsuarioAtual = null;
+
+let palpitesMataMata = {};
+
+let carregamentoMataMataEmAndamento = false;
+let carregamentoMataMataPendente = false;
+
+window.usuarioSalvandoPalpiteMataMata = false;
+window.usuarioInteragindoMataMata = false;
+window.timeoutInteracaoMataMata = null;
+window.ignorarAtualizacaoMataMataAte = 0;
+
+function pausarAtualizacoesMataMataPorInteracao(tempo = 4000) {
+  window.usuarioInteragindoMataMata = true;
+
+  clearTimeout(window.timeoutInteracaoMataMata);
+
+  window.timeoutInteracaoMataMata = setTimeout(() => {
+    window.usuarioInteragindoMataMata = false;
+
+    if (carregamentoMataMataPendente && usuarioAtual) {
+      carregamentoMataMataPendente = false;
+      carregarMataMata();
+    }
+  }, tempo);
+}
+
+function iniciarProtecaoMobileMataMata() {
+  if (window.protecaoMobileMataMataLigada) return;
+
+  window.protecaoMobileMataMataLigada = true;
+
+  window.addEventListener("scroll", () => {
+    pausarAtualizacoesMataMataPorInteracao(2500);
+  }, { passive: true });
+
+  window.addEventListener("touchstart", () => {
+    pausarAtualizacoesMataMataPorInteracao(4000);
+  }, { passive: true });
+
+  window.addEventListener("touchmove", () => {
+    pausarAtualizacoesMataMataPorInteracao(4000);
+  }, { passive: true });
+
+  document.addEventListener("input", () => {
+    pausarAtualizacoesMataMataPorInteracao(6000);
+  });
+
+  document.addEventListener("focusin", (event) => {
+    if (
+      event.target &&
+      (event.target.tagName === "INPUT" || event.target.tagName === "TEXTAREA")
+    ) {
+      pausarAtualizacoesMataMataPorInteracao(8000);
+    }
+  });
+}
+
 const jogosMataMata = [
   // LADO ESQUERDO - Segunda rodada / 32 seleções
   {
@@ -377,17 +449,158 @@ function jogoLiberadoParaPalpite(jogo) {
   return agora >= abertura && agora < inicio;
 }
 
+async function carregarPalpitesMataMata() {
+  if (!usuarioAtual) return;
+
+  palpitesMataMata = {};
+
+  for (const jogo of jogosMataMata) {
+    const palpiteId = `${usuarioAtual.uid}_${jogo.id}`;
+    const palpiteSnap = await getDoc(doc(db, "predictions", palpiteId));
+
+    if (palpiteSnap.exists()) {
+      palpitesMataMata[jogo.id] = palpiteSnap.data();
+    }
+  }
+}
+
+async function salvarPalpiteMataMata(jogo, homeGuess, awayGuess, botao) {
+  if (!usuarioAtual) {
+    alert("Você precisa estar logado.");
+    return;
+  }
+
+  const palpiteExistente = palpitesMataMata[jogo.id];
+  const editCountAtual = Number(palpiteExistente?.editCount || 0);
+
+  if (palpiteExistente && editCountAtual >= 2) {
+    alert("Você já usou as 2 alterações deste palpite.");
+    return;
+  }
+
+  if (homeGuess === "" || awayGuess === "") {
+    alert("Preencha os dois placares.");
+    return;
+  }
+
+  const homeNumber = Number(homeGuess);
+  const awayNumber = Number(awayGuess);
+
+  if (
+    Number.isNaN(homeNumber) ||
+    Number.isNaN(awayNumber) ||
+    homeNumber < 0 ||
+    awayNumber < 0
+  ) {
+    alert("Digite placares válidos.");
+    return;
+  }
+
+  window.usuarioSalvandoPalpiteMataMata = true;
+  window.ignorarAtualizacaoMataMataAte = Date.now() + 5000;
+  pausarAtualizacoesMataMataPorInteracao(8000);
+
+  botao.disabled = true;
+  botao.innerText = "Salvando...";
+
+  try {
+    const palpiteId = `${usuarioAtual.uid}_${jogo.id}`;
+
+    const novoEditCount = palpiteExistente
+      ? editCountAtual + 1
+      : 0;
+
+    const palpite = {
+      userId: usuarioAtual.uid,
+      userName: dadosUsuarioAtual?.nome || usuarioAtual.email,
+      matchId: jogo.id,
+
+      phase: "knockout",
+      round: jogo.fase,
+
+      homeTeam: jogo.homeTeam,
+      awayTeam: jogo.awayTeam,
+      homeGuess: homeNumber,
+      awayGuess: awayNumber,
+
+      editCount: novoEditCount,
+      locked: novoEditCount >= 2,
+
+      points: palpiteExistente?.points || 0,
+
+      createdAt: palpiteExistente?.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    await setDoc(doc(db, "predictions", palpiteId), palpite, { merge: true });
+
+    palpitesMataMata[jogo.id] = palpite;
+
+    carregarChaveamento();
+    carregarProximoJogo();
+
+  } catch (error) {
+    console.log("Erro ao salvar palpite mata-mata:", error);
+    alert("Erro ao salvar palpite. Tente novamente.");
+  } finally {
+    setTimeout(() => {
+      window.usuarioSalvandoPalpiteMataMata = false;
+      window.usuarioInteragindoMataMata = false;
+      window.ignorarAtualizacaoMataMataAte = Date.now() + 3000;
+      carregamentoMataMataPendente = false;
+    }, 500);
+  }
+}
+
 function criarCardJogoMataMata(jogo) {
   const div = document.createElement("div");
   div.className = `jogo-chave ${jogo.fase}`;
 
   const aberto = jogoLiberadoParaPalpite(jogo);
+  const palpite = palpitesMataMata[jogo.id];
+
+  const editCount = Number(palpite?.editCount || 0);
+  const alteracoesRestantes = palpite ? Math.max(0, 2 - editCount) : 2;
+  const travado = palpite && editCount >= 2;
 
   let statusTexto = "Bloqueado";
 
   if (aberto) statusTexto = "Palpites abertos";
   if (jogo.status === "live") statusTexto = "Ao vivo";
   if (jogo.status === "finished") statusTexto = "Encerrado";
+
+  const areaPalpiteSalvo = palpite
+    ? `
+      <div class="palpite-salvo-mata">
+        Seu palpite: <strong>${palpite.homeGuess} x ${palpite.awayGuess}</strong><br>
+        Alterações restantes: <strong>${alteracoesRestantes}</strong>
+      </div>
+    `
+    : "";
+
+  let areaAcao = "";
+
+  if (jogo.status === "finished") {
+    areaAcao = `<button disabled>Encerrado</button>`;
+  } else if (!aberto) {
+    areaAcao = `<button disabled>Bloqueado</button>`;
+  } else if (travado) {
+    areaAcao = `<button disabled>Palpite travado</button>`;
+  } else {
+    areaAcao = `
+      <div class="form-palpite-mata">
+        <div class="linha-palpite-mata">
+          <input type="number" min="0" class="input-home-mata" value="${palpite?.homeGuess ?? ""}" />
+          <span>x</span>
+          <input type="number" min="0" class="input-away-mata" value="${palpite?.awayGuess ?? ""}" />
+        </div>
+
+        <button class="btn-salvar-palpite-mata">
+          ${palpite ? "Alterar palpite" : "Salvar palpite"}
+        </button>
+      </div>
+    `;
+  }
 
   div.innerHTML = `
     <span class="codigo-jogo">${jogo.codigo}</span>
@@ -410,10 +623,26 @@ function criarCardJogoMataMata(jogo) {
 
     <div class="status">${statusTexto}</div>
 
-    <button ${aberto ? "" : "disabled"}>
-      ${aberto ? "Palpitar" : "Bloqueado"}
-    </button>
+    ${areaPalpiteSalvo}
+
+    ${areaAcao}
   `;
+
+  const botaoSalvar = div.querySelector(".btn-salvar-palpite-mata");
+
+  if (botaoSalvar) {
+    botaoSalvar.addEventListener("click", async () => {
+      const inputHome = div.querySelector(".input-home-mata");
+      const inputAway = div.querySelector(".input-away-mata");
+
+      await salvarPalpiteMataMata(
+        jogo,
+        inputHome.value,
+        inputAway.value,
+        botaoSalvar
+      );
+    });
+  }
 
   return div;
 }
@@ -431,6 +660,47 @@ function criarColuna(titulo, jogos, ladoClasse) {
   });
 
   return coluna;
+}
+
+async function carregarMataMata() {
+  if (
+    window.usuarioSalvandoPalpiteMataMata ||
+    window.usuarioInteragindoMataMata ||
+    Date.now() < window.ignorarAtualizacaoMataMataAte
+  ) {
+    carregamentoMataMataPendente = true;
+    return;
+  }
+
+  if (carregamentoMataMataEmAndamento) {
+    carregamentoMataMataPendente = true;
+    return;
+  }
+
+  carregamentoMataMataEmAndamento = true;
+
+  try {
+    await carregarPalpitesMataMata();
+    carregarChaveamento();
+    carregarProximoJogo();
+  } catch (error) {
+    console.log("Erro ao carregar mata-mata:", error);
+  } finally {
+    carregamentoMataMataEmAndamento = false;
+
+    if (
+      carregamentoMataMataPendente &&
+      !window.usuarioSalvandoPalpiteMataMata &&
+      !window.usuarioInteragindoMataMata &&
+      Date.now() >= window.ignorarAtualizacaoMataMataAte
+    ) {
+      carregamentoMataMataPendente = false;
+
+      setTimeout(() => {
+        carregarMataMata();
+      }, 1000);
+    }
+  }
 }
 
 function carregarChaveamento() {
@@ -513,11 +783,32 @@ function carregarProximoJogo() {
 }
 
 function iniciarContagem() {
+  if (window.contagemMataMataLigada) return;
+
+  window.contagemMataMataLigada = true;
+
   setInterval(() => {
     carregarProximoJogo();
   }, 1000);
 }
 
-carregarChaveamento();
-carregarProximoJogo();
-iniciarContagem();
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    window.location.href = "index.html";
+    return;
+  }
+
+  usuarioAtual = user;
+
+  const userSnap = await getDoc(doc(db, "users", user.uid));
+
+  if (userSnap.exists()) {
+    dadosUsuarioAtual = userSnap.data();
+  }
+
+  iniciarProtecaoMobileMataMata();
+
+  await carregarMataMata();
+
+  iniciarContagem();
+});
