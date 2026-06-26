@@ -1,4 +1,4 @@
-// VERSÃO 92
+// VERSÃO 93
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -1056,6 +1056,8 @@ window.recalcularRankingPorPalpites = recalcularRankingPorPalpites;
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+
+await setPersistence(auth, browserLocalPersistence);
 
 let usuarioAtual = null;
 let dadosUsuarioAtual = null;
