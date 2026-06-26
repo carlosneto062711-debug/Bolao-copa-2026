@@ -1,4 +1,4 @@
-// VERSÃO 109 - Corrige apiKey Firebase
+// VERSÃO 110 - Status ao vivo no mata-mata
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -557,12 +557,72 @@ async function salvarPalpiteMataMata(jogo, homeGuess, awayGuess, botao) {
   }
 }
 
+function jogoComecouMataMata(jogo) {
+  const agora = Date.now();
+  const inicio = new Date(jogo.kickoff).getTime();
+
+  return agora >= inicio;
+}
+
+function textoTempoDoJogoMataMata(jogo) {
+  if (jogo.status === "finished") {
+    return "ENCERRADO";
+  }
+
+  if (jogo.apiStatus === "PAUSED") {
+    return "JOGO PAUSADO";
+  }
+
+  if (jogo.apiStatus === "SUSPENDED") {
+    return "SUSPENSO";
+  }
+
+  const agora = Date.now();
+  const inicio = new Date(jogo.kickoff).getTime();
+
+  if (agora < inicio) {
+    return "";
+  }
+
+  const minutosCorridos = Math.floor((agora - inicio) / 60000);
+
+  if (minutosCorridos <= 45) {
+    const minutoJogo = Math.max(1, minutosCorridos + 1);
+    return `1º TEMPO - ${minutoJogo}'`;
+  }
+
+  if (minutosCorridos > 45 && minutosCorridos <= 64) {
+    return "INTERVALO";
+  }
+
+  const minutoJogo = Math.min(90, minutosCorridos - 19);
+  return `2º TEMPO - ${minutoJogo}'`;
+}
+
+function jogoAoVivoMataMata(jogo) {
+  if (jogo.status === "finished") return false;
+  if (jogo.status === "live") return true;
+
+  return jogo.status === "scheduled" && jogoComecouMataMata(jogo);
+}
+
 function criarCardJogoMataMata(jogo) {
   const div = document.createElement("div");
-  div.className = `jogo-chave ${jogo.fase}`;
 
-  const aberto = jogoLiberadoParaPalpite(jogo);
-  const palpite = palpitesMataMata[jogo.id];
+const aoVivo = jogoAoVivoMataMata(jogo);
+
+div.className = `jogo-chave ${jogo.fase}`;
+
+if (aoVivo) {
+  div.classList.add("ao-vivo");
+}
+
+if (jogo.status === "finished") {
+  div.classList.add("encerrado");
+}
+
+const aberto = jogoLiberadoParaPalpite(jogo);
+const palpite = palpitesMataMata[jogo.id];
 
   const editCount = Number(palpite?.editCount || 0);
   const alteracoesRestantes = palpite ? Math.max(0, 2 - editCount) : 2;
@@ -570,10 +630,17 @@ function criarCardJogoMataMata(jogo) {
 
   let statusTexto = "Bloqueado";
 
-  if (aberto) statusTexto = "Palpites abertos";
-  if (jogo.status === "live") statusTexto = "Ao vivo";
-  if (jogo.status === "finished") statusTexto = "Encerrado";
+if (aberto) {
+  statusTexto = "Palpites abertos";
+}
 
+if (aoVivo) {
+  statusTexto = textoTempoDoJogoMataMata(jogo) || "JOGO EM ANDAMENTO";
+}
+
+if (jogo.status === "finished") {
+  statusTexto = "ENCERRADO";
+}
   const areaPalpiteSalvo = palpite
     ? `
       <div class="palpite-salvo-mata">
@@ -587,8 +654,10 @@ function criarCardJogoMataMata(jogo) {
 
   if (!usuarioAtual && aberto) {
   areaAcao = `<button disabled>Faça login para palpitar</button>`;
-} else if (jogo.status === "finished") {
+if (jogo.status === "finished") {
   areaAcao = `<button disabled>Encerrado</button>`;
+} else if (aoVivo) {
+  areaAcao = `<button disabled>Jogo em andamento</button>`;
 } else if (!aberto) {
   areaAcao = `<button disabled>Bloqueado</button>`;
 } else if (travado) {
@@ -796,8 +865,12 @@ function iniciarContagem() {
   window.contagemMataMataLigada = true;
 
   setInterval(() => {
-    carregarProximoJogo();
-  }, 1000);
+  carregarProximoJogo();
+
+  if (!window.usuarioSalvandoPalpiteMataMata && !window.usuarioInteragindoMataMata) {
+    carregarChaveamento();
+  }
+}, 1000);
 }
 
 function configurarLoginMataMata() {
