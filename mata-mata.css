@@ -296,6 +296,22 @@ body {
   display: none;
 }
 
+.jogo-chave.ao-vivo {
+  border-color: #ef4444;
+}
+
+.jogo-chave.ao-vivo .status {
+  color: #f87171;
+}
+
+.jogo-chave.encerrado {
+  border-color: #facc15;
+}
+
+.jogo-chave.encerrado .status {
+  color: #facc15;
+}
+
 @media (max-width: 700px) {
   .pagina-mata-mata {
     padding: 10px;
