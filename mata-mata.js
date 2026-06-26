@@ -1,10 +1,11 @@
-// VERSÃO 106 - Login persistente mata-mata
+// VERSÃO 107 - Login direto no mata-mata
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
 import {
   getAuth,
   onAuthStateChanged,
+  signInWithEmailAndPassword,
   setPersistence,
   browserLocalPersistence
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
@@ -799,20 +800,68 @@ function iniciarContagem() {
   }, 1000);
 }
 
+function configurarLoginMataMata() {
+  const loginBox = document.getElementById("loginMataMata");
+  const emailInput = document.getElementById("emailMataMata");
+  const senhaInput = document.getElementById("senhaMataMata");
+  const botaoEntrar = document.getElementById("btnEntrarMataMata");
+  const erro = document.getElementById("erroLoginMataMata");
+
+  if (!loginBox || !emailInput || !senhaInput || !botaoEntrar) return;
+
+  botaoEntrar.onclick = async () => {
+    erro.innerText = "";
+
+    const email = emailInput.value.trim();
+    const senha = senhaInput.value.trim();
+
+    if (!email || !senha) {
+      erro.innerText = "Preencha e-mail e senha.";
+      return;
+    }
+
+    botaoEntrar.disabled = true;
+    botaoEntrar.innerText = "Entrando...";
+
+    try {
+      await signInWithEmailAndPassword(auth, email, senha);
+    } catch (error) {
+      console.log("Erro login mata-mata:", error);
+      erro.innerText = "E-mail ou senha inválidos.";
+    } finally {
+      botaoEntrar.disabled = false;
+      botaoEntrar.innerText = "Entrar";
+    }
+  };
+}
+
+configurarLoginMataMata();
+
 onAuthStateChanged(auth, async (user) => {
+  const loginBox = document.getElementById("loginMataMata");
+
   iniciarProtecaoMobileMataMata();
 
   if (!user) {
     usuarioAtual = null;
     dadosUsuarioAtual = null;
 
-    await carregarMataMata();
+    if (loginBox) {
+      loginBox.classList.remove("escondido");
+    }
+
+    carregarChaveamento();
+    carregarProximoJogo();
     iniciarContagem();
 
     return;
   }
 
   usuarioAtual = user;
+
+  if (loginBox) {
+    loginBox.classList.add("escondido");
+  }
 
   const userSnap = await getDoc(doc(db, "users", user.uid));
 
