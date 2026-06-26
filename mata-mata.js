@@ -1,4 +1,4 @@
-// VERSÃO 101 - Mata-mata com Firebase e palpites
+// VERSÃO 102 - Mata-mata com Firebase e palpites
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -794,7 +794,13 @@ function iniciarContagem() {
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
-    window.location.href = "index.html";
+    usuarioAtual = null;
+    dadosUsuarioAtual = null;
+
+    carregarChaveamento();
+    carregarProximoJogo();
+    iniciarContagem();
+
     return;
   }
 
