@@ -253,6 +253,49 @@ body {
   color: #111827 !important;
 }
 
+.login-mata-mata {
+  max-width: 420px;
+  margin: 14px auto 18px;
+  background: #1e293b;
+  border: 1px solid #38bdf8;
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.login-mata-mata h3 {
+  margin: 0 0 10px;
+  color: #facc15;
+}
+
+.login-mata-mata input {
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+}
+
+.login-mata-mata button {
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  background: #22c55e;
+  color: #111827;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.login-mata-mata p {
+  color: #f87171;
+  font-weight: bold;
+  margin: 8px 0 0;
+}
+
+.escondido {
+  display: none;
+}
+
 @media (max-width: 700px) {
   .pagina-mata-mata {
     padding: 10px;
