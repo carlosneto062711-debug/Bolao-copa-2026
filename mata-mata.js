@@ -1,4 +1,4 @@
-// VERSÃO 112 - Corrige final do mata-mata
+// VERSÃO 113 - Corrige bloco do card mata-mata
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -609,20 +609,20 @@ function jogoAoVivoMataMata(jogo) {
 function criarCardJogoMataMata(jogo) {
   const div = document.createElement("div");
 
-const aoVivo = jogoAoVivoMataMata(jogo);
+  const aoVivo = jogoAoVivoMataMata(jogo);
 
-div.className = `jogo-chave ${jogo.fase}`;
+  div.className = `jogo-chave ${jogo.fase}`;
 
-if (aoVivo) {
-  div.classList.add("ao-vivo");
-}
+  if (aoVivo) {
+    div.classList.add("ao-vivo");
+  }
 
-if (jogo.status === "finished") {
-  div.classList.add("encerrado");
-}
+  if (jogo.status === "finished") {
+    div.classList.add("encerrado");
+  }
 
-const aberto = jogoLiberadoParaPalpite(jogo);
-const palpite = palpitesMataMata[jogo.id];
+  const aberto = jogoLiberadoParaPalpite(jogo);
+  const palpite = palpitesMataMata[jogo.id];
 
   const editCount = Number(palpite?.editCount || 0);
   const alteracoesRestantes = palpite ? Math.max(0, 2 - editCount) : 2;
@@ -630,17 +630,18 @@ const palpite = palpitesMataMata[jogo.id];
 
   let statusTexto = "Bloqueado";
 
-if (aberto) {
-  statusTexto = "Palpites abertos";
-}
+  if (aberto) {
+    statusTexto = "Palpites abertos";
+  }
 
-if (aoVivo) {
-  statusTexto = textoTempoDoJogoMataMata(jogo) || "JOGO EM ANDAMENTO";
-}
+  if (aoVivo) {
+    statusTexto = textoTempoDoJogoMataMata(jogo) || "JOGO EM ANDAMENTO";
+  }
 
-if (jogo.status === "finished") {
-  statusTexto = "ENCERRADO";
-}
+  if (jogo.status === "finished") {
+    statusTexto = "ENCERRADO";
+  }
+
   const areaPalpiteSalvo = palpite
     ? `
       <div class="palpite-salvo-mata">
@@ -653,16 +654,16 @@ if (jogo.status === "finished") {
   let areaAcao = "";
 
   if (!usuarioAtual && aberto) {
-  areaAcao = `<button disabled>Faça login para palpitar</button>`;
-if (jogo.status === "finished") {
-  areaAcao = `<button disabled>Encerrado</button>`;
-} else if (aoVivo) {
-  areaAcao = `<button disabled>Jogo em andamento</button>`;
-} else if (!aberto) {
-  areaAcao = `<button disabled>Bloqueado</button>`;
-} else if (travado) {
-  areaAcao = `<button disabled>Palpite travado</button>`;
-} else {
+    areaAcao = `<button disabled>Faça login para palpitar</button>`;
+  } else if (jogo.status === "finished") {
+    areaAcao = `<button disabled>Encerrado</button>`;
+  } else if (aoVivo) {
+    areaAcao = `<button disabled>Jogo em andamento</button>`;
+  } else if (!aberto) {
+    areaAcao = `<button disabled>Bloqueado</button>`;
+  } else if (travado) {
+    areaAcao = `<button disabled>Palpite travado</button>`;
+  } else {
     areaAcao = `
       <div class="form-palpite-mata">
         <div class="linha-palpite-mata">
