@@ -1,4 +1,4 @@
-// VERSÃO 108 - Corrige login mata-mata
+// VERSÃO 109 - Corrige apiKey Firebase
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -18,7 +18,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAQszm5MRBszfFXrrPxJH1cSoOoLYo5A6g",
+  apiKey: "AIzaSyAQszm5MRBszffXrrPxJHlcSoOoLYo5A6g",
   authDomain: "bolao-copa-2026-48fc2.firebaseapp.com",
   projectId: "bolao-copa-2026-48fc2",
   storageBucket: "bolao-copa-2026-48fc2.firebasestorage.app",
