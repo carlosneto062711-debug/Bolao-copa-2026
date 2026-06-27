@@ -1,4 +1,4 @@
-// VERSÃO 114 - Data real M101 + base segura para API mata-mata
+// VERSÃO 115 - Mata-mata lê matches do Firestore para times, placar e status
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -12,8 +12,10 @@ import {
 
 import {
   getFirestore,
+  collection,
   doc,
   getDoc,
+  getDocs,
   setDoc
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
@@ -444,6 +446,121 @@ function dataHoraAberturaPalpites(jogo) {
   return new Date(`${ano}-${mes}-${dia}T20:00:00`).getTime();
 }
 
+function normalizarNomeMataMata(nome) {
+  return String(nome || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase()
+    .trim();
+}
+
+function horarioCurtoMataMata(kickoff) {
+  return String(kickoff || "").slice(0, 16);
+}
+
+function partidaEhDoMataMata(match) {
+  if (!match) return false;
+
+  if (match.phase === "knockout") return true;
+  if (match.round === "round32") return true;
+  if (match.stage === "LAST_32") return true;
+  if (match.stage === "ROUND_OF_32") return true;
+  if (match.apiProvider === "football-data" && match.date >= "2026-06-28") {
+    return true;
+  }
+
+  return false;
+}
+
+function encontrarJogoFirestoreParaMataMata(jogoLocal, jogosFirestore) {
+  const dataLocal = jogoLocal.date;
+  const kickoffLocal = horarioCurtoMataMata(jogoLocal.kickoff);
+  const casaLocal = normalizarNomeMataMata(jogoLocal.homeTeam);
+  const foraLocal = normalizarNomeMataMata(jogoLocal.awayTeam);
+
+  return jogosFirestore.find((match) => {
+    if (!partidaEhDoMataMata(match)) return false;
+
+    if (
+      jogoLocal.apiMatchId &&
+      match.apiMatchId &&
+      Number(jogoLocal.apiMatchId) === Number(match.apiMatchId)
+    ) {
+      return true;
+    }
+
+    const mesmaDataHora =
+      match.date === dataLocal &&
+      horarioCurtoMataMata(match.kickoff) === kickoffLocal;
+
+    if (!mesmaDataHora) return false;
+
+    const casaMatch = normalizarNomeMataMata(match.homeTeam);
+    const foraMatch = normalizarNomeMataMata(match.awayTeam);
+
+    const localTemADefinir =
+      casaLocal.includes("A DEFINIR") ||
+      foraLocal.includes("A DEFINIR");
+
+    if (localTemADefinir) {
+      return true;
+    }
+
+    return casaLocal === casaMatch && foraLocal === foraMatch;
+  });
+}
+
+async function atualizarMataMataPorMatchesFirestore() {
+  try {
+    const snapshot = await getDocs(collection(db, "matches"));
+
+    const jogosFirestore = snapshot.docs.map((documento) => ({
+      firestoreId: documento.id,
+      ...documento.data()
+    }));
+
+    let atualizados = 0;
+
+    jogosMataMata.forEach((jogoLocal) => {
+      const match = encontrarJogoFirestoreParaMataMata(jogoLocal, jogosFirestore);
+
+      if (!match) return;
+
+      jogoLocal.firestoreMatchId = match.firestoreId;
+      jogoLocal.apiMatchId = match.apiMatchId || jogoLocal.apiMatchId || null;
+      jogoLocal.apiStatus = match.apiStatus || jogoLocal.apiStatus || null;
+
+      if (match.homeTeam) jogoLocal.homeTeam = match.homeTeam;
+      if (match.awayTeam) jogoLocal.awayTeam = match.awayTeam;
+
+      if (match.date) jogoLocal.date = match.date;
+      if (match.kickoff) jogoLocal.kickoff = match.kickoff;
+
+      if (match.status) jogoLocal.status = match.status;
+
+      if (match.homeScore !== undefined && match.homeScore !== null) {
+        jogoLocal.homeScore = Number(match.homeScore);
+      }
+
+      if (match.awayScore !== undefined && match.awayScore !== null) {
+        jogoLocal.awayScore = Number(match.awayScore);
+      }
+
+      if (match.finishedAt) {
+        jogoLocal.finishedAt = match.finishedAt;
+      }
+
+      atualizados++;
+    });
+
+    if (atualizados > 0) {
+      console.log(`Mata-mata atualizado por matches: ${atualizados} jogo(s).`);
+    }
+  } catch (error) {
+    console.warn("Não foi possível atualizar mata-mata por matches. Mantendo manual.", error);
+  }
+}
+
 function jogoLiberadoParaPalpite(jogo) {
   if (jogo.status !== "scheduled") return false;
 
@@ -570,9 +687,9 @@ function textoTempoDoJogoMataMata(jogo) {
   }
 
   if (jogo.apiStatus === "PAUSED") {
-    return "JOGO PAUSADO";
-  }
-
+  return "INTERVALO";
+}
+  
   if (jogo.apiStatus === "SUSPENDED") {
     return "SUSPENSO";
   }
@@ -642,6 +759,24 @@ function criarCardJogoMataMata(jogo) {
     statusTexto = "ENCERRADO";
   }
 
+  if (jogo.apiStatus === "SUSPENDED") {
+  statusTexto = "SUSPENSO";
+}
+
+  const temPlacarOficial =
+  jogo.homeScore !== undefined &&
+  jogo.homeScore !== null &&
+  jogo.awayScore !== undefined &&
+  jogo.awayScore !== null;
+
+const placarOficial = temPlacarOficial
+  ? `
+    <div class="placar-oficial-mata">
+      Placar: <strong>${jogo.homeScore} x ${jogo.awayScore}</strong>
+    </div>
+  `
+  : "";
+
   const areaPalpiteSalvo = palpite
     ? `
       <div class="palpite-salvo-mata">
@@ -700,7 +835,9 @@ function criarCardJogoMataMata(jogo) {
 
     <div class="status">${statusTexto}</div>
 
-    ${areaPalpiteSalvo}
+${placarOficial}
+
+${areaPalpiteSalvo}
 
     ${areaAcao}
   `;
@@ -740,8 +877,6 @@ function criarColuna(titulo, jogos, ladoClasse) {
 }
 
 async function carregarMataMata() {
-  await carregarPalpitesMataMata();
-
   if (
     window.usuarioSalvandoPalpiteMataMata ||
     window.usuarioInteragindoMataMata ||
@@ -759,25 +894,27 @@ async function carregarMataMata() {
   carregamentoMataMataEmAndamento = true;
 
   try {
+    await atualizarMataMataPorMatchesFirestore();
+    await carregarPalpitesMataMata();
     carregarChaveamento();
     carregarProximoJogo();
   } catch (error) {
     console.log("Erro ao carregar mata-mata:", error);
   } finally {
     carregamentoMataMataEmAndamento = false;
+  }
 
-    if (
-      carregamentoMataMataPendente &&
-      !window.usuarioSalvandoPalpiteMataMata &&
-      !window.usuarioInteragindoMataMata &&
-      Date.now() >= window.ignorarAtualizacaoMataMataAte
-    ) {
-      carregamentoMataMataPendente = false;
+  if (
+    carregamentoMataMataPendente &&
+    !window.usuarioSalvandoPalpiteMataMata &&
+    !window.usuarioInteragindoMataMata &&
+    Date.now() >= window.ignorarAtualizacaoMataMataAte
+  ) {
+    carregamentoMataMataPendente = false;
 
-      setTimeout(() => {
-        carregarMataMata();
-      }, 1000);
-    }
+    setTimeout(() => {
+      carregarMataMata();
+    }, 1000);
   }
 }
 
