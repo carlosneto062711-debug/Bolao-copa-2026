@@ -1,4 +1,4 @@
-// VERSÃO 95
+// VERSÃO 96
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -1781,6 +1781,68 @@ function formatarDataBR(dataISO) {
   return `${dia}/${mes}/${ano}`;
 }
 
+function chaveMataMataPorHorario(jogo) {
+  return `${jogo.date}_${String(jogo.kickoff || "").slice(11, 16)}`;
+}
+
+function idMataMataPorJogoPrincipal(jogo) {
+  if (jogo.knockoutMatchId) return jogo.knockoutMatchId;
+
+  const mapa = {
+    "2026-06-28_16:00": "M101",
+    "2026-06-29_14:00": "M102",
+    "2026-06-29_17:30": "M103",
+    "2026-06-29_22:00": "M104",
+    "2026-06-30_14:00": "M105",
+    "2026-06-30_18:00": "M106",
+    "2026-06-30_22:00": "M107",
+    "2026-07-01_13:00": "M108",
+    "2026-07-01_17:00": "M109",
+    "2026-07-01_21:00": "M110",
+    "2026-07-02_16:00": "M111",
+    "2026-07-02_20:00": "M112",
+    "2026-07-03_00:00": "M113",
+    "2026-07-03_15:00": "M114",
+    "2026-07-03_19:00": "M115",
+    "2026-07-03_22:30": "M116",
+
+    "2026-07-04_14:00": "Oesquerdo1",
+    "2026-07-04_18:00": "Odireito1",
+    "2026-07-05_17:00": "Oesquerdo2",
+    "2026-07-05_21:00": "Odireito2",
+    "2026-07-06_16:00": "Oesquerdo3",
+    "2026-07-06_21:00": "Odireito3",
+    "2026-07-07_13:00": "Oesquerdo4",
+    "2026-07-07_17:00": "Odireito4",
+
+    "2026-07-09_17:00": "Qesquerdo1",
+    "2026-07-10_16:00": "Qdireito1",
+    "2026-07-11_18:00": "Qesquerdo2",
+    "2026-07-11_22:00": "Qdireito2",
+
+    "2026-07-14_16:00": "S1",
+    "2026-07-15_16:00": "S2",
+    "2026-07-18_18:00": "T3",
+    "2026-07-19_16:00": "FINAL"
+  };
+
+  return mapa[chaveMataMataPorHorario(jogo)] || null;
+}
+
+function jogoEhMataMataPrincipal(jogo) {
+  return Boolean(idMataMataPorJogoPrincipal(jogo));
+}
+
+function urlMataMataParaJogoPrincipal(jogo) {
+  const idMataMata = idMataMataPorJogoPrincipal(jogo);
+
+  if (!idMataMata) {
+    return "mata-mata.html";
+  }
+
+  return `mata-mata.html?jogo=${encodeURIComponent(idMataMata)}`;
+}
+
 async function carregarJogosAmanha(dataEscolhida = dataSelecionadaJogosAmanha) {
   const jogosAmanhaDiv = document.getElementById("jogosAmanha");
   jogosAmanhaDiv.innerHTML = "";
@@ -1905,42 +1967,48 @@ async function carregarJogosAmanha(dataEscolhida = dataSelecionadaJogosAmanha) {
         ? "jogo-mini jogo-mini-palpitar"
         : "jogo-mini";
 
-      item.innerHTML = `
-        <span>${formatarHora(jogo.kickoff)}</span>
-        <strong>${jogo.homeTeam} x ${jogo.awayTeam}</strong>
-        <span class="${abertoParaPalpite ? "status-palpitar" : "status-fechado"}">
-          ${abertoParaPalpite ? "Palpitar" : "Bloqueado"}
-        </span>
-      `;
+      const ehMataMata = jogoEhMataMataPrincipal(jogo);
+const textoAcao = abertoParaPalpite
+  ? (ehMataMata ? "Palpitar no mata-mata" : "Palpitar")
+  : "Bloqueado";
 
-      if (abertoParaPalpite) {
-        item.addEventListener("click", async () => {
-          window.usuarioMexendoEmJogosSeguintes = true;
+item.innerHTML = `
+  ${formatarHora(jogo.kickoff)}
+  ${jogo.homeTeam} x ${jogo.awayTeam}
+  ${textoAcao}
+`;
+      
+     if (abertoParaPalpite) {
+  item.addEventListener("click", async () => {
+    if (jogoEhMataMataPrincipal(jogo)) {
+      window.location.href = urlMataMataParaJogoPrincipal(jogo);
+      return;
+    }
 
-          const container = document.createElement("div");
+    window.usuarioMexendoEmJogosSeguintes = true;
 
-          const botaoVoltarCard = document.createElement("button");
-          botaoVoltarCard.innerText = "Voltar aos jogos";
-          botaoVoltarCard.className = "btn-voltar-card-palpite";
+    const container = document.createElement("div");
+    const botaoVoltarCard = document.createElement("button");
+    botaoVoltarCard.innerText = "Voltar aos jogos";
+    botaoVoltarCard.className = "btn-voltar-card-palpite";
+    botaoVoltarCard.onclick = () => {
+      window.usuarioMexendoEmJogosSeguintes = false;
+      window.cardAbertoJogosSeguintes = null;
+      window.jogoAbertoJogosSeguintes = null;
+      carregarJogosAmanha(dataParaMostrar);
+    };
 
-botaoVoltarCard.onclick = () => {
-  window.usuarioMexendoEmJogosSeguintes = false;
-  window.cardAbertoJogosSeguintes = null;
-  window.jogoAbertoJogosSeguintes = null;
-  carregarJogosAmanha(dataParaMostrar);
-};
+    const card = await criarCardJogo(jogo, true);
 
-         const card = await criarCardJogo(jogo, true);
+    container.appendChild(botaoVoltarCard);
+    container.appendChild(card);
 
-container.appendChild(botaoVoltarCard);
-container.appendChild(card);
+    item.replaceWith(container);
 
-item.replaceWith(container);
-
-window.cardAbertoJogosSeguintes = container;
-window.jogoAbertoJogosSeguintes = jogo;
-        });
-      }
+    window.cardAbertoJogosSeguintes = container;
+    window.jogoAbertoJogosSeguintes = jogo;
+  });
+}
 
       jogosAmanhaDiv.appendChild(item);
     }
