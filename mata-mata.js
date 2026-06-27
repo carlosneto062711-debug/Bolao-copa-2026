@@ -1,4 +1,4 @@
-// VERSÃO 116 - Corrige bandeiras e mantém M101 manual como garantia
+// VERSÃO 117 - Corrige casamento dos jogos do mata-mata com matches
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -511,27 +511,107 @@ function bandeiraPorTimeMataMata(nome) {
   return bandeiras[time] || "🏳️";
 }
 
-function horarioCurtoMataMata(kickoff) {
-  return String(kickoff || "").slice(0, 16);
+function dataCurtaMataMata(valor) {
+  if (!valor) return "";
+
+  if (typeof valor?.toDate === "function") {
+    return valor.toDate().toISOString().slice(0, 10);
+  }
+
+  const texto = String(valor);
+
+  if (/^\d{4}-\d{2}-\d{2}/.test(texto)) {
+    return texto.slice(0, 10);
+  }
+
+  return "";
+}
+
+function horaCurtaMataMata(valor) {
+  if (!valor) return "";
+
+  if (typeof valor?.toDate === "function") {
+    return valor
+      .toDate()
+      .toLocaleTimeString("pt-BR", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+        timeZone: "America/Sao_Paulo"
+      });
+  }
+
+  const texto = String(valor);
+
+  const matchHoraIso = texto.match(/T(\d{2}:\d{2})/);
+  if (matchHoraIso) return matchHoraIso[1];
+
+  const matchHoraSolta = texto.match(/^(\d{2}:\d{2})/);
+  if (matchHoraSolta) return matchHoraSolta[1];
+
+  return "";
+}
+
+function nomeCasaMatchMataMata(match) {
+  return (
+    match.homeTeam ||
+    match.home ||
+    match.homeName ||
+    match.home_team ||
+    match.homeTeamName ||
+    ""
+  );
+}
+
+function nomeForaMatchMataMata(match) {
+  return (
+    match.awayTeam ||
+    match.away ||
+    match.awayName ||
+    match.away_team ||
+    match.awayTeamName ||
+    ""
+  );
+}
+
+function dataMatchMataMata(match) {
+  return (
+    match.date ||
+    match.matchDate ||
+    dataCurtaMataMata(match.kickoff) ||
+    dataCurtaMataMata(match.utcDate) ||
+    ""
+  );
+}
+
+function horaMatchMataMata(match) {
+  return (
+    horaCurtaMataMata(match.kickoff) ||
+    horaCurtaMataMata(match.utcDate) ||
+    horaCurtaMataMata(match.time) ||
+    ""
+  );
 }
 
 function partidaEhDoMataMata(match) {
   if (!match) return false;
 
+  const data = dataMatchMataMata(match);
+
   if (match.phase === "knockout") return true;
   if (match.round === "round32") return true;
   if (match.stage === "LAST_32") return true;
   if (match.stage === "ROUND_OF_32") return true;
-  if (match.apiProvider === "football-data" && match.date >= "2026-06-28") {
-    return true;
-  }
+
+  if (data >= "2026-06-28") return true;
 
   return false;
 }
 
 function encontrarJogoFirestoreParaMataMata(jogoLocal, jogosFirestore) {
   const dataLocal = jogoLocal.date;
-  const kickoffLocal = horarioCurtoMataMata(jogoLocal.kickoff);
+  const horaLocal = horaCurtaMataMata(jogoLocal.kickoff);
+
   const casaLocal = normalizarNomeMataMata(jogoLocal.homeTeam);
   const foraLocal = normalizarNomeMataMata(jogoLocal.awayTeam);
 
@@ -546,24 +626,43 @@ function encontrarJogoFirestoreParaMataMata(jogoLocal, jogosFirestore) {
       return true;
     }
 
+    const dataMatch = dataMatchMataMata(match);
+    const horaMatch = horaMatchMataMata(match);
+
     const mesmaDataHora =
-      match.date === dataLocal &&
-      horarioCurtoMataMata(match.kickoff) === kickoffLocal;
+      dataMatch === dataLocal &&
+      horaMatch === horaLocal;
 
-    if (!mesmaDataHora) return false;
-
-    const casaMatch = normalizarNomeMataMata(match.homeTeam);
-    const foraMatch = normalizarNomeMataMata(match.awayTeam);
+    const casaMatch = normalizarNomeMataMata(nomeCasaMatchMataMata(match));
+    const foraMatch = normalizarNomeMataMata(nomeForaMatchMataMata(match));
 
     const localTemADefinir =
       casaLocal.includes("A DEFINIR") ||
       foraLocal.includes("A DEFINIR");
 
-    if (localTemADefinir) {
+    if (mesmaDataHora && localTemADefinir) {
       return true;
     }
 
-    return casaLocal === casaMatch && foraLocal === foraMatch;
+    if (
+      mesmaDataHora &&
+      casaLocal === casaMatch &&
+      foraLocal === foraMatch
+    ) {
+      return true;
+    }
+
+    const algumTimeBate =
+      (casaLocal && casaLocal === casaMatch) ||
+      (casaLocal && casaLocal === foraMatch) ||
+      (foraLocal && foraLocal === casaMatch) ||
+      (foraLocal && foraLocal === foraMatch);
+
+    if (dataMatch === dataLocal && algumTimeBate) {
+      return true;
+    }
+
+    return false;
   });
 }
 
@@ -577,7 +676,35 @@ async function atualizarMataMataPorMatchesFirestore() {
     }));
 
     console.log("Jogos encontrados em matches:", jogosFirestore.length);
-console.log("Primeiros matches:", jogosFirestore.slice(0, 5));
+    console.log("Primeiros matches:", jogosFirestore.slice(0, 5));
+
+    const jogosPossiveisMataMata = jogosFirestore.filter((match) => {
+  const data =
+    match.date ||
+    String(match.kickoff || "").slice(0, 10) ||
+    String(match.utcDate || "").slice(0, 10) ||
+    "";
+
+  return data >= "2026-06-28";
+});
+
+console.log(
+  "Possíveis jogos do mata-mata em matches:",
+  jogosPossiveisMataMata.map((match) => ({
+    id: match.firestoreId,
+    apiMatchId: match.apiMatchId,
+    date: match.date,
+    kickoff: match.kickoff,
+    utcDate: match.utcDate,
+    homeTeam: match.homeTeam,
+    awayTeam: match.awayTeam,
+    status: match.status,
+    apiStatus: match.apiStatus,
+    stage: match.stage,
+    round: match.round,
+    phase: match.phase
+  }))
+);
 
     let atualizados = 0;
 
@@ -585,8 +712,8 @@ console.log("Primeiros matches:", jogosFirestore.slice(0, 5));
       const match = encontrarJogoFirestoreParaMataMata(jogoLocal, jogosFirestore);
 
       if (jogoLocal.id === "M101") {
-  console.log("Match encontrado para M101:", match);
-}
+        console.log("Match encontrado para M101:", match);
+      }
 
       if (!match) return;
 
@@ -594,20 +721,32 @@ console.log("Primeiros matches:", jogosFirestore.slice(0, 5));
       jogoLocal.apiMatchId = match.apiMatchId || jogoLocal.apiMatchId || null;
       jogoLocal.apiStatus = match.apiStatus || jogoLocal.apiStatus || null;
 
-     if (match.homeTeam) {
-  jogoLocal.homeTeam = match.homeTeam;
-  jogoLocal.homeFlag = bandeiraPorTimeMataMata(match.homeTeam);
-}
+      const homeTeamMatch = nomeCasaMatchMataMata(match);
+      const awayTeamMatch = nomeForaMatchMataMata(match);
 
-if (match.awayTeam) {
-  jogoLocal.awayTeam = match.awayTeam;
-  jogoLocal.awayFlag = bandeiraPorTimeMataMata(match.awayTeam);
-}
+      if (homeTeamMatch) {
+        jogoLocal.homeTeam = homeTeamMatch;
+        jogoLocal.homeFlag = bandeiraPorTimeMataMata(homeTeamMatch);
+      }
 
-      if (match.date) jogoLocal.date = match.date;
-      if (match.kickoff) jogoLocal.kickoff = match.kickoff;
+      if (awayTeamMatch) {
+        jogoLocal.awayTeam = awayTeamMatch;
+        jogoLocal.awayFlag = bandeiraPorTimeMataMata(awayTeamMatch);
+      }
+
+      const dataMatch = dataMatchMataMata(match);
+      const horaMatch = horaMatchMataMata(match);
+
+      if (dataMatch) {
+        jogoLocal.date = dataMatch;
+      }
+
+      if (dataMatch && horaMatch) {
+        jogoLocal.kickoff = `${dataMatch}T${horaMatch}:00`;
+      }
 
       if (match.status) jogoLocal.status = match.status;
+      if (match.apiStatus) jogoLocal.apiStatus = match.apiStatus;
 
       if (match.homeScore !== undefined && match.homeScore !== null) {
         jogoLocal.homeScore = Number(match.homeScore);
