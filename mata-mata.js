@@ -1,4 +1,4 @@
-// VERSÃO 113 - Corrige bloco do card mata-mata
+// VERSÃO 114 - Data real M101 + base segura para API mata-mata
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -102,8 +102,8 @@ const jogosMataMata = [
     awayTeam: "Canadá",
     homeFlag: "🛡️",
     awayFlag: "🇨🇦",
-    date: "2026-06-26",
-kickoff: "2026-06-26T23:59:00",
+    date: "2026-06-28",
+kickoff: "2026-06-28T16:00:00",
     status: "scheduled"
   },
   {
