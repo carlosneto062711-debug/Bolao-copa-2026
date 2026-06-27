@@ -1,4 +1,4 @@
-// VERSÃO 94
+// VERSÃO 95
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -415,6 +415,13 @@ function dataHojeEAmanhaParaApi() {
   };
 }
 
+function periodoMataMataParaApi() {
+  return {
+    inicio: "2026-06-28",
+    fim: "2026-07-19"
+  };
+}
+
 async function existeJogoAtivoOuProximo() {
   const snap = await getDocs(collection(db, "matches"));
   const agora = Date.now();
@@ -459,13 +466,21 @@ async function sincronizarApiAutomaticamente(mostrarLog = true) {
   try {
     const periodo = dataHojeEAmanhaParaApi();
 
-    if (mostrarLog) {
-      console.log(`Sincronização automática: ${periodo.hoje} até ${periodo.amanha}`);
-    }
+if (mostrarLog) {
+  console.log(`Sincronização automática: ${periodo.hoje} até ${periodo.amanha}`);
+}
 
-    await sincronizarFootballDataPeriodo(periodo.hoje, periodo.amanha);
+await sincronizarFootballDataPeriodo(periodo.hoje, periodo.amanha);
 
-    await recalcularRankingPorPalpites();
+const periodoMataMata = periodoMataMataParaApi();
+
+if (mostrarLog) {
+  console.log(
+    `Sincronização mata-mata: ${periodoMataMata.inicio} até ${periodoMataMata.fim}`
+  );
+}
+
+await sincronizarFootballDataPeriodo(periodoMataMata.inicio, periodoMataMata.fim);
 
 await recalcularRankingPorPalpites();
 
