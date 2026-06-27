@@ -1,4 +1,4 @@
-// VERSÃO 117 - Corrige casamento dos jogos do mata-mata com matches
+// VERSÃO 118 - Palpite mata-mata com dados completos e link direto para jogo
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -843,26 +843,36 @@ async function salvarPalpiteMataMata(jogo, homeGuess, awayGuess, botao) {
       : 0;
 
     const palpite = {
-      userId: usuarioAtual.uid,
-      userName: dadosUsuarioAtual?.nome || usuarioAtual.email,
-      matchId: jogo.id,
+  userId: usuarioAtual.uid,
+  userName: dadosUsuarioAtual?.nome || usuarioAtual.email || "Usuário",
 
-      phase: "knockout",
-      round: jogo.fase,
+  matchId: jogo.id,
+  knockoutMatchId: jogo.id,
+  phase: "knockout",
+  round: jogo.fase,
 
-      homeTeam: jogo.homeTeam,
-      awayTeam: jogo.awayTeam,
-      homeGuess: homeNumber,
-      awayGuess: awayNumber,
+  firestoreMatchId: jogo.firestoreMatchId || null,
+  apiMatchId: jogo.apiMatchId || null,
 
-      editCount: novoEditCount,
-      locked: novoEditCount >= 2,
+  date: jogo.date,
+  kickoff: jogo.kickoff,
 
-      points: palpiteExistente?.points || 0,
+  homeTeam: jogo.homeTeam,
+  awayTeam: jogo.awayTeam,
+  homeFlag: jogo.homeFlag || "",
+  awayFlag: jogo.awayFlag || "",
 
-      createdAt: palpiteExistente?.createdAt || new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
+  homeGuess: homeNumber,
+  awayGuess: awayNumber,
+
+  editCount: novoEditCount,
+  locked: novoEditCount >= 2,
+
+  points: Number(palpiteExistente?.points || 0),
+
+  createdAt: palpiteExistente?.createdAt || new Date().toISOString(),
+  updatedAt: new Date().toISOString()
+};
 
     await setDoc(doc(db, "predictions", palpiteId), palpite, { merge: true });
 
@@ -939,6 +949,7 @@ function criarCardJogoMataMata(jogo) {
   const aoVivo = jogoAoVivoMataMata(jogo);
 
   div.className = `jogo-chave ${jogo.fase}`;
+  div.id = `jogo-${jogo.id}`;
 
   if (aoVivo) {
     div.classList.add("ao-vivo");
@@ -1107,7 +1118,8 @@ async function carregarMataMata() {
     await atualizarMataMataPorMatchesFirestore();
     await carregarPalpitesMataMata();
     carregarChaveamento();
-    carregarProximoJogo();
+carregarProximoJogo();
+rolarParaJogoMataMataDaUrl();
   } catch (error) {
     console.log("Erro ao carregar mata-mata:", error);
   } finally {
@@ -1126,6 +1138,30 @@ async function carregarMataMata() {
       carregarMataMata();
     }, 1000);
   }
+}
+
+function rolarParaJogoMataMataDaUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const jogoId = params.get("jogo");
+
+  if (!jogoId) return;
+
+  setTimeout(() => {
+    const card = document.getElementById(`jogo-${jogoId}`);
+
+    if (!card) return;
+
+    card.scrollIntoView({
+      behavior: "smooth",
+      block: "center"
+    });
+
+    card.classList.add("destaque-jogo-url");
+
+    setTimeout(() => {
+      card.classList.remove("destaque-jogo-url");
+    }, 3000);
+  }, 800);
 }
 
 function carregarChaveamento() {
