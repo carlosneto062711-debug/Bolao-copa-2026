@@ -1,4 +1,4 @@
-// VERSÃO 115 - Mata-mata lê matches do Firestore para times, placar e status
+// VERSÃO 116 - Bandeiras automáticas no mata-mata por matches
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -454,6 +454,63 @@ function normalizarNomeMataMata(nome) {
     .trim();
 }
 
+function bandeiraPorTimeMataMata(nome) {
+  const time = normalizarNomeMataMata(nome);
+
+  const bandeiras = {
+    "AFRICA DO SUL": "🇿🇦",
+    "CANADA": "🇨🇦",
+    "BRASIL": "🇧🇷",
+    "ALEMANHA": "🇩🇪",
+    "MARROCOS": "🇲🇦",
+    "MEXICO": "🇲🇽",
+    "ESTADOS UNIDOS": "🇺🇸",
+    "SUICA": "🇨🇭",
+    "ARGENTINA": "🇦🇷",
+    "COREIA DO SUL": "🇰🇷",
+    "TCHEQUIA": "🇨🇿",
+    "BOSNIA-HERZEGOVINA": "🇧🇦",
+    "QATAR": "🇶🇦",
+    "HAITI": "🇭🇹",
+    "ESCOCIA": "🏴󠁧󠁢󠁳󠁣󠁴󠁿",
+    "AUSTRALIA": "🇦🇺",
+    "TURQUIA": "🇹🇷",
+    "PARAGUAI": "🇵🇾",
+    "CURACAU": "🇨🇼",
+    "COSTA DO MARFIM": "🇨🇮",
+    "EQUADOR": "🇪🇨",
+    "HOLANDA": "🇳🇱",
+    "SUECIA": "🇸🇪",
+    "TUNISIA": "🇹🇳",
+    "JAPAO": "🇯🇵",
+    "BELGICA": "🇧🇪",
+    "EGITO": "🇪🇬",
+    "IRA": "🇮🇷",
+    "NOVA ZELANDIA": "🇳🇿",
+    "ESPANHA": "🇪🇸",
+    "CABO VERDE": "🇨🇻",
+    "ARABIA SAUDITA": "🇸🇦",
+    "URUGUAI": "🇺🇾",
+    "FRANCA": "🇫🇷",
+    "SENEGAL": "🇸🇳",
+    "IRAQUE": "🇮🇶",
+    "NORUEGA": "🇳🇴",
+    "ARGELIA": "🇩🇿",
+    "AUSTRIA": "🇦🇹",
+    "JORDANIA": "🇯🇴",
+    "PORTUGAL": "🇵🇹",
+    "CONGO DR": "🇨🇩",
+    "UZBEQUISTAO": "🇺🇿",
+    "COLOMBIA": "🇨🇴",
+    "INGLATERRA": "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
+    "CROACIA": "🇭🇷",
+    "GANA": "🇬🇭",
+    "PANAMA": "🇵🇦"
+  };
+
+  return bandeiras[time] || "🏳️";
+}
+
 function horarioCurtoMataMata(kickoff) {
   return String(kickoff || "").slice(0, 16);
 }
@@ -530,8 +587,15 @@ async function atualizarMataMataPorMatchesFirestore() {
       jogoLocal.apiMatchId = match.apiMatchId || jogoLocal.apiMatchId || null;
       jogoLocal.apiStatus = match.apiStatus || jogoLocal.apiStatus || null;
 
-      if (match.homeTeam) jogoLocal.homeTeam = match.homeTeam;
-      if (match.awayTeam) jogoLocal.awayTeam = match.awayTeam;
+     if (match.homeTeam) {
+  jogoLocal.homeTeam = match.homeTeam;
+  jogoLocal.homeFlag = bandeiraPorTimeMataMata(match.homeTeam);
+}
+
+if (match.awayTeam) {
+  jogoLocal.awayTeam = match.awayTeam;
+  jogoLocal.awayFlag = bandeiraPorTimeMataMata(match.awayTeam);
+}
 
       if (match.date) jogoLocal.date = match.date;
       if (match.kickoff) jogoLocal.kickoff = match.kickoff;
