@@ -1,4 +1,4 @@
-// VERSÃO 116 - Bandeiras automáticas no mata-mata por matches
+// VERSÃO 116 - Corrige bandeiras e mantém M101 manual como garantia
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -96,18 +96,18 @@ function iniciarProtecaoMobileMataMata() {
 const jogosMataMata = [
   // LADO ESQUERDO - Segunda rodada / 32 seleções
   {
-    id: "M101",
-    lado: "esquerdo",
-    fase: "round32",
-    codigo: "M101",
-    homeTeam: "A definir",
-    awayTeam: "Canadá",
-    homeFlag: "🛡️",
-    awayFlag: "🇨🇦",
-    date: "2026-06-28",
-kickoff: "2026-06-28T16:00:00",
-    status: "scheduled"
-  },
+  id: "M101",
+  lado: "esquerdo",
+  fase: "round32",
+  codigo: "M101",
+  homeTeam: "ÁFRICA DO SUL",
+  awayTeam: "CANADÁ",
+  homeFlag: "🇿🇦",
+  awayFlag: "🇨🇦",
+  date: "2026-06-28",
+  kickoff: "2026-06-28T16:00:00",
+  status: "scheduled"
+},
   {
     id: "M102",
     lado: "esquerdo",
@@ -576,10 +576,17 @@ async function atualizarMataMataPorMatchesFirestore() {
       ...documento.data()
     }));
 
+    console.log("Jogos encontrados em matches:", jogosFirestore.length);
+console.log("Primeiros matches:", jogosFirestore.slice(0, 5));
+
     let atualizados = 0;
 
     jogosMataMata.forEach((jogoLocal) => {
       const match = encontrarJogoFirestoreParaMataMata(jogoLocal, jogosFirestore);
+
+      if (jogoLocal.id === "M101") {
+  console.log("Match encontrado para M101:", match);
+}
 
       if (!match) return;
 
