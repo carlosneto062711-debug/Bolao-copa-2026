@@ -1,4 +1,4 @@
-// VERSÃO 100
+// VERSÃO 101
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -482,7 +482,7 @@ if (mostrarLog) {
 
 await sincronizarFootballDataPeriodo(periodoMataMata.inicio, periodoMataMata.fim);
 
-await atualizarPontuacaoMataMata();
+// await atualizarPontuacaoMataMata();
 
 await recalcularRankingPorPalpites();
     
@@ -2371,6 +2371,65 @@ async function atualizarCardDepoisDoPalpite(card, jogo) {
 async function criarCardJogo(jogo, rodadaAberta) {
   const div = document.createElement("div");
   div.className = "jogo";
+
+    const ehMataMata = jogoEhMataMataPrincipal(jogo);
+
+  if (ehMataMata) {
+    const inicio = new Date(jogo.kickoff).getTime();
+    const agora = Date.now();
+
+    const jogoFinalizado = jogo.status === "finished";
+    const jogoAoVivo =
+      jogo.status === "live" ||
+      (agora >= inicio && !jogoFinalizado);
+
+    const jogoSeguro = jogoPrincipalComDadosSeguros(jogo);
+
+    const cardMataMata = document.createElement("div");
+    cardMataMata.className = "card-jogo card-mata-mata-principal";
+
+    let areaStatus = `
+      <a class="btn-palpitar-mata-mata-principal" href="${urlMataMataParaJogoPrincipal(jogo)}">
+        Palpitar no mata-mata
+      </a>
+    `;
+
+    if (jogoAoVivo) {
+      areaStatus = `
+        <div class="linha-resultado-real">
+          Placar atual: ${jogo.homeScore ?? 0} x ${jogo.awayScore ?? 0}
+        </div>
+        <span class="badge ao-vivo">${htmlTempoJogoDinamico(jogo)}</span>
+      `;
+    }
+
+    if (jogoFinalizado) {
+      areaStatus = `
+        <div class="linha-resultado-real">
+          Resultado final: ${jogo.homeScore ?? 0} x ${jogo.awayScore ?? 0}
+        </div>
+        <span class="badge finalizado">Encerrado</span>
+      `;
+    }
+
+    cardMataMata.innerHTML = `
+      <div class="linha-times-card">
+        <strong>${nomeSeguroJogoPrincipal(jogoSeguro.homeTeam)}</strong>
+        <span>x</span>
+        <strong>${nomeSeguroJogoPrincipal(jogoSeguro.awayTeam)}</strong>
+      </div>
+
+      <div class="data">
+        ${formatarHora(jogo.kickoff)}
+      </div>
+
+      <p>Este jogo pertence ao mata-mata.</p>
+
+      ${areaStatus}
+    `;
+
+    return cardMataMata;
+  }
 
   const palpiteId = `${usuarioAtual.uid}_${jogo.id}`;
   const palpiteRef = doc(db, "predictions", palpiteId);
