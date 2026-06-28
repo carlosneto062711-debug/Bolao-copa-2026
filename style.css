@@ -666,6 +666,7 @@ input {
   border: 1px solid #22c55e;
   padding: 14px;
   border-radius: 10px;
+  background: #0f172a;
 }
 
 .card-mata-mata-topo {
@@ -692,4 +693,63 @@ input {
   padding: 12px;
   border-radius: 8px;
   text-decoration: none;
+}
+
+.placar-mata-principal {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 12px 0;
+}
+
+.placar-mata-principal span {
+  flex: 1;
+  font-weight: 800;
+}
+
+.placar-mata-principal span:last-child {
+  text-align: right;
+}
+
+.placar-mata-principal strong {
+  font-size: 28px;
+  color: #22c55e;
+  white-space: nowrap;
+}
+
+.status-live-principal {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #dc2626;
+  color: white;
+  font-weight: 900;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+}
+
+.bolinha-live {
+  width: 8px;
+  height: 8px;
+  background: white;
+  border-radius: 50%;
+  animation: piscarLive 1s infinite;
+}
+
+@keyframes piscarLive {
+  0% { opacity: 1; transform: scale(1); }
+  50% { opacity: .5; transform: scale(1.4); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.status-encerrado-principal {
+  display: inline-block;
+  background: #4b5563;
+  color: white;
+  font-weight: 900;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
 }
