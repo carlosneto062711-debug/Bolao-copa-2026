@@ -1,4 +1,4 @@
-// VERSÃO 103
+// VERSÃO 104
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -464,13 +464,14 @@ async function sincronizarApiAutomaticamente(mostrarLog = true) {
   sincronizacaoApiRodando = true;
 
   try {
-    const periodo = dataHojeEAmanhaParaApi();
+    const inicioPeriodoAtual = adicionarDiasISO(hojeISO(), -1);
+const fimPeriodoAtual = adicionarDiasISO(hojeISO(), 1);
 
 if (mostrarLog) {
-  console.log(`Sincronização automática: ${periodo.hoje} até ${periodo.amanha}`);
+  console.log(`Sincronização automática: ${inicioPeriodoAtual} até ${fimPeriodoAtual}`);
 }
 
-await sincronizarFootballDataPeriodo(periodo.hoje, periodo.amanha);
+await sincronizarFootballDataPeriodo(inicioPeriodoAtual, fimPeriodoAtual);
 
 const periodoMataMata = periodoMataMataParaApi();
 
