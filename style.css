@@ -661,3 +661,24 @@ input {
     margin-left: 0 !important;
   }
 }
+
+.card-mata-mata-principal {
+  border: 1px solid #22c55e;
+}
+
+.btn-palpitar-mata-mata-principal {
+  display: block;
+  width: 100%;
+  text-align: center;
+  background: #22c55e;
+  color: #07111f;
+  font-weight: 800;
+  padding: 12px;
+  border-radius: 8px;
+  text-decoration: none;
+  margin-top: 12px;
+}
+
+.btn-palpitar-mata-mata-principal:hover {
+  filter: brightness(1.05);
+}
