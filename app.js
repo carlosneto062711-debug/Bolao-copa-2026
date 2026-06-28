@@ -1,4 +1,4 @@
-// VERSÃO 104
+// VERSÃO 105
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -1843,10 +1843,33 @@ function jogoEncerradoAindaFicaHoje(jogo) {
 }
 
 function jogoDeveAparecerHoje(jogo) {
-  if (jogo.date !== hojeISO()) return false;
+  const hoje = hojeISO();
+  const ontem = adicionarDiasISO(hoje, -1);
+
+  if (jogo.date !== hoje && jogo.date !== ontem) return false;
+
+  if (jogo.date === ontem) {
+    if (jogo.status === "live") return true;
+
+    if (jogo.status === "finished") {
+      return jogoEncerradoAindaFicaHoje(jogo);
+    }
+
+    if (jogo.status === "scheduled") {
+      const inicio = new Date(jogo.kickoff).getTime();
+      const agora = Date.now();
+
+      return agora >= inicio && agora <= inicio + 3 * 60 * 60 * 1000;
+    }
+
+    return false;
+  }
 
   if (jogo.status === "live") return true;
-  if (jogo.status === "finished") return jogoEncerradoAindaFicaHoje(jogo);
+
+  if (jogo.status === "finished") {
+    return jogoEncerradoAindaFicaHoje(jogo);
+  }
 
   if (jogo.status === "scheduled") {
     return jogoLiberadoParaPalpite(jogo) || jogoComecou(jogo);
@@ -1886,26 +1909,22 @@ const snap = await getDocs(qHoje);
 
     const jogosFiltrados = todosJogos.filter((jogo) => {
   if (jogo.date === ontem) {
-    return jogo.status === "finished" && jogoEncerradoAindaFicaHoje(jogo);
-  }
-
-  if (jogo.date !== hoje) {
-    return false;
-  }
-
   if (jogo.status === "live") return true;
-  if (jogo.status === "finished") return jogoEncerradoAindaFicaHoje(jogo);
+
+  if (jogo.status === "finished") {
+    return jogoEncerradoAindaFicaHoje(jogo);
+  }
 
   if (jogo.status === "scheduled") {
     const inicio = new Date(jogo.kickoff).getTime();
+    const agora = Date.now();
 
-    if (jogoComecou(jogo)) return true;
-
-    return Date.now() < inicio && jogoLiberadoParaPalpite(jogo);
+    // Jogos que começaram tarde ontem e ainda podem estar acontecendo.
+    return agora >= inicio && agora <= inicio + 3 * 60 * 60 * 1000;
   }
 
   return false;
-});
+}
 
     const jogos = removerJogosDuplicados(jogosFiltrados).sort((a, b) => {
       const pesoStatus = (jogo) => {
