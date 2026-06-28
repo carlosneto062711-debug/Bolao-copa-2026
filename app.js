@@ -1096,11 +1096,16 @@ async function recalcularRankingPorPalpites() {
   snapPredictions.forEach((docSnap) => {
   const palpite = docSnap.data();
 
-  if (palpite.phase === "knockout") {
-    if (palpite.scored === true || palpite.status === "finished") {
-      pontosPorUsuario[palpite.userId] =
-        (pontosPorUsuario[palpite.userId] || 0) + Number(palpite.points || 0);
-    }
+/*
+if (palpite.phase === "knockout") {
+  if (palpite.scored === true || palpite.status === "finished") {
+    pontosPorUsuario[palpite.userId] =
+      (pontosPorUsuario[palpite.userId] || 0) + Number(palpite.points || 0);
+  }
+
+  return;
+}
+*/
 
     return;
   }
