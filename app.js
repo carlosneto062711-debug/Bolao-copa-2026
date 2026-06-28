@@ -1,4 +1,4 @@
-// VERSÃO 96
+// VERSÃO 97
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -1973,9 +1973,14 @@ const textoAcao = abertoParaPalpite
   : "Bloqueado";
 
 item.innerHTML = `
-  ${formatarHora(jogo.kickoff)}
-  ${jogo.homeTeam} x ${jogo.awayTeam}
-  ${textoAcao}
+  <div class="linha-jogo-seguinte-info">
+    <span class="hora-jogo-seguinte">${formatarHora(jogo.kickoff)}</span>
+    <strong class="times-jogo-seguinte">${jogo.homeTeam} x ${jogo.awayTeam}</strong>
+  </div>
+
+  <span class="acao-jogo-seguinte ${ehMataMata ? "acao-mata-mata" : ""}">
+    ${textoAcao}
+  </span>
 `;
       
      if (abertoParaPalpite) {
