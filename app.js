@@ -1,4 +1,4 @@
-// VERSÃO 105
+// VERSÃO 106
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -1909,22 +1909,39 @@ const snap = await getDocs(qHoje);
 
     const jogosFiltrados = todosJogos.filter((jogo) => {
   if (jogo.date === ontem) {
-  if (jogo.status === "live") return true;
+    if (jogo.status === "live") return true;
 
-  if (jogo.status === "finished") {
-    return jogoEncerradoAindaFicaHoje(jogo);
+    if (jogo.status === "finished") {
+      return jogoEncerradoAindaFicaHoje(jogo);
+    }
+
+    if (jogo.status === "scheduled") {
+      const inicio = new Date(jogo.kickoff).getTime();
+      const agora = Date.now();
+
+      // Jogos que começaram tarde ontem e ainda podem estar acontecendo.
+      return agora >= inicio && agora <= inicio + 3 * 60 * 60 * 1000;
+    }
+
+    return false;
   }
 
-  if (jogo.status === "scheduled") {
-    const inicio = new Date(jogo.kickoff).getTime();
-    const agora = Date.now();
+  if (jogo.date === hoje) {
+    if (jogo.status === "live") return true;
 
-    // Jogos que começaram tarde ontem e ainda podem estar acontecendo.
-    return agora >= inicio && agora <= inicio + 3 * 60 * 60 * 1000;
+    if (jogo.status === "finished") {
+      return jogoEncerradoAindaFicaHoje(jogo);
+    }
+
+    if (jogo.status === "scheduled") {
+      return jogoLiberadoParaPalpite(jogo) || jogoComecou(jogo);
+    }
+
+    return false;
   }
 
   return false;
-}
+});
 
     const jogos = removerJogosDuplicados(jogosFiltrados).sort((a, b) => {
       const pesoStatus = (jogo) => {
