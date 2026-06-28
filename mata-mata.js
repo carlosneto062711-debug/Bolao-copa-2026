@@ -1,4 +1,4 @@
-// VERSÃO 120
+// VERSÃO 121 - Força ao vivo no mata-mata após horário do jogo
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -933,7 +933,7 @@ function jogoAoVivoMataMata(jogo) {
     return true;
   }
 
-  return jogo.status === "scheduled" && jogoComecouMataMata(jogo);
+  return jogoComecouMataMata(jogo);
 }
 
 function criarCardJogoMataMata(jogo) {
