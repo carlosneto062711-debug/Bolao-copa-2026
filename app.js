@@ -1,4 +1,4 @@
-// VERSÃO 107
+// VERSÃO 108
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -2462,6 +2462,9 @@ if (ehMataMata) {
     `;
   }
 
+  if (jogoAoVivo || jogoFinalizado) {
+  cardMataMata.innerHTML = areaStatus;
+} else {
   cardMataMata.innerHTML = `
     <div class="card-mata-mata-topo">
       <strong>${nomeSeguroJogoPrincipal(jogoSeguro.homeTeam)} x ${nomeSeguroJogoPrincipal(jogoSeguro.awayTeam)}</strong>
@@ -2474,6 +2477,7 @@ if (ehMataMata) {
 
     ${areaStatus}
   `;
+}
 
   return cardMataMata;
 }
