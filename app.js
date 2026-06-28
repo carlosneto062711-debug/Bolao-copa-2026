@@ -1,4 +1,4 @@
-// VERSÃO 106
+// VERSÃO 107
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -2411,61 +2411,72 @@ async function criarCardJogo(jogo, rodadaAberta) {
   const div = document.createElement("div");
   div.className = "jogo";
 
-    const ehMataMata = jogoEhMataMataPrincipal(jogo);
+  const ehMataMata = jogoEhMataMataPrincipal(jogo);
 
-  if (ehMataMata) {
-    const inicio = new Date(jogo.kickoff).getTime();
-    const agora = Date.now();
+if (ehMataMata) {
+  const inicio = new Date(jogo.kickoff).getTime();
+  const agora = Date.now();
 
-    const jogoFinalizado = jogo.status === "finished";
-    const jogoAoVivo =
-      jogo.status === "live" ||
-      (agora >= inicio && !jogoFinalizado);
+  const jogoFinalizado = jogo.status === "finished";
+  const jogoAoVivo =
+    jogo.status === "live" ||
+    (agora >= inicio && !jogoFinalizado);
 
-    const jogoSeguro = jogoPrincipalComDadosSeguros(jogo);
+  const jogoSeguro = jogoPrincipalComDadosSeguros(jogo);
 
-    const cardMataMata = document.createElement("div");
-    cardMataMata.className = "card-jogo card-mata-mata-principal";
+  const cardMataMata = document.createElement("div");
+  cardMataMata.className = "card-jogo card-mata-mata-principal";
 
-    let areaStatus = `
-      <a class="btn-palpitar-mata-mata-principal" href="${urlMataMataParaJogoPrincipal(jogo)}">
-        Palpitar no mata-mata
-      </a>
+  let areaStatus = `
+    <a class="btn-palpitar-mata-mata-principal" href="${urlMataMataParaJogoPrincipal(jogo)}">
+      Palpitar no mata-mata
+    </a>
+  `;
+
+  if (jogoAoVivo) {
+    areaStatus = `
+      <div class="placar-mata-principal">
+        <span>${nomeSeguroJogoPrincipal(jogoSeguro.homeTeam)}</span>
+        <strong>${jogo.homeScore ?? 0} x ${jogo.awayScore ?? 0}</strong>
+        <span>${nomeSeguroJogoPrincipal(jogoSeguro.awayTeam)}</span>
+      </div>
+
+      <div class="status-live-principal">
+        <span class="bolinha-live"></span>
+        AO VIVO — ${htmlTempoJogoDinamico(jogo)}
+      </div>
     `;
-
-    if (jogoAoVivo) {
-      areaStatus = `
-        <div class="linha-resultado-real">
-          Placar atual: ${jogo.homeScore ?? 0} x ${jogo.awayScore ?? 0}
-        </div>
-        <span class="badge ao-vivo">${htmlTempoJogoDinamico(jogo)}</span>
-      `;
-    }
-
-    if (jogoFinalizado) {
-      areaStatus = `
-        <div class="linha-resultado-real">
-          Resultado final: ${jogo.homeScore ?? 0} x ${jogo.awayScore ?? 0}
-        </div>
-        <span class="badge finalizado">Encerrado</span>
-      `;
-    }
-
-   cardMataMata.innerHTML = `
-  <div class="card-mata-mata-topo">
-    <strong>${nomeSeguroJogoPrincipal(jogoSeguro.homeTeam)} x ${nomeSeguroJogoPrincipal(jogoSeguro.awayTeam)}</strong>
-    <span>${formatarHora(jogo.kickoff)}</span>
-  </div>
-
-  <p class="aviso-mata-mata-principal">
-    Palpite disponível na página do mata-mata.
-  </p>
-
-  ${areaStatus}
-`;
-
-    return cardMataMata;
   }
+
+  if (jogoFinalizado) {
+    areaStatus = `
+      <div class="placar-mata-principal">
+        <span>${nomeSeguroJogoPrincipal(jogoSeguro.homeTeam)}</span>
+        <strong>${jogo.homeScore ?? 0} x ${jogo.awayScore ?? 0}</strong>
+        <span>${nomeSeguroJogoPrincipal(jogoSeguro.awayTeam)}</span>
+      </div>
+
+      <div class="status-encerrado-principal">
+        ENCERRADO
+      </div>
+    `;
+  }
+
+  cardMataMata.innerHTML = `
+    <div class="card-mata-mata-topo">
+      <strong>${nomeSeguroJogoPrincipal(jogoSeguro.homeTeam)} x ${nomeSeguroJogoPrincipal(jogoSeguro.awayTeam)}</strong>
+      <span>${formatarHora(jogo.kickoff)}</span>
+    </div>
+
+    <p class="aviso-mata-mata-principal">
+      Palpite disponível na página do mata-mata.
+    </p>
+
+    ${areaStatus}
+  `;
+
+  return cardMataMata;
+}
 
   const palpiteId = `${usuarioAtual.uid}_${jogo.id}`;
   const palpiteRef = doc(db, "predictions", palpiteId);
@@ -2962,7 +2973,7 @@ return;
       const abertura = dataHoraAberturaPalpites(jogoAlvo);
 
       titulo.innerText = `${jogoAlvo.homeTeam} x ${jogoAlvo.awayTeam}`;
-      texto.innerText = "Palpites abrem às 20h do dia anterior";
+      texto.innerText = "Palpites abrem às 20 horas";
       alvoContagem = new Date(abertura);
 configurarPainelContagem("abertura_palpites", jogoAlvo);
       
@@ -3403,7 +3414,7 @@ function atualizarPainelContagemPrincipal() {
   }
 
   if (window.painelContagemTipo === "abertura_palpites") {
-    texto.innerText = "Palpites abrem às 20h do dia anterior";
+    texto.innerText = "Palpites abrem às 20 horas";
     contador.classList.remove("alerta");
   }
 }
