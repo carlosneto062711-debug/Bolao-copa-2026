@@ -1,4 +1,4 @@
-// VERSÃO 118 - Palpite mata-mata com dados completos e link direto para jogo
+// VERSÃO 119 - Corrige link direto e status ao vivo do mata-mata
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -902,43 +902,36 @@ function jogoComecouMataMata(jogo) {
 }
 
 function textoTempoDoJogoMataMata(jogo) {
-  if (jogo.status === "finished") {
-    return "ENCERRADO";
-  }
+  if (jogo.status === "finished") return "ENCERRADO";
 
-  if (jogo.apiStatus === "PAUSED") {
-  return "INTERVALO";
-}
-  
-  if (jogo.apiStatus === "SUSPENDED") {
-    return "SUSPENSO";
-  }
+  if (jogo.apiStatus === "PAUSED") return "INTERVALO";
+  if (jogo.apiStatus === "SUSPENDED") return "SUSPENSO";
+  if (jogo.apiStatus === "IN_PLAY") return "AO VIVO";
+
+  if (!jogoComecouMataMata(jogo)) return "";
 
   const agora = Date.now();
   const inicio = new Date(jogo.kickoff).getTime();
+  const minutos = Math.max(1, Math.floor((agora - inicio) / 60000) + 1);
 
-  if (agora < inicio) {
-    return "";
-  }
+  if (minutos <= 45) return `1º TEMPO - ${minutos}'`;
+  if (minutos <= 60) return "INTERVALO";
 
-  const minutosCorridos = Math.floor((agora - inicio) / 60000);
-
-  if (minutosCorridos <= 45) {
-    const minutoJogo = Math.max(1, minutosCorridos + 1);
-    return `1º TEMPO - ${minutoJogo}'`;
-  }
-
-  if (minutosCorridos > 45 && minutosCorridos <= 64) {
-    return "INTERVALO";
-  }
-
-  const minutoJogo = Math.min(90, minutosCorridos - 19);
-  return `2º TEMPO - ${minutoJogo}'`;
+  return `2º TEMPO - ${Math.min(90, minutos - 15)}'`;
 }
 
 function jogoAoVivoMataMata(jogo) {
+  if (!jogo) return false;
+
   if (jogo.status === "finished") return false;
-  if (jogo.status === "live") return true;
+
+  if (
+    jogo.apiStatus === "IN_PLAY" ||
+    jogo.apiStatus === "PAUSED" ||
+    jogo.apiStatus === "SUSPENDED"
+  ) {
+    return true;
+  }
 
   return jogo.status === "scheduled" && jogoComecouMataMata(jogo);
 }
@@ -1140,16 +1133,27 @@ rolarParaJogoMataMataDaUrl();
   }
 }
 
+let jaRolouParaJogoDaUrlMataMata = false;
+
 function rolarParaJogoMataMataDaUrl() {
+  if (jaRolouParaJogoDaUrlMataMata) return;
+
   const params = new URLSearchParams(window.location.search);
   const jogoId = params.get("jogo");
 
   if (!jogoId) return;
 
-  setTimeout(() => {
+  const tentarRolar = (tentativas = 0) => {
     const card = document.getElementById(`jogo-${jogoId}`);
 
+    if (!card && tentativas < 10) {
+      setTimeout(() => tentarRolar(tentativas + 1), 400);
+      return;
+    }
+
     if (!card) return;
+
+    jaRolouParaJogoDaUrlMataMata = true;
 
     card.scrollIntoView({
       behavior: "smooth",
@@ -1160,8 +1164,10 @@ function rolarParaJogoMataMataDaUrl() {
 
     setTimeout(() => {
       card.classList.remove("destaque-jogo-url");
-    }, 3000);
-  }, 800);
+    }, 4000);
+  };
+
+  tentarRolar();
 }
 
 function carregarChaveamento() {
