@@ -606,3 +606,58 @@ input {
     margin-top: 8px;
   }
 }
+
+.item-jogo-mata-mata-principal {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 16px !important;
+  width: 100% !important;
+}
+
+.item-jogo-mata-mata-principal .linha-jogo-seguinte-info {
+  display: flex !important;
+  align-items: center !important;
+  gap: 18px !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+}
+
+.item-jogo-mata-mata-principal .hora-jogo-seguinte {
+  flex: 0 0 auto !important;
+  min-width: 50px !important;
+}
+
+.item-jogo-mata-mata-principal .times-jogo-seguinte {
+  flex: 1 1 auto !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.item-jogo-mata-mata-principal .acao-jogo-seguinte {
+  flex: 0 0 auto !important;
+  margin-left: auto !important;
+}
+
+@media (max-width: 700px) {
+  .item-jogo-mata-mata-principal {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .item-jogo-mata-mata-principal .linha-jogo-seguinte-info {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 3px !important;
+  }
+
+  .item-jogo-mata-mata-principal .times-jogo-seguinte {
+    white-space: normal !important;
+  }
+
+  .item-jogo-mata-mata-principal .acao-jogo-seguinte {
+    width: 100% !important;
+    margin-left: 0 !important;
+  }
+}
