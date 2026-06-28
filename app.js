@@ -1,4 +1,4 @@
-// VERSÃO 99
+// VERSÃO 100
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -482,8 +482,10 @@ if (mostrarLog) {
 
 await sincronizarFootballDataPeriodo(periodoMataMata.inicio, periodoMataMata.fim);
 
-await recalcularRankingPorPalpites();
+await atualizarPontuacaoMataMata();
 
+await recalcularRankingPorPalpites();
+    
 // Não chama carregarTudo aqui.
 // O Firestore/onSnapshot já atualiza a tela automaticamente.
     
@@ -929,6 +931,142 @@ function encontrarJogoPorTimes(jogos, casa, fora) {
   return encontrados[0] || null;
 }
 
+function calcularPontosMataMata(homeGuess, awayGuess, homeScore, awayScore) {
+  const hg = Number(homeGuess);
+  const ag = Number(awayGuess);
+  const hs = Number(homeScore);
+  const as = Number(awayScore);
+
+  if (
+    Number.isNaN(hg) ||
+    Number.isNaN(ag) ||
+    Number.isNaN(hs) ||
+    Number.isNaN(as)
+  ) {
+    return 0;
+  }
+
+  if (hg === hs && ag === as) {
+    return 3;
+  }
+
+  const resultadoPalpite =
+    hg > ag ? "home" :
+    hg < ag ? "away" :
+    "draw";
+
+  const resultadoReal =
+    hs > as ? "home" :
+    hs < as ? "away" :
+    "draw";
+
+  return resultadoPalpite === resultadoReal ? 1 : 0;
+}
+
+async function atualizarPontuacaoMataMata() {
+  try {
+    const snapPredictions = await getDocs(collection(db, "predictions"));
+    const snapMatches = await getDocs(collection(db, "matches"));
+
+    const matchesPorFirestoreId = {};
+    const matchesPorApiId = {};
+    const matchesPorDataHoraTimes = {};
+
+    snapMatches.forEach((docSnap) => {
+      const jogo = {
+        id: docSnap.id,
+        ...docSnap.data()
+      };
+
+      matchesPorFirestoreId[jogo.id] = jogo;
+
+      if (jogo.apiMatchId) {
+        matchesPorApiId[String(jogo.apiMatchId)] = jogo;
+      }
+
+      const chave = [
+        jogo.date,
+        String(jogo.kickoff || "").slice(11, 16),
+        nomeSeguroJogoPrincipal(jogo.homeTeam),
+        nomeSeguroJogoPrincipal(jogo.awayTeam)
+      ].join("_");
+
+      matchesPorDataHoraTimes[chave] = jogo;
+    });
+
+    const atualizacoes = [];
+
+    snapPredictions.forEach((docSnap) => {
+      const palpite = {
+        id: docSnap.id,
+        ...docSnap.data()
+      };
+
+      if (palpite.phase !== "knockout") return;
+
+      let jogo =
+        matchesPorFirestoreId[palpite.firestoreMatchId] ||
+        matchesPorApiId[String(palpite.apiMatchId || "")];
+
+      if (!jogo) {
+        const chave = [
+          palpite.date,
+          String(palpite.kickoff || "").slice(11, 16),
+          nomeSeguroJogoPrincipal(palpite.homeTeam),
+          nomeSeguroJogoPrincipal(palpite.awayTeam)
+        ].join("_");
+
+        jogo = matchesPorDataHoraTimes[chave];
+      }
+
+      if (!jogo) return;
+      if (jogo.status !== "finished") return;
+
+      if (
+        jogo.homeScore === undefined ||
+        jogo.homeScore === null ||
+        jogo.awayScore === undefined ||
+        jogo.awayScore === null
+      ) {
+        return;
+      }
+
+      const pontos = calcularPontosMataMata(
+        palpite.homeGuess,
+        palpite.awayGuess,
+        jogo.homeScore,
+        jogo.awayScore
+      );
+
+      if (
+        Number(palpite.points || 0) === pontos &&
+        palpite.scored === true
+      ) {
+        return;
+      }
+
+      atualizacoes.push(
+        updateDoc(doc(db, "predictions", palpite.id), {
+          points: pontos,
+          scored: true,
+          scoredAt: new Date().toISOString(),
+          status: "finished",
+          homeScore: Number(jogo.homeScore),
+          awayScore: Number(jogo.awayScore)
+        })
+      );
+    });
+
+    await Promise.all(atualizacoes);
+
+    if (atualizacoes.length > 0) {
+      console.log(`Pontuação mata-mata atualizada: ${atualizacoes.length}`);
+    }
+  } catch (error) {
+    console.error("Erro ao atualizar pontuação mata-mata:", error);
+  }
+}
+
 async function recalcularRankingPorPalpites() {
   const snapUsers = await getDocs(collection(db, "users"));
   const usuarios = [];
@@ -956,10 +1094,20 @@ async function recalcularRankingPorPalpites() {
   });
 
   snapPredictions.forEach((docSnap) => {
-    const palpite = docSnap.data();
-    const jogo = jogos[palpite.matchId];
+  const palpite = docSnap.data();
 
-    if (!jogo) return;
+  if (palpite.phase === "knockout") {
+    if (palpite.scored === true || palpite.status === "finished") {
+      pontosPorUsuario[palpite.userId] =
+        (pontosPorUsuario[palpite.userId] || 0) + Number(palpite.points || 0);
+    }
+
+    return;
+  }
+
+  const jogo = jogos[palpite.matchId];
+
+  if (!jogo) return;
     if (jogo.status !== "finished") return;
 
     const temPlacar =
@@ -1230,10 +1378,18 @@ const jogosUnicosPorChave = {};
 jogos
   .filter((jogo) => jogo.date === dataSelecionadaAdversarios)
   .forEach((jogo) => {
-    const jogoSeguro = jogoPrincipalComDadosSeguros(jogo);
-    const chave = chaveUnicaJogoPrincipal(jogoSeguro);
+    const idMataMata = idMataMataPorJogoPrincipal(jogo);
 
-    jogosUnicosPorChave[chave] = jogoSeguro;
+    const chave = idMataMata
+      ? idMataMata
+      : `${jogo.date}_${String(jogo.kickoff || "").slice(11, 16)}_${nomeSeguroJogoPrincipal(jogo.homeTeam)}_${nomeSeguroJogoPrincipal(jogo.awayTeam)}`;
+
+    jogosUnicosPorChave[chave] = {
+      ...jogo,
+      knockoutMatchId: idMataMata || jogo.knockoutMatchId || null,
+      homeTeam: nomeSeguroJogoPrincipal(jogo.homeTeam),
+      awayTeam: nomeSeguroJogoPrincipal(jogo.awayTeam)
+    };
   });
 
 palpites
@@ -1242,29 +1398,19 @@ palpites
     palpite.date === dataSelecionadaAdversarios
   )
   .forEach((palpite) => {
-    const jogoDoPalpite = {
+    const chave = palpite.knockoutMatchId || palpite.matchId;
+
+    jogosUnicosPorChave[chave] = {
+      ...(jogosUnicosPorChave[chave] || {}),
       id: palpite.matchId,
       knockoutMatchId: palpite.knockoutMatchId || palpite.matchId,
       homeTeam: nomeSeguroJogoPrincipal(palpite.homeTeam),
       awayTeam: nomeSeguroJogoPrincipal(palpite.awayTeam),
       date: palpite.date,
       kickoff: palpite.kickoff,
-      status: palpite.status || "scheduled"
-    };
-
-    const chave = chaveUnicaJogoPrincipal(jogoDoPalpite);
-
-    jogosUnicosPorChave[chave] = {
-      ...(jogosUnicosPorChave[chave] || {}),
-      ...jogoDoPalpite,
-      homeTeam: nomeSeguroJogoPrincipal(
-        jogoDoPalpite.homeTeam,
-        jogosUnicosPorChave[chave]?.homeTeam
-      ),
-      awayTeam: nomeSeguroJogoPrincipal(
-        jogoDoPalpite.awayTeam,
-        jogosUnicosPorChave[chave]?.awayTeam
-      )
+      status: jogosUnicosPorChave[chave]?.status || palpite.status || "scheduled",
+      homeScore: jogosUnicosPorChave[chave]?.homeScore ?? palpite.homeScore ?? null,
+      awayScore: jogosUnicosPorChave[chave]?.awayScore ?? palpite.awayScore ?? null
     };
   });
 
@@ -2339,7 +2485,7 @@ div.dataset.apiStatus = jogo.apiStatus || "";
 
   div.innerHTML = `
     <span>${formatarHora(jogo.kickoff)}</span>
-    <strong>${jogo.homeTeam} x ${jogo.awayTeam}</strong>
+  <strong>${nomeSeguroJogoPrincipal(jogo.homeTeam)} x ${nomeSeguroJogoPrincipal(jogo.awayTeam)}</strong>
     <span class="status-fechado">Palpite feito. Aguarde começar!</span>
   `;
 
@@ -2961,7 +3107,15 @@ statusTexto = htmlTempoJogoDinamico(jogo);
       statusTexto = "Encerrado";
       badgeClasse = "finalizado";
 
-      const pontos = calcularPontos(
+      const pontos =
+  palpite.phase === "knockout"
+    ? calcularPontosMataMata(
+        palpite.homeGuess,
+        palpite.awayGuess,
+        jogo.homeScore,
+        jogo.awayScore
+      )
+    : calcularPontos(
         palpite.homeGuess,
         palpite.awayGuess,
         jogo.homeScore,
@@ -2982,7 +3136,8 @@ statusTexto = htmlTempoJogoDinamico(jogo);
     const div = document.createElement("div");
     div.className = "linha-info";
     div.innerHTML = `
-      <strong>${jogo.homeTeam} x ${jogo.awayTeam}</strong>
+     
+  <strong>${nomeSeguroJogoPrincipal(jogo.homeTeam)} x ${nomeSeguroJogoPrincipal(jogo.awayTeam)}</strong>
       <span>Data: ${formatarDataBR(jogo.date)} — ${formatarHora(jogo.kickoff)}</span>
       <br>
       <span>Seu palpite: ${palpite.homeGuess} x ${palpite.awayGuess}</span>
