@@ -1,4 +1,4 @@
-// VERSÃO 123 - Ajusta tempo ao vivo igual ao principal
+// VERSÃO 124 - Ajusta 
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
