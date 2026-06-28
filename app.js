@@ -1,4 +1,4 @@
-// VERSÃO 97
+// VERSÃO 98
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -1215,9 +1215,40 @@ async function carregarPalpitesAdversarios(dataFiltro = dataSelecionadaAdversari
     });
   });
 
-  const jogosDaData = jogos
-    .filter((jogo) => jogo.date === dataSelecionadaAdversarios)
-    .sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
+ const snapPredictions = await getDocs(collection(db, "predictions"));
+const palpites = [];
+
+snapPredictions.forEach((docSnap) => {
+  palpites.push({
+    id: docSnap.id,
+    ...docSnap.data()
+  });
+});
+
+const jogosMataMataPorId = {};
+
+palpites
+  .filter((palpite) =>
+    palpite.phase === "knockout" &&
+    palpite.date === dataSelecionadaAdversarios
+  )
+  .forEach((palpite) => {
+    if (!jogosMataMataPorId[palpite.matchId]) {
+      jogosMataMataPorId[palpite.matchId] = {
+        id: palpite.matchId,
+        homeTeam: palpite.homeTeam,
+        awayTeam: palpite.awayTeam,
+        date: palpite.date,
+        kickoff: palpite.kickoff,
+        status: palpite.status || "scheduled"
+      };
+    }
+  });
+
+const jogosDaData = [
+  ...jogos.filter((jogo) => jogo.date === dataSelecionadaAdversarios),
+  ...Object.values(jogosMataMataPorId)
+].sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
 
   if (jogosDaData.length === 0) {
     const vazio = document.createElement("p");
@@ -1234,16 +1265,6 @@ async function carregarPalpitesAdversarios(dataFiltro = dataSelecionadaAdversari
       id: docSnap.id,
       ...docSnap.data()
     };
-  });
-
-  const snapPredictions = await getDocs(collection(db, "predictions"));
-  const palpites = [];
-
-  snapPredictions.forEach((docSnap) => {
-    palpites.push({
-      id: docSnap.id,
-      ...docSnap.data()
-    });
   });
 
   let mostrouAlgum = false;
@@ -1971,6 +1992,10 @@ async function carregarJogosAmanha(dataEscolhida = dataSelecionadaJogosAmanha) {
 const textoAcao = abertoParaPalpite
   ? (ehMataMata ? "Palpitar no mata-mata" : "Palpitar")
   : "Bloqueado";
+
+      if (ehMataMata) {
+  item.classList.add("item-jogo-mata-mata-principal");
+}
 
 item.innerHTML = `
   <div class="linha-jogo-seguinte-info">
@@ -2759,18 +2784,31 @@ async function carregarMeusPalpites(dataFiltro = dataSelecionadaMeusPalpites) {
 
   const lista = [];
 
-  palpites.forEach((palpite) => {
-    const jogo = jogosPorId[palpite.matchId];
+ palpites.forEach((palpite) => {
+  let jogo = jogosPorId[palpite.matchId];
 
-    if (!jogo) return;
-    if (jogo.date !== dataSelecionadaMeusPalpites) return;
+  if (!jogo && palpite.phase === "knockout") {
+    jogo = {
+      id: palpite.matchId,
+      homeTeam: palpite.homeTeam,
+      awayTeam: palpite.awayTeam,
+      homeScore: palpite.homeScore ?? null,
+      awayScore: palpite.awayScore ?? null,
+      date: palpite.date,
+      kickoff: palpite.kickoff,
+      status: palpite.status || "scheduled"
+    };
+  }
 
-    lista.push({
-      palpite,
-      jogo
-    });
+  if (!jogo) return;
+  if (jogo.date !== dataSelecionadaMeusPalpites) return;
+
+  lista.push({
+    palpite,
+    jogo
   });
-
+});
+  
   lista.sort((a, b) => new Date(a.jogo.kickoff) - new Date(b.jogo.kickoff));
 
   if (lista.length === 0) {
