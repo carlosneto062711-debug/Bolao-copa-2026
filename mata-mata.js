@@ -1,4 +1,4 @@
-// VERSÃO 125 - Corrige função jogoAoVivoMataMata 
+// VERSÃO 126
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -1023,14 +1023,25 @@ const placarOficial = temPlacarOficial
   `
   : "";
 
-  const areaPalpiteSalvo = palpite
-    ? `
-      <div class="palpite-salvo-mata">
-        Seu palpite: <strong>${palpite.homeGuess} x ${palpite.awayGuess}</strong><br>
-        Alterações restantes: <strong>${alteracoesRestantes}</strong>
-      </div>
-    `
-    : "";
+  const mostrarAlteracoesRestantes =
+  palpite &&
+  !aoVivo &&
+  jogo.status !== "finished" &&
+  aberto &&
+  !travado;
+
+const areaPalpiteSalvo = palpite
+  ? `
+    <div class="palpite-salvo-mata">
+      Seu palpite: <strong>${palpite.homeGuess} x ${palpite.awayGuess}</strong>
+      ${
+        mostrarAlteracoesRestantes
+          ? `<br>Alterações restantes: <strong>${alteracoesRestantes}</strong>`
+          : ""
+      }
+    </div>
+  `
+  : "";
 
   let areaAcao = "";
 
