@@ -1,4 +1,4 @@
-// VERSÃO 102
+// VERSÃO 103
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -1106,9 +1106,6 @@ if (palpite.phase === "knockout") {
   return;
 }
 */
-
-    return;
-  }
 
   const jogo = jogos[palpite.matchId];
 
@@ -2417,21 +2414,18 @@ async function criarCardJogo(jogo, rodadaAberta) {
       `;
     }
 
-    cardMataMata.innerHTML = `
-      <div class="linha-times-card">
-        <strong>${nomeSeguroJogoPrincipal(jogoSeguro.homeTeam)}</strong>
-        <span>x</span>
-        <strong>${nomeSeguroJogoPrincipal(jogoSeguro.awayTeam)}</strong>
-      </div>
+   cardMataMata.innerHTML = `
+  <div class="card-mata-mata-topo">
+    <strong>${nomeSeguroJogoPrincipal(jogoSeguro.homeTeam)} x ${nomeSeguroJogoPrincipal(jogoSeguro.awayTeam)}</strong>
+    <span>${formatarHora(jogo.kickoff)}</span>
+  </div>
 
-      <div class="data">
-        ${formatarHora(jogo.kickoff)}
-      </div>
+  <p class="aviso-mata-mata-principal">
+    Palpite disponível na página do mata-mata.
+  </p>
 
-      <p>Este jogo pertence ao mata-mata.</p>
-
-      ${areaStatus}
-    `;
+  ${areaStatus}
+`;
 
     return cardMataMata;
   }
@@ -3149,10 +3143,19 @@ palpites.forEach((palpite) => {
   }
 
   lista.forEach(({ palpite, jogo }) => {
-    const agora = new Date();
-    const jogoComecouAgora = agora >= new Date(jogo.kickoff);
-    const jogoFinalizado = jogo.status === "finished";
-    const jogoAoVivo = jogo.status === "live" || (jogoComecouAgora && !jogoFinalizado);
+    const inicioMs = new Date(jogo.kickoff).getTime();
+const agoraMs = Date.now();
+const jogoComecouAgora = agoraMs >= inicioMs;
+const passouLimiteAoVivo = agoraMs > inicioMs + 3 * 60 * 60 * 1000;
+
+const jogoFinalizado = jogo.status === "finished";
+
+const jogoAoVivo =
+  !jogoFinalizado &&
+  (
+    jogo.status === "live" ||
+    (jogoComecouAgora && !passouLimiteAoVivo)
+  );
 
     let statusTexto = "Agendado";
     let badgeClasse = "agendado";
