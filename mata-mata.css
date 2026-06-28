@@ -474,3 +474,35 @@ body {
   margin-top: 6px;
   font-size: 11px;
 }
+
+.badge-live-mata {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.badge-live-mata::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  background: #ffffff;
+  border-radius: 50%;
+  animation: piscarBolinhaMata 1s infinite;
+}
+
+@keyframes piscarBolinhaMata {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.35;
+    transform: scale(1.45);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
