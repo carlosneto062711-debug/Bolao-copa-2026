@@ -1,4 +1,4 @@
-// VERSÃO 124 - Ajusta 
+// VERSÃO 125 - Corrige função jogoAoVivoMataMata 
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -899,6 +899,22 @@ function jogoComecouMataMata(jogo) {
   const inicio = new Date(jogo.kickoff).getTime();
 
   return agora >= inicio;
+}
+
+function jogoAoVivoMataMata(jogo) {
+  if (!jogo) return false;
+
+  if (jogo.status === "finished") return false;
+
+  if (
+    jogo.apiStatus === "IN_PLAY" ||
+    jogo.apiStatus === "PAUSED" ||
+    jogo.apiStatus === "SUSPENDED"
+  ) {
+    return true;
+  }
+
+  return jogoComecouMataMata(jogo);
 }
 
 function textoTempoDoJogoMataMata(jogo) {
