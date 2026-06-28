@@ -1,4 +1,4 @@
-// VERSÃO 121 - Força ao vivo no mata-mata após horário do jogo
+// VERSÃO 123 - Ajusta tempo ao vivo igual ao principal
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -902,38 +902,33 @@ function jogoComecouMataMata(jogo) {
 }
 
 function textoTempoDoJogoMataMata(jogo) {
+  if (!jogo) return "";
+
   if (jogo.status === "finished") return "ENCERRADO";
 
   if (jogo.apiStatus === "PAUSED") return "INTERVALO";
   if (jogo.apiStatus === "SUSPENDED") return "SUSPENSO";
-  if (jogo.apiStatus === "IN_PLAY") return "AO VIVO";
 
   if (!jogoComecouMataMata(jogo)) return "";
 
   const agora = Date.now();
   const inicio = new Date(jogo.kickoff).getTime();
-  const minutos = Math.max(1, Math.floor((agora - inicio) / 60000) + 1);
 
-  if (minutos <= 45) return `1º TEMPO - ${minutos}'`;
-  if (minutos <= 60) return "INTERVALO";
+  let minutos = Math.floor((agora - inicio) / 60000) + 1;
 
-  return `2º TEMPO - ${Math.min(90, minutos - 15)}'`;
-}
+  if (minutos < 1) minutos = 1;
 
-function jogoAoVivoMataMata(jogo) {
-  if (!jogo) return false;
-
-  if (jogo.status === "finished") return false;
-
-  if (
-    jogo.apiStatus === "IN_PLAY" ||
-    jogo.apiStatus === "PAUSED" ||
-    jogo.apiStatus === "SUSPENDED"
-  ) {
-    return true;
+  if (minutos <= 45) {
+    return `1º TEMPO - ${minutos}'`;
   }
 
-  return jogoComecouMataMata(jogo);
+  if (minutos <= 60) {
+    return "INTERVALO";
+  }
+
+  const minutoSegundoTempo = Math.min(90, minutos - 15);
+
+  return `2º TEMPO - ${minutoSegundoTempo}'`;
 }
 
 function criarCardJogoMataMata(jogo) {
@@ -984,7 +979,7 @@ const blocoPlacarMata =
     ? `
       <div class="placar-card-mata">
         <div class="${aoVivo ? "badge-live-mata" : "badge-finished-mata"}">
-          ${aoVivo ? "● AO VIVO" : "ENCERRADO"}
+          ${aoVivo ? "AO VIVO" : "ENCERRADO"}
         </div>
 
         <div class="linha-placar-mata">
@@ -1277,16 +1272,26 @@ function iniciarContagem() {
 
   window.contagemMataMataLigada = true;
 
-  setInterval(() => {
-    carregarProximoJogo();
+  let ultimaAtualizacaoMatchesMataMata = 0;
 
-    if (
-      !window.usuarioSalvandoPalpiteMataMata &&
-      !window.usuarioInteragindoMataMata
-    ) {
-      carregarChaveamento();
+setInterval(async () => {
+  carregarProximoJogo();
+
+  const agora = Date.now();
+
+  if (
+    !window.usuarioSalvandoPalpiteMataMata &&
+    !window.usuarioInteragindoMataMata &&
+    Date.now() >= window.ignorarAtualizacaoMataMataAte
+  ) {
+    if (agora - ultimaAtualizacaoMatchesMataMata >= 60 * 1000) {
+      ultimaAtualizacaoMatchesMataMata = agora;
+      await atualizarMataMataPorMatchesFirestore();
     }
-  }, 1000);
+
+    carregarChaveamento();
+  }
+}, 1000);
 }
 
 function configurarLoginMataMata() {
