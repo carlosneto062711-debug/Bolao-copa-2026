@@ -1,4 +1,4 @@
-// VERSÃO 98
+// VERSÃO 99
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -1225,7 +1225,16 @@ snapPredictions.forEach((docSnap) => {
   });
 });
 
-const jogosMataMataPorId = {};
+const jogosUnicosPorChave = {};
+
+jogos
+  .filter((jogo) => jogo.date === dataSelecionadaAdversarios)
+  .forEach((jogo) => {
+    const jogoSeguro = jogoPrincipalComDadosSeguros(jogo);
+    const chave = chaveUnicaJogoPrincipal(jogoSeguro);
+
+    jogosUnicosPorChave[chave] = jogoSeguro;
+  });
 
 palpites
   .filter((palpite) =>
@@ -1233,23 +1242,35 @@ palpites
     palpite.date === dataSelecionadaAdversarios
   )
   .forEach((palpite) => {
-    if (!jogosMataMataPorId[palpite.matchId]) {
-      jogosMataMataPorId[palpite.matchId] = {
-        id: palpite.matchId,
-        homeTeam: palpite.homeTeam,
-        awayTeam: palpite.awayTeam,
-        date: palpite.date,
-        kickoff: palpite.kickoff,
-        status: palpite.status || "scheduled"
-      };
-    }
+    const jogoDoPalpite = {
+      id: palpite.matchId,
+      knockoutMatchId: palpite.knockoutMatchId || palpite.matchId,
+      homeTeam: nomeSeguroJogoPrincipal(palpite.homeTeam),
+      awayTeam: nomeSeguroJogoPrincipal(palpite.awayTeam),
+      date: palpite.date,
+      kickoff: palpite.kickoff,
+      status: palpite.status || "scheduled"
+    };
+
+    const chave = chaveUnicaJogoPrincipal(jogoDoPalpite);
+
+    jogosUnicosPorChave[chave] = {
+      ...(jogosUnicosPorChave[chave] || {}),
+      ...jogoDoPalpite,
+      homeTeam: nomeSeguroJogoPrincipal(
+        jogoDoPalpite.homeTeam,
+        jogosUnicosPorChave[chave]?.homeTeam
+      ),
+      awayTeam: nomeSeguroJogoPrincipal(
+        jogoDoPalpite.awayTeam,
+        jogosUnicosPorChave[chave]?.awayTeam
+      )
+    };
   });
 
-const jogosDaData = [
-  ...jogos.filter((jogo) => jogo.date === dataSelecionadaAdversarios),
-  ...Object.values(jogosMataMataPorId)
-].sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
-
+const jogosDaData = Object.values(jogosUnicosPorChave)
+  .sort((a, b) => new Date(a.kickoff) - new Date(b.kickoff));
+  
   if (jogosDaData.length === 0) {
     const vazio = document.createElement("p");
     vazio.innerText = "Nenhum jogo encontrado para esta data.";
@@ -1293,8 +1314,8 @@ statusJogo = htmlTempoJogoDinamico(jogo);
     }
 
     cardJogo.innerHTML = `
-      <strong>${jogo.homeTeam} x ${jogo.awayTeam}</strong>
-      <span>${formatarDataBR(jogo.date)} — ${formatarHora(jogo.kickoff)}</span>
+<strong>${nomeSeguroJogoPrincipal(jogo.homeTeam)} x ${nomeSeguroJogoPrincipal(jogo.awayTeam)}</strong>
+<span>${formatarDataBR(jogo.date)} — ${formatarHora(jogo.kickoff)}</span>
       <br>
       <span class="linha-resultado-real">${resultadoJogo}</span>
       <br>
@@ -1307,7 +1328,19 @@ statusJogo = htmlTempoJogoDinamico(jogo);
     }
 
     const palpitesDoJogo = palpites
-  .filter((palpite) => palpite.matchId === jogo.id)
+  .filter((palpite) => {
+    if (palpite.matchId === jogo.id) return true;
+
+    if (
+      palpite.phase === "knockout" &&
+      palpite.knockoutMatchId &&
+      palpite.knockoutMatchId === jogo.knockoutMatchId
+    ) {
+      return true;
+    }
+
+    return false;
+  })
   .sort((a, b) => {
     if (a.userId === usuarioAtual.uid) return -1;
     if (b.userId === usuarioAtual.uid) return 1;
@@ -1864,6 +1897,87 @@ function urlMataMataParaJogoPrincipal(jogo) {
   return `mata-mata.html?jogo=${encodeURIComponent(idMataMata)}`;
 }
 
+function nomeSeguroJogoPrincipal(nome, fallback = "A definir") {
+  const texto = String(nome ?? "").trim();
+
+  if (!texto || texto.toLowerCase() === "null" || texto.toLowerCase() === "undefined") {
+    return fallback;
+  }
+
+  return texto;
+}
+
+function chaveJogoPrincipalPorDataHora(jogo) {
+  return `${jogo.date}_${String(jogo.kickoff || "").slice(11, 16)}`;
+}
+
+function dadosMataMataManualPorChave(chave) {
+  const mapa = {
+    "2026-06-28_16:00": {
+      id: "M101",
+      homeTeam: "ÁFRICA DO SUL",
+      awayTeam: "CANADÁ"
+    },
+    "2026-06-29_14:00": {
+      id: "M102",
+      homeTeam: "BRASIL",
+      awayTeam: "JAPÃO"
+    },
+    "2026-06-29_17:30": {
+      id: "M103",
+      homeTeam: "ALEMANHA",
+      awayTeam: "A definir"
+    },
+    "2026-06-29_22:00": {
+      id: "M104",
+      homeTeam: "HOLANDA",
+      awayTeam: "MARROCOS"
+    },
+    "2026-06-30_14:00": {
+      id: "M105",
+      homeTeam: "COSTA DO MARFIM",
+      awayTeam: "A definir"
+    }
+  };
+
+  return mapa[chave] || null;
+}
+
+function dadosMataMataManualPorJogo(jogo) {
+  const chave = chaveJogoPrincipalPorDataHora(jogo);
+  return dadosMataMataManualPorChave(chave);
+}
+
+function jogoPrincipalComDadosSeguros(jogo) {
+  const dadosMataMata = dadosMataMataManualPorJogo(jogo);
+  const idMataMata = idMataMataPorJogoPrincipal(jogo);
+
+  return {
+    ...jogo,
+    id: idMataMata || jogo.id,
+    knockoutMatchId: idMataMata || jogo.knockoutMatchId || null,
+    homeTeam: nomeSeguroJogoPrincipal(
+      jogo.homeTeam,
+      dadosMataMata?.homeTeam || "A definir"
+    ),
+    awayTeam: nomeSeguroJogoPrincipal(
+      jogo.awayTeam,
+      dadosMataMata?.awayTeam || "A definir"
+    )
+  };
+}
+
+function chaveUnicaJogoPrincipal(jogo) {
+  const seguro = jogoPrincipalComDadosSeguros(jogo);
+
+  return [
+    seguro.date,
+    String(seguro.kickoff || "").slice(11, 16),
+    nomeSeguroJogoPrincipal(seguro.homeTeam),
+    nomeSeguroJogoPrincipal(seguro.awayTeam)
+  ].join("_");
+}
+
 async function carregarJogosAmanha(dataEscolhida = dataSelecionadaJogosAmanha) {
   const jogosAmanhaDiv = document.getElementById("jogosAmanha");
   jogosAmanhaDiv.innerHTML = "";
@@ -1997,10 +2111,12 @@ const textoAcao = abertoParaPalpite
   item.classList.add("item-jogo-mata-mata-principal");
 }
 
+      const jogoSeguro = jogoPrincipalComDadosSeguros(jogo);
+
 item.innerHTML = `
   <div class="linha-jogo-seguinte-info">
     <span class="hora-jogo-seguinte">${formatarHora(jogo.kickoff)}</span>
-    <strong class="times-jogo-seguinte">${jogo.homeTeam} x ${jogo.awayTeam}</strong>
+    <strong class="times-jogo-seguinte">${jogoSeguro.homeTeam} x ${jogoSeguro.awayTeam}</strong>
   </div>
 
   <span class="acao-jogo-seguinte ${ehMataMata ? "acao-mata-mata" : ""}">
@@ -2784,19 +2900,23 @@ async function carregarMeusPalpites(dataFiltro = dataSelecionadaMeusPalpites) {
 
   const lista = [];
 
- palpites.forEach((palpite) => {
-  let jogo = jogosPorId[palpite.matchId];
+palpites.forEach((palpite) => {
+  let jogo =
+    jogosPorId[palpite.matchId] ||
+    jogosPorId[palpite.firestoreMatchId];
 
-  if (!jogo && palpite.phase === "knockout") {
+  if (palpite.phase === "knockout") {
     jogo = {
+      ...(jogo || {}),
       id: palpite.matchId,
-      homeTeam: palpite.homeTeam,
-      awayTeam: palpite.awayTeam,
-      homeScore: palpite.homeScore ?? null,
-      awayScore: palpite.awayScore ?? null,
-      date: palpite.date,
-      kickoff: palpite.kickoff,
-      status: palpite.status || "scheduled"
+      knockoutMatchId: palpite.knockoutMatchId || palpite.matchId,
+      homeTeam: nomeSeguroJogoPrincipal(palpite.homeTeam, jogo?.homeTeam),
+      awayTeam: nomeSeguroJogoPrincipal(palpite.awayTeam, jogo?.awayTeam),
+      homeScore: jogo?.homeScore ?? palpite.homeScore ?? null,
+      awayScore: jogo?.awayScore ?? palpite.awayScore ?? null,
+      date: palpite.date || jogo?.date,
+      kickoff: palpite.kickoff || jogo?.kickoff,
+      status: jogo?.status || palpite.status || "scheduled"
     };
   }
 
