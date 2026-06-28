@@ -1,4 +1,4 @@
-// VERSÃO 119 - Corrige link direto e status ao vivo do mata-mata
+// VERSÃO 120
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -977,6 +977,27 @@ function criarCardJogoMataMata(jogo) {
   statusTexto = "SUSPENSO";
 }
 
+  const jogoFinalizado = jogo.status === "finished";
+
+const blocoPlacarMata =
+  aoVivo || jogoFinalizado
+    ? `
+      <div class="placar-card-mata">
+        <div class="${aoVivo ? "badge-live-mata" : "badge-finished-mata"}">
+          ${aoVivo ? "● AO VIVO" : "ENCERRADO"}
+        </div>
+
+        <div class="linha-placar-mata">
+          <span>${jogo.homeTeam}</span>
+          <strong>${jogo.homeScore ?? 0} x ${jogo.awayScore ?? 0}</strong>
+          <span>${jogo.awayTeam}</span>
+        </div>
+
+        <div class="tempo-mata">${statusTexto}</div>
+      </div>
+    `
+    : "";
+  
   const temPlacarOficial =
   jogo.homeScore !== undefined &&
   jogo.homeScore !== null &&
@@ -1031,25 +1052,27 @@ const placarOficial = temPlacarOficial
   div.innerHTML = `
     <span class="codigo-jogo">${jogo.codigo}</span>
 
-    <div class="times">
-      <div class="time-linha">
-        <span>${jogo.homeFlag}</span>
-        <strong>${jogo.homeTeam}</strong>
-      </div>
-
-      <div class="time-linha">
-        <span>${jogo.awayFlag}</span>
-        <strong>${jogo.awayTeam}</strong>
-      </div>
+    ${blocoPlacarMata || `
+  <div class="times">
+    <div class="time-linha">
+      <span>${jogo.homeFlag}</span>
+      <strong>${jogo.homeTeam}</strong>
     </div>
 
-    <div class="data">
-      ${formatarDataBR(jogo.date)} — ${formatarHora(jogo.kickoff)}
+    <div class="time-linha">
+      <span>${jogo.awayFlag}</span>
+      <strong>${jogo.awayTeam}</strong>
     </div>
+  </div>
 
-    <div class="status">${statusTexto}</div>
+  <div class="data">
+    ${formatarDataBR(jogo.date)} — ${formatarHora(jogo.kickoff)}
+  </div>
 
-${placarOficial}
+  <div class="status">${statusTexto}</div>
+
+  ${placarOficial}
+`}
 
 ${areaPalpiteSalvo}
 
