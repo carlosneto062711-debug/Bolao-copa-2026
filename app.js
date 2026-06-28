@@ -1,4 +1,4 @@
-// VERSÃO 108
+// VERSÃO 109
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -483,7 +483,7 @@ if (mostrarLog) {
 
 await sincronizarFootballDataPeriodo(periodoMataMata.inicio, periodoMataMata.fim);
 
-// await atualizarPontuacaoMataMata();
+await atualizarPontuacaoMataMata();
 
 await recalcularRankingPorPalpites();
     
@@ -1068,6 +1068,8 @@ async function atualizarPontuacaoMataMata() {
   }
 }
 
+window.atualizarPontuacaoMataMata = atualizarPontuacaoMataMata;
+
 async function recalcularRankingPorPalpites() {
   const snapUsers = await getDocs(collection(db, "users"));
   const usuarios = [];
@@ -1097,7 +1099,6 @@ async function recalcularRankingPorPalpites() {
   snapPredictions.forEach((docSnap) => {
   const palpite = docSnap.data();
 
-/*
 if (palpite.phase === "knockout") {
   if (palpite.scored === true || palpite.status === "finished") {
     pontosPorUsuario[palpite.userId] =
@@ -1106,7 +1107,6 @@ if (palpite.phase === "knockout") {
 
   return;
 }
-*/
 
   const jogo = jogos[palpite.matchId];
 
@@ -1139,6 +1139,8 @@ if (palpite.phase === "knockout") {
 
   console.log("Ranking recalculado:", pontosPorUsuario);
 }
+
+window.recalcularRankingPorPalpites = recalcularRankingPorPalpites;
 
 async function importarPalpitesHistoricos() {
   try {
