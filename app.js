@@ -1,4 +1,4 @@
-// VERSÃO 109
+// VERSÃO 110
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -1138,6 +1138,7 @@ if (palpite.phase === "knockout") {
   }
 
   console.log("Ranking recalculado:", pontosPorUsuario);
+  await carregarRanking();
 }
 
 window.recalcularRankingPorPalpites = recalcularRankingPorPalpites;
@@ -1405,17 +1406,35 @@ palpites
   .forEach((palpite) => {
     const chave = palpite.knockoutMatchId || palpite.matchId;
 
+    const jogoFirestore =
+      jogos.find((jogo) => jogo.id === palpite.firestoreMatchId) ||
+      jogos.find((jogo) => String(jogo.apiMatchId || "") === String(palpite.apiMatchId || ""));
+
+    const jogoExistente = jogosUnicosPorChave[chave] || {};
+
     jogosUnicosPorChave[chave] = {
-      ...(jogosUnicosPorChave[chave] || {}),
+      ...jogoExistente,
       id: palpite.matchId,
       knockoutMatchId: palpite.knockoutMatchId || palpite.matchId,
-      homeTeam: nomeSeguroJogoPrincipal(palpite.homeTeam),
-      awayTeam: nomeSeguroJogoPrincipal(palpite.awayTeam),
-      date: palpite.date,
-      kickoff: palpite.kickoff,
-      status: jogosUnicosPorChave[chave]?.status || palpite.status || "scheduled",
-      homeScore: jogosUnicosPorChave[chave]?.homeScore ?? palpite.homeScore ?? null,
-      awayScore: jogosUnicosPorChave[chave]?.awayScore ?? palpite.awayScore ?? null
+
+      homeTeam: nomeSeguroJogoPrincipal(
+        jogoFirestore?.homeTeam || jogoExistente.homeTeam,
+        palpite.homeTeam || "A definir"
+      ),
+
+      awayTeam: nomeSeguroJogoPrincipal(
+        jogoFirestore?.awayTeam || jogoExistente.awayTeam,
+        palpite.awayTeam || "A definir"
+      ),
+
+      date: jogoFirestore?.date || jogoExistente.date || palpite.date,
+      kickoff: jogoFirestore?.kickoff || jogoExistente.kickoff || palpite.kickoff,
+
+      status: jogoFirestore?.status || jogoExistente.status || palpite.status || "scheduled",
+      apiStatus: jogoFirestore?.apiStatus || jogoExistente.apiStatus || palpite.apiStatus || null,
+
+      homeScore: jogoFirestore?.homeScore ?? jogoExistente.homeScore ?? palpite.homeScore ?? null,
+      awayScore: jogoFirestore?.awayScore ?? jogoExistente.awayScore ?? palpite.awayScore ?? null
     };
   });
 
@@ -2720,58 +2739,19 @@ async function carregarRanking() {
   rankingDiv.innerHTML = "";
 
   const usersSnap = await getDocs(collection(db, "users"));
-  const matchesSnap = await getDocs(collection(db, "matches"));
-  const predictionsSnap = await getDocs(collection(db, "predictions"));
 
   const usuarios = [];
-  usersSnap.forEach((docSnap) => {
-    usuarios.push({
-      id: docSnap.id,
-      ...docSnap.data(),
-      pontosCalculados: 0
-    });
-  });
 
-  const jogosFinalizados = [];
-  matchesSnap.forEach((docSnap) => {
-    const jogo = {
+  usersSnap.forEach((docSnap) => {
+    const usuario = {
       id: docSnap.id,
       ...docSnap.data()
     };
 
-    if (jogo.status === "finished") {
-      jogosFinalizados.push(jogo);
-    }
-  });
-
-  const palpites = [];
-  predictionsSnap.forEach((docSnap) => {
-    palpites.push({
-      id: docSnap.id,
-      ...docSnap.data()
+    usuarios.push({
+      ...usuario,
+      pontosCalculados: Number(usuario.pontos || 0)
     });
-  });
-
-  usuarios.forEach((usuario) => {
-    let total = 0;
-
-    jogosFinalizados.forEach((jogo) => {
-      const palpite = palpites.find((p) =>
-        p.userId === usuario.id &&
-        p.matchId === jogo.id
-      );
-
-      if (palpite) {
-        total += calcularPontos(
-          palpite.homeGuess,
-          palpite.awayGuess,
-          jogo.homeScore,
-          jogo.awayScore
-        );
-      }
-    });
-
-    usuario.pontosCalculados = total;
   });
 
   usuarios.sort((a, b) => b.pontosCalculados - a.pontosCalculados);
@@ -2780,14 +2760,23 @@ async function carregarRanking() {
     const div = document.createElement("div");
     div.className = "ranking-item";
 
+    const nome =
+      usuario.nome ||
+      usuario.name ||
+      usuario.displayName ||
+      usuario.email ||
+      "Usuário";
+
     div.innerHTML = `
-      <span>${index + 1}. ${usuario.nome}</span>
+      <span>${index + 1}. ${nome}</span>
       <strong>${usuario.pontosCalculados} pts</strong>
     `;
 
     rankingDiv.appendChild(div);
   });
 }
+
+window.carregarRanking = carregarRanking;
 
 async function cadastrarJogo() {
   const data = document.getElementById("dataJogo").value;
