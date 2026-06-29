@@ -1,4 +1,4 @@
-// VERSÃO 112
+// VERSÃO 113
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -1056,12 +1056,18 @@ async function atualizarPontuacaoMataMata() {
         return;
       }
 
-      const pontos = calcularPontosMataMata(
-        palpite.homeGuess,
-        palpite.awayGuess,
-        jogo.homeScore,
-        jogo.awayScore
-      );
+     const placarBaseHome =
+  jogo.regularTimeHomeScore ?? jogo.homeScore;
+
+const placarBaseAway =
+  jogo.regularTimeAwayScore ?? jogo.awayScore;
+
+const pontos = calcularPontosMataMata(
+  palpite.homeGuess,
+  palpite.awayGuess,
+  placarBaseHome,
+  placarBaseAway
+);
 
       if (
         Number(palpite.points || 0) === pontos &&
@@ -1076,8 +1082,12 @@ async function atualizarPontuacaoMataMata() {
           scored: true,
           scoredAt: new Date().toISOString(),
           status: "finished",
-          homeScore: Number(jogo.homeScore),
-          awayScore: Number(jogo.awayScore)
+         homeScore: Number(placarBaseHome),
+awayScore: Number(placarBaseAway),
+realFinalHomeScore: Number(jogo.homeScore),
+realFinalAwayScore: Number(jogo.awayScore),
+scoreDuration: jogo.scoreDuration || null,
+winner: jogo.winner || null
         })
       );
     });
@@ -2251,6 +2261,98 @@ function dadosMataMataManualPorChave(chave) {
   };
 
   return mapa[chave] || null;
+}
+
+function vencedorDoJogoPrincipal(jogo) {
+  if (!jogo) return null;
+  if (jogo.status !== "finished") return null;
+
+  if (jogo.winner === "HOME_TEAM") {
+    return {
+      team: jogo.homeTeam,
+      flag: jogo.homeFlag || ""
+    };
+  }
+
+  if (jogo.winner === "AWAY_TEAM") {
+    return {
+      team: jogo.awayTeam,
+      flag: jogo.awayFlag || ""
+    };
+  }
+
+  const extraHome = Number(jogo.extraTimeHomeScore);
+  const extraAway = Number(jogo.extraTimeAwayScore);
+
+  if (!Number.isNaN(extraHome) && !Number.isNaN(extraAway)) {
+    if (extraHome > extraAway) {
+      return {
+        team: jogo.homeTeam,
+        flag: jogo.homeFlag || ""
+      };
+    }
+
+    if (extraAway > extraHome) {
+      return {
+        team: jogo.awayTeam,
+        flag: jogo.awayFlag || ""
+      };
+    }
+  }
+
+  const penHome = Number(jogo.penaltiesHomeScore);
+  const penAway = Number(jogo.penaltiesAwayScore);
+
+  if (!Number.isNaN(penHome) && !Number.isNaN(penAway)) {
+    if (penHome > penAway) {
+      return {
+        team: jogo.homeTeam,
+        flag: jogo.homeFlag || ""
+      };
+    }
+
+    if (penAway > penHome) {
+      return {
+        team: jogo.awayTeam,
+        flag: jogo.awayFlag || ""
+      };
+    }
+  }
+
+  const homeScore = Number(jogo.homeScore);
+  const awayScore = Number(jogo.awayScore);
+
+  if (Number.isNaN(homeScore) || Number.isNaN(awayScore)) return null;
+
+  if (homeScore > awayScore) {
+    return {
+      team: jogo.homeTeam,
+      flag: jogo.homeFlag || ""
+    };
+  }
+
+  if (awayScore > homeScore) {
+    return {
+      team: jogo.awayTeam,
+      flag: jogo.awayFlag || ""
+    };
+  }
+
+  return null;
+}
+
+function aplicarTimeNoJogoPrincipal(jogo, lado, classificado) {
+  if (!jogo || !classificado) return;
+
+  if (lado === "home") {
+    jogo.homeTeam = classificado.team;
+    jogo.homeFlag = classificado.flag || "";
+  }
+
+  if (lado === "away") {
+    jogo.awayTeam = classificado.team;
+    jogo.awayFlag = classificado.flag || "";
+  }
 }
 
 function adicionarJogosMataMataManuais(listaJogos) {
