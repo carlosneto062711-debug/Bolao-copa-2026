@@ -1,4 +1,4 @@
-// VERSÃO 128
+// VERSÃO 129 - Corrige chaveamento real das 32 seleções
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -96,34 +96,6 @@ function iniciarProtecaoMobileMataMata() {
 const jogosMataMata = [
   // LADO ESQUERDO - Segunda rodada / 32 seleções
   {
-    id: "M101",
-    lado: "esquerdo",
-    fase: "round32",
-    codigo: "M101",
-    homeTeam: "ÁFRICA DO SUL",
-    awayTeam: "CANADÁ",
-    homeFlag: "🇿🇦",
-    awayFlag: "🇨🇦",
-    date: "2026-06-28",
-    kickoff: "2026-06-28T16:00:00",
-    status: "finished",
-    homeScore: 0,
-    awayScore: 1
-  },
-  {
-    id: "M102",
-    lado: "esquerdo",
-    fase: "round32",
-    codigo: "M102",
-    homeTeam: "BRASIL",
-    awayTeam: "JAPÃO",
-    homeFlag: "🇧🇷",
-    awayFlag: "🇯🇵",
-    date: "2026-06-29",
-    kickoff: "2026-06-29T14:00:00",
-    status: "scheduled"
-  },
-  {
     id: "M103",
     lado: "esquerdo",
     fase: "round32",
@@ -134,32 +106,6 @@ const jogosMataMata = [
     awayFlag: "🇵🇾",
     date: "2026-06-29",
     kickoff: "2026-06-29T17:30:00",
-    status: "scheduled"
-  },
-  {
-    id: "M104",
-    lado: "esquerdo",
-    fase: "round32",
-    codigo: "M104",
-    homeTeam: "HOLANDA",
-    awayTeam: "MARROCOS",
-    homeFlag: "🇳🇱",
-    awayFlag: "🇲🇦",
-    date: "2026-06-29",
-    kickoff: "2026-06-29T22:00:00",
-    status: "scheduled"
-  },
-  {
-    id: "M105",
-    lado: "esquerdo",
-    fase: "round32",
-    codigo: "M105",
-    homeTeam: "COSTA DO MARFIM",
-    awayTeam: "NORUEGA",
-    homeFlag: "🇨🇮",
-    awayFlag: "🇳🇴",
-    date: "2026-06-30",
-    kickoff: "2026-06-30T14:00:00",
     status: "scheduled"
   },
   {
@@ -176,8 +122,116 @@ const jogosMataMata = [
     status: "scheduled"
   },
   {
-    id: "M107",
+    id: "M101",
     lado: "esquerdo",
+    fase: "round32",
+    codigo: "M101",
+    homeTeam: "ÁFRICA DO SUL",
+    awayTeam: "CANADÁ",
+    homeFlag: "🇿🇦",
+    awayFlag: "🇨🇦",
+    date: "2026-06-28",
+    kickoff: "2026-06-28T16:00:00",
+    status: "finished",
+    homeScore: 0,
+    awayScore: 1
+  },
+  {
+    id: "M104",
+    lado: "esquerdo",
+    fase: "round32",
+    codigo: "M104",
+    homeTeam: "HOLANDA",
+    awayTeam: "MARROCOS",
+    homeFlag: "🇳🇱",
+    awayFlag: "🇲🇦",
+    date: "2026-06-29",
+    kickoff: "2026-06-29T22:00:00",
+    status: "scheduled"
+  },
+  {
+    id: "M112",
+    lado: "esquerdo",
+    fase: "round32",
+    codigo: "M112",
+    homeTeam: "PORTUGAL",
+    awayTeam: "CROÁCIA",
+    homeFlag: "🇵🇹",
+    awayFlag: "🇭🇷",
+    date: "2026-07-02",
+    kickoff: "2026-07-02T20:00:00",
+    status: "scheduled"
+  },
+  {
+    id: "M111",
+    lado: "esquerdo",
+    fase: "round32",
+    codigo: "M111",
+    homeTeam: "ESPANHA",
+    awayTeam: "ÁUSTRIA",
+    homeFlag: "🇪🇸",
+    awayFlag: "🇦🇹",
+    date: "2026-07-02",
+    kickoff: "2026-07-02T16:00:00",
+    status: "scheduled"
+  },
+  {
+    id: "M110",
+    lado: "esquerdo",
+    fase: "round32",
+    codigo: "M110",
+    homeTeam: "ESTADOS UNIDOS",
+    awayTeam: "BÓSNIA E HERZEGOVINA",
+    homeFlag: "🇺🇸",
+    awayFlag: "🇧🇦",
+    date: "2026-07-01",
+    kickoff: "2026-07-01T21:00:00",
+    status: "scheduled"
+  },
+  {
+    id: "M109",
+    lado: "esquerdo",
+    fase: "round32",
+    codigo: "M109",
+    homeTeam: "BÉLGICA",
+    awayTeam: "SENEGAL",
+    homeFlag: "🇧🇪",
+    awayFlag: "🇸🇳",
+    date: "2026-07-01",
+    kickoff: "2026-07-01T17:00:00",
+    status: "scheduled"
+  },
+
+  // LADO DIREITO - Segunda rodada / 32 seleções
+  {
+    id: "M102",
+    lado: "direito",
+    fase: "round32",
+    codigo: "M102",
+    homeTeam: "BRASIL",
+    awayTeam: "JAPÃO",
+    homeFlag: "🇧🇷",
+    awayFlag: "🇯🇵",
+    date: "2026-06-29",
+    kickoff: "2026-06-29T14:00:00",
+    status: "scheduled"
+  },
+  {
+    id: "M105",
+    lado: "direito",
+    fase: "round32",
+    codigo: "M105",
+    homeTeam: "COSTA DO MARFIM",
+    awayTeam: "NORUEGA",
+    homeFlag: "🇨🇮",
+    awayFlag: "🇳🇴",
+    date: "2026-06-30",
+    kickoff: "2026-06-30T14:00:00",
+    status: "scheduled"
+  },
+  {
+    id: "M107",
+    lado: "direito",
     fase: "round32",
     codigo: "M107",
     homeTeam: "MÉXICO",
@@ -190,7 +244,7 @@ const jogosMataMata = [
   },
   {
     id: "M108",
-    lado: "esquerdo",
+    lado: "direito",
     fase: "round32",
     codigo: "M108",
     homeTeam: "INGLATERRA",
@@ -201,71 +255,17 @@ const jogosMataMata = [
     kickoff: "2026-07-01T13:00:00",
     status: "scheduled"
   },
-
-  // LADO DIREITO - Segunda rodada / 32 seleções
   {
-    id: "M109",
+    id: "M115",
     lado: "direito",
     fase: "round32",
-    codigo: "M109",
-    homeTeam: "BÉLGICA",
-    awayTeam: "SENEGAL",
-    homeFlag: "🇧🇪",
-    awayFlag: "🇸🇳",
-    date: "2026-07-01",
-    kickoff: "2026-07-01T17:00:00",
-    status: "scheduled"
-  },
-  {
-    id: "M110",
-    lado: "direito",
-    fase: "round32",
-    codigo: "M110",
-    homeTeam: "ESTADOS UNIDOS",
-    awayTeam: "BÓSNIA E HERZEGOVINA",
-    homeFlag: "🇺🇸",
-    awayFlag: "🇧🇦",
-    date: "2026-07-01",
-    kickoff: "2026-07-01T21:00:00",
-    status: "scheduled"
-  },
-  {
-    id: "M111",
-    lado: "direito",
-    fase: "round32",
-    codigo: "M111",
-    homeTeam: "ESPANHA",
-    awayTeam: "A definir",
-    homeFlag: "🇪🇸",
-    awayFlag: "🛡️",
-    date: "2026-07-02",
-    kickoff: "2026-07-02T16:00:00",
-    status: "scheduled"
-  },
-  {
-    id: "M112",
-    lado: "direito",
-    fase: "round32",
-    codigo: "M112",
-    homeTeam: "PORTUGAL",
-    awayTeam: "CROÁCIA",
-    homeFlag: "🇵🇹",
-    awayFlag: "🇭🇷",
-    date: "2026-07-02",
-    kickoff: "2026-07-02T20:00:00",
-    status: "scheduled"
-  },
-  {
-    id: "M113",
-    lado: "direito",
-    fase: "round32",
-    codigo: "M113",
-    homeTeam: "SUÍÇA",
-    awayTeam: "ARGÉLIA",
-    homeFlag: "🇨🇭",
-    awayFlag: "🇩🇿",
+    codigo: "M115",
+    homeTeam: "ARGENTINA",
+    awayTeam: "CABO VERDE",
+    homeFlag: "🇦🇷",
+    awayFlag: "🇨🇻",
     date: "2026-07-03",
-    kickoff: "2026-07-03T00:00:00",
+    kickoff: "2026-07-03T19:00:00",
     status: "scheduled"
   },
   {
@@ -282,16 +282,16 @@ const jogosMataMata = [
     status: "scheduled"
   },
   {
-    id: "M115",
+    id: "M113",
     lado: "direito",
     fase: "round32",
-    codigo: "M115",
-    homeTeam: "ARGENTINA",
-    awayTeam: "CABO VERDE",
-    homeFlag: "🇦🇷",
-    awayFlag: "🇨🇻",
+    codigo: "M113",
+    homeTeam: "SUÍÇA",
+    awayTeam: "ARGÉLIA",
+    homeFlag: "🇨🇭",
+    awayFlag: "🇩🇿",
     date: "2026-07-03",
-    kickoff: "2026-07-03T19:00:00",
+    kickoff: "2026-07-03T00:00:00",
     status: "scheduled"
   },
   {
@@ -456,44 +456,63 @@ function colocarClassificadoNoJogo(destino, posicao, classificado) {
 
 function aplicarAvancoAutomaticoMataMata() {
   const pares = [
+    // LADO ESQUERDO DO CHAVEAMENTO REAL
+
+    // ALE/PAR x FRA/SUE
     {
       destino: buscarJogoOitavasMataMata("esquerdo", "2026-07-04", "14:00"),
-      homeOrigem: "M101",
-      awayOrigem: "M102"
-    },
-    {
-      destino: buscarJogoOitavasMataMata("esquerdo", "2026-07-05", "17:00"),
       homeOrigem: "M103",
-      awayOrigem: "M104"
-    },
-    {
-      destino: buscarJogoOitavasMataMata("esquerdo", "2026-07-06", "16:00"),
-      homeOrigem: "M105",
       awayOrigem: "M106"
     },
+
+    // AFS/CAN x HOL/MAR
+    {
+      destino: buscarJogoOitavasMataMata("esquerdo", "2026-07-05", "17:00"),
+      homeOrigem: "M101",
+      awayOrigem: "M104"
+    },
+
+    // POR/CRO x ESP/AUT
+    {
+      destino: buscarJogoOitavasMataMata("esquerdo", "2026-07-06", "16:00"),
+      homeOrigem: "M112",
+      awayOrigem: "M111"
+    },
+
+    // EUA/BOS x BEL/SEN
     {
       destino: buscarJogoOitavasMataMata("esquerdo", "2026-07-07", "13:00"),
+      homeOrigem: "M110",
+      awayOrigem: "M109"
+    },
+
+    // LADO DIREITO DO CHAVEAMENTO REAL
+
+    // BRA/JAP x CDM/NOR
+    {
+      destino: buscarJogoOitavasMataMata("direito", "2026-07-04", "18:00"),
+      homeOrigem: "M102",
+      awayOrigem: "M105"
+    },
+
+    // MEX/EQU x ING/RDC
+    {
+      destino: buscarJogoOitavasMataMata("direito", "2026-07-05", "21:00"),
       homeOrigem: "M107",
       awayOrigem: "M108"
     },
-    {
-      destino: buscarJogoOitavasMataMata("direito", "2026-07-04", "18:00"),
-      homeOrigem: "M109",
-      awayOrigem: "M110"
-    },
-    {
-      destino: buscarJogoOitavasMataMata("direito", "2026-07-05", "21:00"),
-      homeOrigem: "M111",
-      awayOrigem: "M112"
-    },
+
+    // ARG/CPV x AUS/EGT
     {
       destino: buscarJogoOitavasMataMata("direito", "2026-07-06", "21:00"),
-      homeOrigem: "M113",
+      homeOrigem: "M115",
       awayOrigem: "M114"
     },
+
+    // SUI/AGL x COL/GAN
     {
       destino: buscarJogoOitavasMataMata("direito", "2026-07-07", "17:00"),
-      homeOrigem: "M115",
+      homeOrigem: "M113",
       awayOrigem: "M116"
     }
   ];
