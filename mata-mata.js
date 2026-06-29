@@ -1,4 +1,4 @@
-// VERSÃO 131
+// VERSÃO 132
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -1178,6 +1178,37 @@ function textoTempoDoJogoMataMata(jogo) {
   return `2º TEMPO - ${minutoSegundoTempo}'`;
 }
 
+function htmlDetalhesExtrasMataMata(jogo) {
+  const temProrrogacao =
+    jogo.extraTimeHomeScore !== undefined &&
+    jogo.extraTimeHomeScore !== null &&
+    jogo.extraTimeAwayScore !== undefined &&
+    jogo.extraTimeAwayScore !== null;
+
+  const temPenaltis =
+    jogo.penaltiesHomeScore !== undefined &&
+    jogo.penaltiesHomeScore !== null &&
+    jogo.penaltiesAwayScore !== undefined &&
+    jogo.penaltiesAwayScore !== null;
+
+  if (!temProrrogacao && !temPenaltis) return "";
+
+  return `
+    <div class="detalhes-extras-mata">
+      ${
+        temProrrogacao
+          ? `<div class="linha-extra-mata">Prorrogação: <strong>${jogo.extraTimeHomeScore} x ${jogo.extraTimeAwayScore}</strong></div>`
+          : ""
+      }
+      ${
+        temPenaltis
+          ? `<div class="linha-extra-mata">Pênaltis: <strong>${jogo.penaltiesHomeScore} x ${jogo.penaltiesAwayScore}</strong></div>`
+          : ""
+      }
+    </div>
+  `;
+}
+
 function criarCardJogoMataMata(jogo) {
   const div = document.createElement("div");
 
@@ -1236,6 +1267,9 @@ const blocoPlacarMata =
         </div>
 
         <div class="tempo-mata">${statusTexto}</div>
+
+        ${htmlDetalhesExtrasMataMata(jogo)}
+        
       </div>
     `
     : "";
