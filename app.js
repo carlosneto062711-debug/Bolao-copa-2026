@@ -1,4 +1,4 @@
-// VERSÃO 110
+// VERSÃO 111
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -1384,17 +1384,18 @@ const jogosUnicosPorChave = {};
 jogos
   .filter((jogo) => jogo.date === dataSelecionadaAdversarios)
   .forEach((jogo) => {
-    const idMataMata = idMataMataPorJogoPrincipal(jogo);
+    const jogoSeguro = jogoPrincipalComDadosSeguros(jogo);
+    const idMataMata = jogoSeguro.knockoutMatchId || idMataMataPorJogoPrincipal(jogo);
 
     const chave = idMataMata
       ? idMataMata
-      : `${jogo.date}_${String(jogo.kickoff || "").slice(11, 16)}_${nomeSeguroJogoPrincipal(jogo.homeTeam)}_${nomeSeguroJogoPrincipal(jogo.awayTeam)}`;
+      : `${jogoSeguro.date}_${String(jogoSeguro.kickoff || "").slice(11, 16)}_${nomeSeguroJogoPrincipal(jogoSeguro.homeTeam)}_${nomeSeguroJogoPrincipal(jogoSeguro.awayTeam)}`;
 
     jogosUnicosPorChave[chave] = {
-      ...jogo,
-      knockoutMatchId: idMataMata || jogo.knockoutMatchId || null,
-      homeTeam: nomeSeguroJogoPrincipal(jogo.homeTeam),
-      awayTeam: nomeSeguroJogoPrincipal(jogo.awayTeam)
+      ...jogoSeguro,
+      knockoutMatchId: idMataMata || jogoSeguro.knockoutMatchId || null,
+      homeTeam: nomeSeguroJogoPrincipal(jogoSeguro.homeTeam),
+      awayTeam: nomeSeguroJogoPrincipal(jogoSeguro.awayTeam)
     };
   });
 
@@ -2124,25 +2125,95 @@ function dadosMataMataManualPorChave(chave) {
       homeTeam: "ÁFRICA DO SUL",
       awayTeam: "CANADÁ"
     },
+
     "2026-06-29_14:00": {
       id: "M102",
       homeTeam: "BRASIL",
       awayTeam: "JAPÃO"
     },
+
     "2026-06-29_17:30": {
       id: "M103",
       homeTeam: "ALEMANHA",
-      awayTeam: "A definir"
+      awayTeam: "PARAGUAI"
     },
+
     "2026-06-29_22:00": {
       id: "M104",
       homeTeam: "HOLANDA",
       awayTeam: "MARROCOS"
     },
+
     "2026-06-30_14:00": {
       id: "M105",
       homeTeam: "COSTA DO MARFIM",
+      awayTeam: "NORUEGA"
+    },
+
+    "2026-06-30_18:00": {
+      id: "M106",
+      homeTeam: "FRANÇA",
+      awayTeam: "SUÉCIA"
+    },
+
+    "2026-06-30_22:00": {
+      id: "M107",
+      homeTeam: "MÉXICO",
+      awayTeam: "EQUADOR"
+    },
+
+    "2026-07-01_13:00": {
+      id: "M108",
+      homeTeam: "INGLATERRA",
+      awayTeam: "CONGO DR"
+    },
+
+    "2026-07-01_17:00": {
+      id: "M109",
+      homeTeam: "BÉLGICA",
+      awayTeam: "SENEGAL"
+    },
+
+    "2026-07-01_21:00": {
+      id: "M110",
+      homeTeam: "ESTADOS UNIDOS",
+      awayTeam: "BÓSNIA E HERZEGOVINA"
+    },
+
+    "2026-07-02_16:00": {
+      id: "M111",
+      homeTeam: "ESPANHA",
       awayTeam: "A definir"
+    },
+
+    "2026-07-02_20:00": {
+      id: "M112",
+      homeTeam: "PORTUGAL",
+      awayTeam: "CROÁCIA"
+    },
+
+    "2026-07-03_00:00": {
+      id: "M113",
+      homeTeam: "SUÍÇA",
+      awayTeam: "ARGÉLIA"
+    },
+
+    "2026-07-03_15:00": {
+      id: "M114",
+      homeTeam: "AUSTRÁLIA",
+      awayTeam: "EGITO"
+    },
+
+    "2026-07-03_19:00": {
+      id: "M115",
+      homeTeam: "ARGENTINA",
+      awayTeam: "CABO VERDE"
+    },
+
+    "2026-07-03_22:30": {
+      id: "M116",
+      homeTeam: "COLÔMBIA",
+      awayTeam: "GANA"
     }
   };
 
