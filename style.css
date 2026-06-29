@@ -753,3 +753,18 @@ input {
   border-radius: 999px;
   font-size: 12px;
 }
+
+.bloco-extras-jogo {
+  margin-top: 6px;
+  margin-bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  text-align: center;
+  font-size: 0.85rem;
+  color: #d9e6ff;
+}
+
+.linha-extra-jogo strong {
+  color: #ffffff;
+}
