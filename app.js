@@ -1,4 +1,4 @@
-// VERSÃO 111
+// VERSÃO 112
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -310,12 +310,22 @@ const finishedAt =
   awayTeam: foraApi,
   date: dataApi,
   kickoff: kickoffApi,
-
   status: novoStatus,
   apiStatus: jogoApi.status,
-
   apiProvider: "football-data",
   apiMatchId: jogoApi.id,
+
+  winner: jogoApi.score?.winner || null,
+  scoreDuration: jogoApi.score?.duration || null,
+
+  regularTimeHomeScore: jogoApi.score?.regularTime?.home ?? null,
+  regularTimeAwayScore: jogoApi.score?.regularTime?.away ?? null,
+
+  extraTimeHomeScore: jogoApi.score?.extraTime?.home ?? null,
+  extraTimeAwayScore: jogoApi.score?.extraTime?.away ?? null,
+
+  penaltiesHomeScore: jogoApi.score?.penalties?.home ?? null,
+  penaltiesAwayScore: jogoApi.score?.penalties?.away ?? null,
 
   createdFromApiAt: jogoExistente?.createdFromApiAt || new Date().toISOString(),
   updatedFromApiAt: new Date().toISOString()
@@ -343,14 +353,28 @@ continue;
 
       const novoStatus = statusFootballDataParaFirestore(jogoApi.status);
 
-    const novosDados = {
+   const novosDados = {
   homeTeam: casaApi,
   awayTeam: foraApi,
   date: dataApi,
   kickoff: kickoffApi,
   status: novoStatus,
+  apiStatus: jogoApi.status,
   apiProvider: "football-data",
   apiMatchId: jogoApi.id,
+
+  winner: jogoApi.score?.winner || null,
+  scoreDuration: jogoApi.score?.duration || null,
+
+  regularTimeHomeScore: jogoApi.score?.regularTime?.home ?? null,
+  regularTimeAwayScore: jogoApi.score?.regularTime?.away ?? null,
+
+  extraTimeHomeScore: jogoApi.score?.extraTime?.home ?? null,
+  extraTimeAwayScore: jogoApi.score?.extraTime?.away ?? null,
+
+  penaltiesHomeScore: jogoApi.score?.penalties?.home ?? null,
+  penaltiesAwayScore: jogoApi.score?.penalties?.away ?? null,
+
   updatedFromApiAt: new Date().toISOString()
 };
 
@@ -1305,7 +1329,14 @@ onAuthStateChanged(auth, async (user) => {
     iniciarProtecaoMobile();
 iniciarContagemEmTempoReal();
 iniciarAtualizacaoAutomatica();
+ 
+    if (window.innerWidth <= 768) {
+  setTimeout(() => {
     iniciarSincronizacaoApiAutomatica();
+  }, 2500);
+} else {
+  iniciarSincronizacaoApiAutomatica();
+}
     
   } else {
     usuarioAtual = null;
@@ -1368,6 +1399,8 @@ async function carregarPalpitesAdversarios(dataFiltro = dataSelecionadaAdversari
       ...docSnap.data()
     });
   });
+
+  adicionarJogosMataMataManuais(jogos);
 
  const snapPredictions = await getDocs(collection(db, "predictions"));
 const palpites = [];
@@ -2220,6 +2253,64 @@ function dadosMataMataManualPorChave(chave) {
   return mapa[chave] || null;
 }
 
+function adicionarJogosMataMataManuais(listaJogos) {
+  const chaves = [
+    "2026-06-28_16:00",
+    "2026-06-29_14:00",
+    "2026-06-29_17:30",
+    "2026-06-29_22:00",
+    "2026-06-30_14:00",
+    "2026-06-30_18:00",
+    "2026-06-30_22:00",
+    "2026-07-01_13:00",
+    "2026-07-01_17:00",
+    "2026-07-01_21:00",
+    "2026-07-02_16:00",
+    "2026-07-02_20:00",
+    "2026-07-03_00:00",
+    "2026-07-03_15:00",
+    "2026-07-03_19:00",
+    "2026-07-03_22:30"
+  ];
+
+  chaves.forEach((chave) => {
+    const dadosManual = dadosMataMataManualPorChave(chave);
+    if (!dadosManual) return;
+
+    const [date, hora] = chave.split("_");
+    const kickoff = `${date}T${hora}:00`;
+
+    const jaExiste = listaJogos.some((jogo) => {
+      const mesmaData = jogo.date === date;
+      const mesmaHora = String(jogo.kickoff || "").slice(11, 16) === hora;
+
+      const mesmoId =
+        jogo.id === dadosManual.id ||
+        jogo.matchId === dadosManual.id ||
+        jogo.knockoutMatchId === dadosManual.id ||
+        idMataMataPorJogoPrincipal(jogo) === dadosManual.id;
+
+      return mesmoId || (mesmaData && mesmaHora);
+    });
+
+    if (jaExiste) return;
+
+    listaJogos.push({
+      id: dadosManual.id,
+      matchId: dadosManual.id,
+      knockoutMatchId: dadosManual.id,
+      phase: "knockout",
+      round: "round32",
+      homeTeam: dadosManual.homeTeam,
+      awayTeam: dadosManual.awayTeam,
+      date,
+      kickoff,
+      status: "scheduled",
+      apiProvider: "manual"
+    });
+  });
+}
+
 function dadosMataMataManualPorJogo(jogo) {
   const chave = chaveJogoPrincipalPorDataHora(jogo);
   return dadosMataMataManualPorChave(chave);
@@ -2269,6 +2360,8 @@ async function carregarJogosAmanha(dataEscolhida = dataSelecionadaJogosAmanha) {
         ...docSnap.data()
       });
     });
+
+    adicionarJogosMataMataManuais(todosJogos);
 
     const amanha = amanhaISO();
 
