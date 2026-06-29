@@ -1,4 +1,4 @@
-// VERSÃO 114
+// VERSÃO 115
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -3346,32 +3346,6 @@ function jogoEhKnockoutParaTempo(jogo) {
   if (jogo.phase === "knockout") return true;
   if (jogo.knockoutMatchId) return true;
   if (jogo.matchId && String(jogo.matchId).startsWith("M")) return true;
-  if (jogo.id && String(jogo.id).startsWith("M")) return true;
-  if (jogo.id && String(jogo.id).startsWith("O")) return true;
-
-  if (typeof jogoEhMataMataPrincipal === "function") {
-    return jogoEhMataMataPrincipal(jogo);
-  }
-
-  return false;
-}
-
-function minutosDesdeInicioJogo(kickoff) {
-  if (!kickoff) return 0;
-
-  const inicio = new Date(kickoff).getTime();
-  const agora = Date.now();
-
-  return Math.max(0, Math.floor((agora - inicio) / 60000));
-}
-
-function jogoEhKnockoutParaTempo(jogo) {
-  if (!jogo) return false;
-
-  if (jogo.phase === "knockout") return true;
-  if (jogo.knockoutMatchId) return true;
-  if (jogo.matchId && String(jogo.matchId).startsWith("M")) return true;
-  if (jogo.matchId && String(jogo.matchId).startsWith("O")) return true;
   if (jogo.id && String(jogo.id).startsWith("M")) return true;
   if (jogo.id && String(jogo.id).startsWith("O")) return true;
 
