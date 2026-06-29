@@ -1,4 +1,4 @@
-// VERSÃO 130
+// VERSÃO 131
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -391,7 +391,7 @@ const jogosMataMata = [
   }
 ];
 
-fufunction vencedorDoJogoMataMata(jogo) {
+function vencedorDoJogoMataMata(jogo) {
   if (!jogo) return null;
   if (jogo.status !== "finished") return null;
 
