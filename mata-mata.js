@@ -1,4 +1,4 @@
-// VERSÃO 129 - Corrige chaveamento real das 32 seleções
+// VERSÃO 130
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -391,7 +391,7 @@ const jogosMataMata = [
   }
 ];
 
-function vencedorDoJogoMataMata(jogo) {
+fufunction vencedorDoJogoMataMata(jogo) {
   if (!jogo) return null;
   if (jogo.status !== "finished") return null;
 
@@ -407,6 +407,44 @@ function vencedorDoJogoMataMata(jogo) {
       team: jogo.awayTeam,
       flag: jogo.awayFlag
     };
+  }
+
+  const extraHome = Number(jogo.extraTimeHomeScore);
+  const extraAway = Number(jogo.extraTimeAwayScore);
+
+  if (!Number.isNaN(extraHome) && !Number.isNaN(extraAway)) {
+    if (extraHome > extraAway) {
+      return {
+        team: jogo.homeTeam,
+        flag: jogo.homeFlag
+      };
+    }
+
+    if (extraAway > extraHome) {
+      return {
+        team: jogo.awayTeam,
+        flag: jogo.awayFlag
+      };
+    }
+  }
+
+  const penHome = Number(jogo.penaltiesHomeScore);
+  const penAway = Number(jogo.penaltiesAwayScore);
+
+  if (!Number.isNaN(penHome) && !Number.isNaN(penAway)) {
+    if (penHome > penAway) {
+      return {
+        team: jogo.homeTeam,
+        flag: jogo.homeFlag
+      };
+    }
+
+    if (penAway > penHome) {
+      return {
+        team: jogo.awayTeam,
+        flag: jogo.awayFlag
+      };
+    }
   }
 
   const homeScore = Number(jogo.homeScore);
@@ -913,6 +951,38 @@ if (
       if (match.awayScore !== undefined && match.awayScore !== null) {
         jogoLocal.awayScore = Number(match.awayScore);
       }
+
+      if (match.winner) {
+  jogoLocal.winner = match.winner;
+}
+
+if (match.scoreDuration) {
+  jogoLocal.scoreDuration = match.scoreDuration;
+}
+
+if (match.regularTimeHomeScore !== undefined && match.regularTimeHomeScore !== null) {
+  jogoLocal.regularTimeHomeScore = Number(match.regularTimeHomeScore);
+}
+
+if (match.regularTimeAwayScore !== undefined && match.regularTimeAwayScore !== null) {
+  jogoLocal.regularTimeAwayScore = Number(match.regularTimeAwayScore);
+}
+
+if (match.extraTimeHomeScore !== undefined && match.extraTimeHomeScore !== null) {
+  jogoLocal.extraTimeHomeScore = Number(match.extraTimeHomeScore);
+}
+
+if (match.extraTimeAwayScore !== undefined && match.extraTimeAwayScore !== null) {
+  jogoLocal.extraTimeAwayScore = Number(match.extraTimeAwayScore);
+}
+
+if (match.penaltiesHomeScore !== undefined && match.penaltiesHomeScore !== null) {
+  jogoLocal.penaltiesHomeScore = Number(match.penaltiesHomeScore);
+}
+
+if (match.penaltiesAwayScore !== undefined && match.penaltiesAwayScore !== null) {
+  jogoLocal.penaltiesAwayScore = Number(match.penaltiesAwayScore);
+}
 
       if (match.finishedAt) {
         jogoLocal.finishedAt = match.finishedAt;
