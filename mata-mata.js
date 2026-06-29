@@ -1,4 +1,4 @@
-// VERSÃO 126
+// VERSÃO 127 - Atualiza confrontos manuais e Canadá nas oitavas
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -96,27 +96,29 @@ function iniciarProtecaoMobileMataMata() {
 const jogosMataMata = [
   // LADO ESQUERDO - Segunda rodada / 32 seleções
   {
-  id: "M101",
-  lado: "esquerdo",
-  fase: "round32",
-  codigo: "M101",
-  homeTeam: "ÁFRICA DO SUL",
-  awayTeam: "CANADÁ",
-  homeFlag: "🇿🇦",
-  awayFlag: "🇨🇦",
-  date: "2026-06-28",
-  kickoff: "2026-06-28T16:00:00",
-  status: "scheduled"
-},
+    id: "M101",
+    lado: "esquerdo",
+    fase: "round32",
+    codigo: "M101",
+    homeTeam: "ÁFRICA DO SUL",
+    awayTeam: "CANADÁ",
+    homeFlag: "🇿🇦",
+    awayFlag: "🇨🇦",
+    date: "2026-06-28",
+    kickoff: "2026-06-28T16:00:00",
+    status: "finished",
+    homeScore: 0,
+    awayScore: 1
+  },
   {
     id: "M102",
     lado: "esquerdo",
     fase: "round32",
     codigo: "M102",
-    homeTeam: "Brasil",
-    awayTeam: "A definir",
+    homeTeam: "BRASIL",
+    awayTeam: "JAPÃO",
     homeFlag: "🇧🇷",
-    awayFlag: "🛡️",
+    awayFlag: "🇯🇵",
     date: "2026-06-29",
     kickoff: "2026-06-29T14:00:00",
     status: "scheduled"
@@ -126,10 +128,10 @@ const jogosMataMata = [
     lado: "esquerdo",
     fase: "round32",
     codigo: "M103",
-    homeTeam: "Alemanha",
-    awayTeam: "A definir",
+    homeTeam: "ALEMANHA",
+    awayTeam: "PARAGUAI",
     homeFlag: "🇩🇪",
-    awayFlag: "🛡️",
+    awayFlag: "🇵🇾",
     date: "2026-06-29",
     kickoff: "2026-06-29T17:30:00",
     status: "scheduled"
@@ -139,9 +141,9 @@ const jogosMataMata = [
     lado: "esquerdo",
     fase: "round32",
     codigo: "M104",
-    homeTeam: "A definir",
-    awayTeam: "Marrocos",
-    homeFlag: "🛡️",
+    homeTeam: "HOLANDA",
+    awayTeam: "MARROCOS",
+    homeFlag: "🇳🇱",
     awayFlag: "🇲🇦",
     date: "2026-06-29",
     kickoff: "2026-06-29T22:00:00",
@@ -152,10 +154,10 @@ const jogosMataMata = [
     lado: "esquerdo",
     fase: "round32",
     codigo: "M105",
-    homeTeam: "A definir",
-    awayTeam: "A definir",
-    homeFlag: "🛡️",
-    awayFlag: "🛡️",
+    homeTeam: "COSTA DO MARFIM",
+    awayTeam: "NORUEGA",
+    homeFlag: "🇨🇮",
+    awayFlag: "🇳🇴",
     date: "2026-06-30",
     kickoff: "2026-06-30T14:00:00",
     status: "scheduled"
@@ -165,10 +167,10 @@ const jogosMataMata = [
     lado: "esquerdo",
     fase: "round32",
     codigo: "M106",
-    homeTeam: "A definir",
-    awayTeam: "A definir",
-    homeFlag: "🛡️",
-    awayFlag: "🛡️",
+    homeTeam: "FRANÇA",
+    awayTeam: "SUÉCIA",
+    homeFlag: "🇫🇷",
+    awayFlag: "🇸🇪",
     date: "2026-06-30",
     kickoff: "2026-06-30T18:00:00",
     status: "scheduled"
@@ -178,10 +180,10 @@ const jogosMataMata = [
     lado: "esquerdo",
     fase: "round32",
     codigo: "M107",
-    homeTeam: "México",
-    awayTeam: "A definir",
+    homeTeam: "MÉXICO",
+    awayTeam: "EQUADOR",
     homeFlag: "🇲🇽",
-    awayFlag: "🛡️",
+    awayFlag: "🇪🇨",
     date: "2026-06-30",
     kickoff: "2026-06-30T22:00:00",
     status: "scheduled"
@@ -191,10 +193,10 @@ const jogosMataMata = [
     lado: "esquerdo",
     fase: "round32",
     codigo: "M108",
-    homeTeam: "A definir",
-    awayTeam: "A definir",
-    homeFlag: "🛡️",
-    awayFlag: "🛡️",
+    homeTeam: "INGLATERRA",
+    awayTeam: "CONGO DR",
+    homeFlag: "🏴",
+    awayFlag: "🇨🇩",
     date: "2026-07-01",
     kickoff: "2026-07-01T13:00:00",
     status: "scheduled"
@@ -206,10 +208,10 @@ const jogosMataMata = [
     lado: "direito",
     fase: "round32",
     codigo: "M109",
-    homeTeam: "A definir",
-    awayTeam: "A definir",
-    homeFlag: "🛡️",
-    awayFlag: "🛡️",
+    homeTeam: "BÉLGICA",
+    awayTeam: "SENEGAL",
+    homeFlag: "🇧🇪",
+    awayFlag: "🇸🇳",
     date: "2026-07-01",
     kickoff: "2026-07-01T17:00:00",
     status: "scheduled"
@@ -219,10 +221,10 @@ const jogosMataMata = [
     lado: "direito",
     fase: "round32",
     codigo: "M110",
-    homeTeam: "Estados Unidos",
-    awayTeam: "A definir",
+    homeTeam: "ESTADOS UNIDOS",
+    awayTeam: "BÓSNIA E HERZEGOVINA",
     homeFlag: "🇺🇸",
-    awayFlag: "🛡️",
+    awayFlag: "🇧🇦",
     date: "2026-07-01",
     kickoff: "2026-07-01T21:00:00",
     status: "scheduled"
@@ -232,9 +234,9 @@ const jogosMataMata = [
     lado: "direito",
     fase: "round32",
     codigo: "M111",
-    homeTeam: "A definir",
+    homeTeam: "ESPANHA",
     awayTeam: "A definir",
-    homeFlag: "🛡️",
+    homeFlag: "🇪🇸",
     awayFlag: "🛡️",
     date: "2026-07-02",
     kickoff: "2026-07-02T16:00:00",
@@ -245,10 +247,10 @@ const jogosMataMata = [
     lado: "direito",
     fase: "round32",
     codigo: "M112",
-    homeTeam: "A definir",
-    awayTeam: "A definir",
-    homeFlag: "🛡️",
-    awayFlag: "🛡️",
+    homeTeam: "PORTUGAL",
+    awayTeam: "CROÁCIA",
+    homeFlag: "🇵🇹",
+    awayFlag: "🇭🇷",
     date: "2026-07-02",
     kickoff: "2026-07-02T20:00:00",
     status: "scheduled"
@@ -258,10 +260,10 @@ const jogosMataMata = [
     lado: "direito",
     fase: "round32",
     codigo: "M113",
-    homeTeam: "Suíça",
-    awayTeam: "A definir",
+    homeTeam: "SUÍÇA",
+    awayTeam: "ARGÉLIA",
     homeFlag: "🇨🇭",
-    awayFlag: "🛡️",
+    awayFlag: "🇩🇿",
     date: "2026-07-03",
     kickoff: "2026-07-03T00:00:00",
     status: "scheduled"
@@ -271,10 +273,10 @@ const jogosMataMata = [
     lado: "direito",
     fase: "round32",
     codigo: "M114",
-    homeTeam: "A definir",
-    awayTeam: "A definir",
-    homeFlag: "🛡️",
-    awayFlag: "🛡️",
+    homeTeam: "AUSTRÁLIA",
+    awayTeam: "EGITO",
+    homeFlag: "🇦🇺",
+    awayFlag: "🇪🇬",
     date: "2026-07-03",
     kickoff: "2026-07-03T15:00:00",
     status: "scheduled"
@@ -284,10 +286,10 @@ const jogosMataMata = [
     lado: "direito",
     fase: "round32",
     codigo: "M115",
-    homeTeam: "Argentina",
-    awayTeam: "A definir",
+    homeTeam: "ARGENTINA",
+    awayTeam: "CABO VERDE",
     homeFlag: "🇦🇷",
-    awayFlag: "🛡️",
+    awayFlag: "🇨🇻",
     date: "2026-07-03",
     kickoff: "2026-07-03T19:00:00",
     status: "scheduled"
@@ -297,10 +299,10 @@ const jogosMataMata = [
     lado: "direito",
     fase: "round32",
     codigo: "M116",
-    homeTeam: "A definir",
-    awayTeam: "A definir",
-    homeFlag: "🛡️",
-    awayFlag: "🛡️",
+    homeTeam: "COLÔMBIA",
+    awayTeam: "GANA",
+    homeFlag: "🇨🇴",
+    awayFlag: "🇬🇭",
     date: "2026-07-03",
     kickoff: "2026-07-03T22:30:00",
     status: "scheduled"
@@ -388,6 +390,22 @@ const jogosMataMata = [
     status: "scheduled"
   }
 ];
+
+function aplicarClassificadosManuaisMataMata() {
+  const oitavaCanada = jogosMataMata.find((jogo) =>
+    jogo.fase === "oitavas" &&
+    jogo.lado === "esquerdo" &&
+    jogo.date === "2026-07-04" &&
+    jogo.kickoff === "2026-07-04T14:00:00"
+  );
+
+  if (oitavaCanada) {
+    oitavaCanada.homeTeam = "CANADÁ";
+    oitavaCanada.homeFlag = "🇨🇦";
+  }
+}
+
+aplicarClassificadosManuaisMataMata();
 
 function criarJogosGenericos(lado, fase, prefixo, quantidade, datas) {
   return datas.map((item, index) => {
@@ -724,15 +742,25 @@ console.log(
       const homeTeamMatch = nomeCasaMatchMataMata(match);
       const awayTeamMatch = nomeForaMatchMataMata(match);
 
-      if (homeTeamMatch) {
-        jogoLocal.homeTeam = homeTeamMatch;
-        jogoLocal.homeFlag = bandeiraPorTimeMataMata(homeTeamMatch);
-      }
+      if (
+  homeTeamMatch &&
+  normalizarNomeMataMata(homeTeamMatch) !== "A DEFINIR" &&
+  normalizarNomeMataMata(homeTeamMatch) !== "NULL" &&
+  normalizarNomeMataMata(homeTeamMatch) !== "UNDEFINED"
+) {
+  jogoLocal.homeTeam = homeTeamMatch;
+  jogoLocal.homeFlag = bandeiraPorTimeMataMata(homeTeamMatch);
+}
 
-      if (awayTeamMatch) {
-        jogoLocal.awayTeam = awayTeamMatch;
-        jogoLocal.awayFlag = bandeiraPorTimeMataMata(awayTeamMatch);
-      }
+if (
+  awayTeamMatch &&
+  normalizarNomeMataMata(awayTeamMatch) !== "A DEFINIR" &&
+  normalizarNomeMataMata(awayTeamMatch) !== "NULL" &&
+  normalizarNomeMataMata(awayTeamMatch) !== "UNDEFINED"
+) {
+  jogoLocal.awayTeam = awayTeamMatch;
+  jogoLocal.awayFlag = bandeiraPorTimeMataMata(awayTeamMatch);
+}
 
       const dataMatch = dataMatchMataMata(match);
       const horaMatch = horaMatchMataMata(match);
