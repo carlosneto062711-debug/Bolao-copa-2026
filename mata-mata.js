@@ -1,4 +1,4 @@
-// VERSÃO 127 - Atualiza confrontos manuais e Canadá nas oitavas
+// VERSÃO 128
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -391,21 +391,132 @@ const jogosMataMata = [
   }
 ];
 
-function aplicarClassificadosManuaisMataMata() {
-  const oitavaCanada = jogosMataMata.find((jogo) =>
-    jogo.fase === "oitavas" &&
-    jogo.lado === "esquerdo" &&
-    jogo.date === "2026-07-04" &&
-    jogo.kickoff === "2026-07-04T14:00:00"
-  );
+function vencedorDoJogoMataMata(jogo) {
+  if (!jogo) return null;
+  if (jogo.status !== "finished") return null;
 
-  if (oitavaCanada) {
-    oitavaCanada.homeTeam = "CANADÁ";
-    oitavaCanada.homeFlag = "🇨🇦";
+  if (jogo.winner === "HOME_TEAM") {
+    return {
+      team: jogo.homeTeam,
+      flag: jogo.homeFlag
+    };
+  }
+
+  if (jogo.winner === "AWAY_TEAM") {
+    return {
+      team: jogo.awayTeam,
+      flag: jogo.awayFlag
+    };
+  }
+
+  const homeScore = Number(jogo.homeScore);
+  const awayScore = Number(jogo.awayScore);
+
+  if (Number.isNaN(homeScore) || Number.isNaN(awayScore)) return null;
+
+  if (homeScore > awayScore) {
+    return {
+      team: jogo.homeTeam,
+      flag: jogo.homeFlag
+    };
+  }
+
+  if (awayScore > homeScore) {
+    return {
+      team: jogo.awayTeam,
+      flag: jogo.awayFlag
+    };
+  }
+
+  return null;
+}
+
+function buscarJogoOitavasMataMata(lado, date, hora) {
+  return jogosMataMata.find((jogo) =>
+    jogo.fase === "oitavas" &&
+    jogo.lado === lado &&
+    jogo.date === date &&
+    String(jogo.kickoff || "").slice(11, 16) === hora
+  );
+}
+
+function colocarClassificadoNoJogo(destino, posicao, classificado) {
+  if (!destino || !classificado) return;
+
+  if (posicao === "home") {
+    destino.homeTeam = classificado.team;
+    destino.homeFlag = classificado.flag || bandeiraPorTimeMataMata(classificado.team);
+  }
+
+  if (posicao === "away") {
+    destino.awayTeam = classificado.team;
+    destino.awayFlag = classificado.flag || bandeiraPorTimeMataMata(classificado.team);
   }
 }
 
-aplicarClassificadosManuaisMataMata();
+function aplicarAvancoAutomaticoMataMata() {
+  const pares = [
+    {
+      destino: buscarJogoOitavasMataMata("esquerdo", "2026-07-04", "14:00"),
+      homeOrigem: "M101",
+      awayOrigem: "M102"
+    },
+    {
+      destino: buscarJogoOitavasMataMata("esquerdo", "2026-07-05", "17:00"),
+      homeOrigem: "M103",
+      awayOrigem: "M104"
+    },
+    {
+      destino: buscarJogoOitavasMataMata("esquerdo", "2026-07-06", "16:00"),
+      homeOrigem: "M105",
+      awayOrigem: "M106"
+    },
+    {
+      destino: buscarJogoOitavasMataMata("esquerdo", "2026-07-07", "13:00"),
+      homeOrigem: "M107",
+      awayOrigem: "M108"
+    },
+    {
+      destino: buscarJogoOitavasMataMata("direito", "2026-07-04", "18:00"),
+      homeOrigem: "M109",
+      awayOrigem: "M110"
+    },
+    {
+      destino: buscarJogoOitavasMataMata("direito", "2026-07-05", "21:00"),
+      homeOrigem: "M111",
+      awayOrigem: "M112"
+    },
+    {
+      destino: buscarJogoOitavasMataMata("direito", "2026-07-06", "21:00"),
+      homeOrigem: "M113",
+      awayOrigem: "M114"
+    },
+    {
+      destino: buscarJogoOitavasMataMata("direito", "2026-07-07", "17:00"),
+      homeOrigem: "M115",
+      awayOrigem: "M116"
+    }
+  ];
+
+  pares.forEach((par) => {
+    const jogoHome = jogosMataMata.find((jogo) => jogo.id === par.homeOrigem);
+    const jogoAway = jogosMataMata.find((jogo) => jogo.id === par.awayOrigem);
+
+    colocarClassificadoNoJogo(
+      par.destino,
+      "home",
+      vencedorDoJogoMataMata(jogoHome)
+    );
+
+    colocarClassificadoNoJogo(
+      par.destino,
+      "away",
+      vencedorDoJogoMataMata(jogoAway)
+    );
+  });
+}
+
+aplicarAvancoAutomaticoMataMata();
 
 function criarJogosGenericos(lado, fase, prefixo, quantidade, datas) {
   return datas.map((item, index) => {
@@ -794,6 +905,9 @@ if (
     if (atualizados > 0) {
       console.log(`Mata-mata atualizado por matches: ${atualizados} jogo(s).`);
     }
+
+    aplicarAvancoAutomaticoMataMata();
+    
   } catch (error) {
     console.warn("Não foi possível atualizar mata-mata por matches. Mantendo manual.", error);
   }
