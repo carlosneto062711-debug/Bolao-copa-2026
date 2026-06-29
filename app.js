@@ -1,4 +1,4 @@
-// VERSÃO 115
+// VERSÃO 116
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -1518,8 +1518,8 @@ const jogosDaData = Object.values(jogosUnicosPorChave)
     let resultadoJogo = "Os palpites serão liberados quando o jogo começar.";
 
     if (jogoAoVivo) {
-statusJogo = htmlTempoJogoDinamico(jogo);
-      resultadoJogo = `Placar atual: ${jogo.homeScore ?? 0} x ${jogo.awayScore ?? 0}`;
+  statusJogo = htmlTempoJogoDinamico(jogo);
+  resultadoJogo = `Placar atual: ${placarTempoNormalJogo(jogo).home} x ${placarTempoNormalJogo(jogo).away}`;
 }
 
     if (jogoFinalizado) {
@@ -2724,7 +2724,7 @@ if (ehMataMata) {
     areaStatus = `
       <div class="placar-mata-principal">
         <span>${nomeSeguroJogoPrincipal(jogoSeguro.homeTeam)}</span>
-        <strong>${jogo.homeScore ?? 0} x ${jogo.awayScore ?? 0}</strong>
+        <strong>${placarTempoNormalJogo(jogo).home} x ${placarTempoNormalJogo(jogo).away}</strong>
         <span>${nomeSeguroJogoPrincipal(jogoSeguro.awayTeam)}</span>
       </div>
 
@@ -2742,7 +2742,7 @@ if (ehMataMata) {
     areaStatus = `
       <div class="placar-mata-principal">
         <span>${nomeSeguroJogoPrincipal(jogoSeguro.homeTeam)}</span>
-        <strong>${jogo.homeScore ?? 0} x ${jogo.awayScore ?? 0}</strong>
+        <strong>${placarTempoNormalJogo(jogo).home} x ${placarTempoNormalJogo(jogo).away}</strong>
         <span>${nomeSeguroJogoPrincipal(jogoSeguro.awayTeam)}</span>
       </div>
 
@@ -3374,12 +3374,22 @@ function textoTempoDoJogoDetalhado(jogo) {
   const minutos = minutosDesdeInicioJogo(jogo.kickoff);
 
   if (jogo.apiStatus === "PENALTY_SHOOTOUT") return "PÊNALTIS";
-  if (jogo.apiStatus === "SUSPENDED") return "JOGO PAUSADO";
+  const penaltis = placarPenaltisJogo(jogo);
 
+if (penaltis || jogo.apiStatus === "PENALTY_SHOOTOUT") {
+  return "PÊNALTIS";
+}
+
+if (jogo.apiStatus === "SUSPENDED") {
+  if (ehKnockout && minutos > 120) return "PÊNALTIS";
+  return "JOGO PAUSADO";
+}
   if (jogo.apiStatus === "PAUSED") {
-    if (ehKnockout && minutos > 90) return "INTERVALO PRORROGAÇÃO";
-    return "INTERVALO";
-  }
+  if (ehKnockout && minutos > 120) return "PÊNALTIS";
+  if (ehKnockout && minutos > 105) return "INTERVALO PRORROGAÇÃO";
+  if (ehKnockout && minutos > 90) return "INTERVALO PRORROGAÇÃO";
+  return "INTERVALO";
+}
 
   if (jogo.apiStatus === "EXTRA_TIME") {
     if (minutos <= 95) return "INTERVALO PRORROGAÇÃO";
@@ -3426,31 +3436,59 @@ function htmlTempoJogoDinamico(jogo, textoPadrao = "AO VIVO") {
   `;
 }
 
-function htmlDetalhesExtrasJogo(jogo) {
+function placarTempoNormalJogo(jogo) {
+  return {
+    home: jogo.regularTimeHomeScore ?? jogo.homeScore ?? 0,
+    away: jogo.regularTimeAwayScore ?? jogo.awayScore ?? 0
+  };
+}
+
+function placarProrrogacaoJogo(jogo) {
   const temProrrogacao =
     jogo.extraTimeHomeScore !== undefined &&
     jogo.extraTimeHomeScore !== null &&
     jogo.extraTimeAwayScore !== undefined &&
     jogo.extraTimeAwayScore !== null;
 
+  if (!temProrrogacao) return null;
+
+  return {
+    home: jogo.extraTimeHomeScore,
+    away: jogo.extraTimeAwayScore
+  };
+}
+
+function placarPenaltisJogo(jogo) {
   const temPenaltis =
     jogo.penaltiesHomeScore !== undefined &&
     jogo.penaltiesHomeScore !== null &&
     jogo.penaltiesAwayScore !== undefined &&
     jogo.penaltiesAwayScore !== null;
 
-  if (!temProrrogacao && !temPenaltis) return "";
+  if (!temPenaltis) return null;
+
+  return {
+    home: jogo.penaltiesHomeScore,
+    away: jogo.penaltiesAwayScore
+  };
+}
+
+function htmlDetalhesExtrasJogo(jogo) {
+  const prorrogacao = placarProrrogacaoJogo(jogo);
+  const penaltis = placarPenaltisJogo(jogo);
+
+  if (!prorrogacao && !penaltis) return "";
 
   return `
     <div class="bloco-extras-jogo">
       ${
-        temProrrogacao
-          ? `<div class="linha-extra-jogo">Prorrogação: <strong>${jogo.extraTimeHomeScore} x ${jogo.extraTimeAwayScore}</strong></div>`
+        prorrogacao
+          ? `<div class="linha-extra-jogo">Prorrogação: <strong>${prorrogacao.home} x ${prorrogacao.away}</strong></div>`
           : ""
       }
       ${
-        temPenaltis
-          ? `<div class="linha-extra-jogo">Pênaltis: <strong>${jogo.penaltiesHomeScore} x ${jogo.penaltiesAwayScore}</strong></div>`
+        penaltis
+          ? `<div class="linha-extra-jogo">Pênaltis: <strong>${penaltis.home} x ${penaltis.away}</strong></div>`
           : ""
       }
     </div>
@@ -3583,12 +3621,12 @@ const jogoAoVivo =
     let pontosLinha = "";
 
     if (jogoAoVivo) {
-statusTexto = htmlTempoJogoDinamico(jogo);
-      badgeClasse = "ao-vivo";
-  resultadoLinha = `Placar atual: ${jogo.homeScore ?? 0} x ${jogo.awayScore ?? 0}`;
-  comparacao = "Jogo em andamento.";
+  statusTexto = htmlTempoJogoDinamico(jogo);
+  badgeClasse = "ao-vivo";
+  resultadoLinha = `Placar atual: ${placarTempoNormalJogo(jogo).home} x ${placarTempoNormalJogo(jogo).away}`;
+  comparacao = "Tempo normal encerrado.";
 }
-
+    
     if (jogoFinalizado) {
       statusTexto = "Encerrado";
       badgeClasse = "finalizado";
