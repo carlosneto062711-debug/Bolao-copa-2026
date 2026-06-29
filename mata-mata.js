@@ -1,4 +1,4 @@
-// VERSÃO 132
+// VERSÃO 133
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -1140,7 +1140,9 @@ function jogoAoVivoMataMata(jogo) {
   if (
     jogo.apiStatus === "IN_PLAY" ||
     jogo.apiStatus === "PAUSED" ||
-    jogo.apiStatus === "SUSPENDED"
+    jogo.apiStatus === "SUSPENDED" ||
+    jogo.apiStatus === "EXTRA_TIME" ||
+    jogo.apiStatus === "PENALTY_SHOOTOUT"
   ) {
     return true;
   }
@@ -1151,19 +1153,48 @@ function jogoAoVivoMataMata(jogo) {
 function textoTempoDoJogoMataMata(jogo) {
   if (!jogo) return "";
 
-  if (jogo.status === "finished") return "ENCERRADO";
+  if (jogo.status === "finished") {
+    return "ENCERRADO";
+  }
 
-  if (jogo.apiStatus === "PAUSED") return "INTERVALO";
-  if (jogo.apiStatus === "SUSPENDED") return "SUSPENSO";
+  const temPenaltis =
+    jogo.penaltiesHomeScore !== undefined &&
+    jogo.penaltiesHomeScore !== null &&
+    jogo.penaltiesAwayScore !== undefined &&
+    jogo.penaltiesAwayScore !== null;
 
-  if (!jogoComecouMataMata(jogo)) return "";
+  if (temPenaltis || jogo.apiStatus === "PENALTY_SHOOTOUT") {
+    return "PÊNALTIS";
+  }
+
+  if (!jogoComecouMataMata(jogo)) {
+    return "";
+  }
 
   const agora = Date.now();
   const inicio = new Date(jogo.kickoff).getTime();
 
   let minutos = Math.floor((agora - inicio) / 60000) + 1;
-
   if (minutos < 1) minutos = 1;
+
+  if (jogo.apiStatus === "SUSPENDED") {
+    if (minutos > 120) return "PÊNALTIS";
+    return "JOGO PAUSADO";
+  }
+
+  if (jogo.apiStatus === "PAUSED") {
+    if (minutos > 120) return "PÊNALTIS";
+    if (minutos > 90) return "INTERVALO PRORROGAÇÃO";
+    return "INTERVALO";
+  }
+
+  if (jogo.apiStatus === "EXTRA_TIME") {
+    if (minutos <= 95) return "INTERVALO PRORROGAÇÃO";
+    if (minutos <= 105) return `1ºT PRORROGAÇÃO - ${minutos}'`;
+    if (minutos <= 110) return "INTERVALO PRORROGAÇÃO";
+    if (minutos <= 120) return `2ºT PRORROGAÇÃO - ${minutos}'`;
+    return "PÊNALTIS";
+  }
 
   if (minutos <= 45) {
     return `1º TEMPO - ${minutos}'`;
@@ -1173,36 +1204,96 @@ function textoTempoDoJogoMataMata(jogo) {
     return "INTERVALO";
   }
 
-  const minutoSegundoTempo = Math.min(90, minutos - 15);
+  if (minutos <= 90) {
+    return `2º TEMPO - ${Math.min(90, minutos - 15)}'`;
+  }
 
-  return `2º TEMPO - ${minutoSegundoTempo}'`;
+  const empatado =
+    Number(jogo.homeScore ?? 0) === Number(jogo.awayScore ?? 0);
+
+  if (!empatado) {
+    return `2º TEMPO - 90'`;
+  }
+
+  if (minutos <= 95) return "INTERVALO PRORROGAÇÃO";
+  if (minutos <= 105) return `1ºT PRORROGAÇÃO - ${minutos}'`;
+  if (minutos <= 110) return "INTERVALO PRORROGAÇÃO";
+  if (minutos <= 120) return `2ºT PRORROGAÇÃO - ${minutos}'`;
+
+  return "PÊNALTIS";
 }
 
-function htmlDetalhesExtrasMataMata(jogo) {
+function placarTempoNormalMataMata(jogo) {
+  return {
+    home: jogo.regularTimeHomeScore ?? jogo.homeScore ?? 0,
+    away: jogo.regularTimeAwayScore ?? jogo.awayScore ?? 0
+  };
+}
+
+function placarProrrogacaoMataMata(jogo) {
   const temProrrogacao =
     jogo.extraTimeHomeScore !== undefined &&
     jogo.extraTimeHomeScore !== null &&
     jogo.extraTimeAwayScore !== undefined &&
     jogo.extraTimeAwayScore !== null;
 
+  if (!temProrrogacao) return null;
+
+  const tempoNormal = placarTempoNormalMataMata(jogo);
+
+  const extraHome = Number(jogo.extraTimeHomeScore);
+  const extraAway = Number(jogo.extraTimeAwayScore);
+
+  if (Number.isNaN(extraHome) || Number.isNaN(extraAway)) return null;
+
+  const extraPareceSerApenasPeriodo =
+    extraHome < Number(tempoNormal.home) ||
+    extraAway < Number(tempoNormal.away);
+
+  if (extraPareceSerApenasPeriodo) {
+    return {
+      home: Number(tempoNormal.home) + extraHome,
+      away: Number(tempoNormal.away) + extraAway
+    };
+  }
+
+  return {
+    home: extraHome,
+    away: extraAway
+  };
+}
+
+function placarPenaltisMataMata(jogo) {
   const temPenaltis =
     jogo.penaltiesHomeScore !== undefined &&
     jogo.penaltiesHomeScore !== null &&
     jogo.penaltiesAwayScore !== undefined &&
     jogo.penaltiesAwayScore !== null;
 
-  if (!temProrrogacao && !temPenaltis) return "";
+  if (!temPenaltis) return null;
+
+  return {
+    home: jogo.penaltiesHomeScore,
+    away: jogo.penaltiesAwayScore
+  };
+}
+
+function htmlDetalhesExtrasMataMata(jogo) {
+  const prorrogacao = placarProrrogacaoMataMata(jogo);
+  const penaltis = placarPenaltisMataMata(jogo);
+
+  if (!prorrogacao && !penaltis) return "";
 
   return `
     <div class="detalhes-extras-mata">
       ${
-        temProrrogacao
-          ? `<div class="linha-extra-mata">Prorrogação: <strong>${jogo.extraTimeHomeScore} x ${jogo.extraTimeAwayScore}</strong></div>`
+        prorrogacao
+          ? `<div class="linha-extra-mata">Prorrogação: <strong>${prorrogacao.home} x ${prorrogacao.away}</strong></div>`
           : ""
       }
       ${
-        temPenaltis
-          ? `<div class="linha-extra-mata">Pênaltis: <strong>${jogo.penaltiesHomeScore} x ${jogo.penaltiesAwayScore}</strong></div>`
+        penaltis
+          ? `<div class="linha-extra-mata">Pênaltis: <strong>${penaltis.home} x ${penaltis.away}</strong></div>`
           : ""
       }
     </div>
@@ -1238,17 +1329,13 @@ function criarCardJogoMataMata(jogo) {
     statusTexto = "Palpites abertos";
   }
 
-  if (aoVivo) {
-    statusTexto = textoTempoDoJogoMataMata(jogo) || "JOGO EM ANDAMENTO";
-  }
+ if (aoVivo) {
+  statusTexto = textoTempoDoJogoMataMata(jogo) || "AO VIVO";
+}
 
   if (jogo.status === "finished") {
     statusTexto = "ENCERRADO";
   }
-
-  if (jogo.apiStatus === "SUSPENDED") {
-  statusTexto = "SUSPENSO";
-}
 
   const jogoFinalizado = jogo.status === "finished";
 
@@ -1262,7 +1349,7 @@ const blocoPlacarMata =
 
         <div class="linha-placar-mata">
           <span>${jogo.homeTeam}</span>
-          <strong>${jogo.homeScore ?? 0} x ${jogo.awayScore ?? 0}</strong>
+         <strong>${placarTempoNormalMataMata(jogo).home} x ${placarTempoNormalMataMata(jogo).away}</strong>
           <span>${jogo.awayTeam}</span>
         </div>
 
@@ -1315,7 +1402,7 @@ const areaPalpiteSalvo = palpite
   } else if (jogo.status === "finished") {
     areaAcao = `<button disabled>Encerrado</button>`;
   } else if (aoVivo) {
-    areaAcao = `<button disabled>Jogo em andamento</button>`;
+    areaAcao = `<button disabled>${aoVivo ? "Tempo normal encerrado" : "Encerrado"}</button>`;
   } else if (!aberto) {
     areaAcao = `<button disabled>Bloqueado</button>`;
   } else if (travado) {
