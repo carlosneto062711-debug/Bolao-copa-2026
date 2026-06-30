@@ -1,4 +1,4 @@
-// VERSÃO 134
+// VERSÃO 136
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -308,20 +308,20 @@ const jogosMataMata = [
     status: "scheduled"
   },
 
-  // OITAVAS
-  ...criarJogosGenericos("esquerdo", "oitavas", "O", 4, [
-    ["2026-07-04", "14:00"],
-    ["2026-07-05", "17:00"],
-    ["2026-07-06", "16:00"],
-    ["2026-07-07", "13:00"]
-  ]),
-  ...criarJogosGenericos("direito", "oitavas", "O", 4, [
-    ["2026-07-04", "18:00"],
-    ["2026-07-05", "21:00"],
-    ["2026-07-06", "21:00"],
-    ["2026-07-07", "17:00"]
-  ]),
-
+// OITAVAS
+...criarJogosGenericos("esquerdo", "oitavas", "O", 4, [
+  ["2026-07-04", "18:00"], // ALE/PAR x FRA/SUE
+  ["2026-07-04", "14:00"], // AFS/CAN x HOL/MAR
+  ["2026-07-06", "16:00"], // POR/CRO x ESP/AUT
+  ["2026-07-07", "13:00"]  // EUA/BOS x BEL/SEN
+]),
+...criarJogosGenericos("direito", "oitavas", "O", 4, [
+  ["2026-07-05", "17:00"], // BRA/JAP x CDM/NOR
+  ["2026-07-05", "21:00"], // MEX/EQU x ING/RDC
+  ["2026-07-06", "21:00"], // ARG/CPV x AUS/EGT
+  ["2026-07-07", "17:00"]  // SUI/AGL x COL/GAN
+]),
+  
   // QUARTAS
   ...criarJogosGenericos("esquerdo", "quartas", "Q", 2, [
     ["2026-07-09", "17:00"],
@@ -497,80 +497,97 @@ function colocarClassificadoNoJogo(destino, posicao, classificado) {
 }
 
 function aplicarAvancoAutomaticoMataMata() {
- const pares = [
-  // CANADÁ x HOLANDA/MARROCOS — 04/07 14:00
-  {
-    destino: buscarJogoOitavasMataMata("esquerdo", "2026-07-04", "14:00"),
-    homeOrigem: "M101",
-    awayOrigem: "M104"
-  },
-
-  // PARAGUAI x FRANÇA/SUÉCIA — 04/07 18:00
-  {
-    destino: buscarJogoOitavasMataMata("direito", "2026-07-04", "18:00"),
-    homeOrigem: "M103",
-    awayOrigem: "M106"
-  },
-
-  // BRASIL/JAPÃO x COSTA DO MARFIM/NORUEGA — 05/07 17:00
-  {
-    destino: buscarJogoOitavasMataMata("esquerdo", "2026-07-05", "17:00"),
-    homeOrigem: "M102",
-    awayOrigem: "M105"
-  },
-
-  // MÉXICO/EQUADOR x INGLATERRA/CONGO DR — 05/07 21:00
-  {
-    destino: buscarJogoOitavasMataMata("direito", "2026-07-05", "21:00"),
-    homeOrigem: "M107",
-    awayOrigem: "M108"
-  },
-
-  // PORTUGAL/CROÁCIA x ESPANHA/ÁUSTRIA — 06/07 16:00
-  {
-    destino: buscarJogoOitavasMataMata("esquerdo", "2026-07-06", "16:00"),
-    homeOrigem: "M112",
-    awayOrigem: "M111"
-  },
-
-  // ARGENTINA/CABO VERDE x AUSTRÁLIA/EGITO — 06/07 21:00
-  {
-    destino: buscarJogoOitavasMataMata("direito", "2026-07-06", "21:00"),
-    homeOrigem: "M115",
-    awayOrigem: "M114"
-  },
-
-  // EUA/BÓSNIA x BÉLGICA/SENEGAL — 07/07 13:00
-  {
-    destino: buscarJogoOitavasMataMata("esquerdo", "2026-07-07", "13:00"),
-    homeOrigem: "M110",
-    awayOrigem: "M109"
-  },
-
-  // SUÍÇA/ARGÉLIA x COLÔMBIA/GANA — 07/07 17:00
-  {
-    destino: buscarJogoOitavasMataMata("direito", "2026-07-07", "17:00"),
-    homeOrigem: "M113",
-    awayOrigem: "M116"
+  function jogoPorId(id) {
+    return jogosMataMata.find((jogo) => jogo.id === id);
   }
-];
-  
-  pares.forEach((par) => {
-    const jogoHome = jogosMataMata.find((jogo) => jogo.id === par.homeOrigem);
-    const jogoAway = jogosMataMata.find((jogo) => jogo.id === par.awayOrigem);
+
+  function avancar(destinoId, homeOrigemId, awayOrigemId) {
+    const destino = jogoPorId(destinoId);
+    if (!destino) return;
+
+    const jogoHome = jogoPorId(homeOrigemId);
+    const jogoAway = jogoPorId(awayOrigemId);
 
     colocarClassificadoNoJogo(
-      par.destino,
+      destino,
       "home",
       vencedorDoJogoMataMata(jogoHome)
     );
 
     colocarClassificadoNoJogo(
-      par.destino,
+      destino,
       "away",
       vencedorDoJogoMataMata(jogoAway)
     );
-  });
+  }
+
+  function perdedorDoJogo(id) {
+    const jogo = jogoPorId(id);
+    if (!jogo) return null;
+
+    const vencedor = vencedorDoJogoMataMata(jogo);
+    if (!vencedor) return null;
+
+    const vencedorNormalizado = normalizarNomeMataMata(vencedor.team);
+    const homeNormalizado = normalizarNomeMataMata(jogo.homeTeam);
+    const awayNormalizado = normalizarNomeMataMata(jogo.awayTeam);
+
+    if (vencedorNormalizado === homeNormalizado) {
+      return {
+        team: jogo.awayTeam,
+        flag: jogo.awayFlag
+      };
+    }
+
+    if (vencedorNormalizado === awayNormalizado) {
+      return {
+        team: jogo.homeTeam,
+        flag: jogo.homeFlag
+      };
+    }
+
+    return null;
+  }
+
+  // 32 SELEÇÕES → OITAVAS
+  avancar("Oesquerdo1", "M103", "M106"); // ALE/PAR x FRA/SUE
+  avancar("Oesquerdo2", "M101", "M104"); // AFS/CAN x HOL/MAR
+  avancar("Oesquerdo3", "M112", "M111"); // POR/CRO x ESP/AUT
+  avancar("Oesquerdo4", "M110", "M109"); // EUA/BOS x BEL/SEN
+
+  avancar("Odireito1", "M102", "M105"); // BRA/JAP x CDM/NOR
+  avancar("Odireito2", "M107", "M108"); // MEX/EQU x ING/RDC
+  avancar("Odireito3", "M115", "M114"); // ARG/CPV x AUS/EGT
+  avancar("Odireito4", "M113", "M116"); // SUI/AGL x COL/GAN
+
+  // OITAVAS → QUARTAS
+  avancar("Qesquerdo1", "Oesquerdo1", "Oesquerdo2");
+  avancar("Qesquerdo2", "Oesquerdo3", "Oesquerdo4");
+
+  avancar("Qdireito1", "Odireito1", "Odireito2");
+  avancar("Qdireito2", "Odireito3", "Odireito4");
+
+  // QUARTAS → SEMIFINAIS
+  avancar("S1", "Qesquerdo1", "Qesquerdo2");
+  avancar("S2", "Qdireito1", "Qdireito2");
+
+  // SEMIFINAIS → FINAL
+  avancar("FINAL", "S1", "S2");
+
+  // PERDEDORES DAS SEMIFINAIS → 3º LUGAR
+  const terceiroLugar = jogoPorId("T3");
+
+  colocarClassificadoNoJogo(
+    terceiroLugar,
+    "home",
+    perdedorDoJogo("S1")
+  );
+
+  colocarClassificadoNoJogo(
+    terceiroLugar,
+    "away",
+    perdedorDoJogo("S2")
+  );
 }
 
 aplicarAvancoAutomaticoMataMata();
@@ -1239,27 +1256,9 @@ function placarProrrogacaoMataMata(jogo) {
 
   if (!temProrrogacao) return null;
 
-  const tempoNormal = placarTempoNormalMataMata(jogo);
-
-  const extraHome = Number(jogo.extraTimeHomeScore);
-  const extraAway = Number(jogo.extraTimeAwayScore);
-
-  if (Number.isNaN(extraHome) || Number.isNaN(extraAway)) return null;
-
-  const extraPareceSerPeriodo =
-    extraHome < Number(tempoNormal.home) ||
-    extraAway < Number(tempoNormal.away);
-
-  if (extraPareceSerPeriodo) {
-    return {
-      home: Number(tempoNormal.home) + extraHome,
-      away: Number(tempoNormal.away) + extraAway
-    };
-  }
-
   return {
-    home: extraHome,
-    away: extraAway
+    home: Number(jogo.extraTimeHomeScore),
+    away: Number(jogo.extraTimeAwayScore)
   };
 }
 
