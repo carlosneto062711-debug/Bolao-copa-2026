@@ -1,4 +1,4 @@
-// VERSÃO 136
+// VERSÃO 137
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -1401,7 +1401,7 @@ const areaPalpiteSalvo = palpite
   } else if (jogo.status === "finished") {
     areaAcao = `<button disabled>Encerrado</button>`;
   } else if (aoVivo) {
-    areaAcao = `<button disabled>${aoVivo ? "Tempo normal encerrado" : "Encerrado"}</button>`;
+    areaAcao = `<button disabled>Jogo em andamento</button>`;
   } else if (!aberto) {
     areaAcao = `<button disabled>Bloqueado</button>`;
   } else if (travado) {
