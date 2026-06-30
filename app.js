@@ -1,4 +1,4 @@
-// VERSÃO 124
+// VERSÃO 125
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -3568,12 +3568,16 @@ function textoTempoDoJogoDetalhado(jogo) {
   if (jogo.status === "finished") return "ENCERRADO";
 
   const ehKnockout = jogoEhKnockoutParaTempo(jogo);
-  const minutos = minutosDesdeInicioJogo(jogo.kickoff);
-  const penaltis = placarPenaltisJogo(jogo);
+  const minutosCorridos = minutosDesdeInicioJogo(jogo.kickoff) + 1;
 
-  if (penaltis || jogo.apiStatus === "PENALTY_SHOOTOUT" || jogo.scoreDuration === "PENALTY_SHOOTOUT") {
-    return "PÊNALTIS";
-  }
+  const minutoDeJogo =
+    minutosCorridos <= 45
+      ? minutosCorridos
+      : minutosCorridos <= 65
+        ? 45
+        : minutosCorridos - 20;
+
+  const penaltis = placarPenaltisJogo(jogo);
 
   const empatadoNoTempoNormal =
     Number(placarTempoNormalJogo(jogo).home) === Number(placarTempoNormalJogo(jogo).away);
@@ -3595,52 +3599,42 @@ function textoTempoDoJogoDetalhado(jogo) {
       jogo.penaltiesAwayScore !== null
     );
 
-  if (jogo.apiStatus === "SUSPENDED") {
-    if (ehKnockout && empatadoNoTempoNormal && temProrrogacao && minutos > 130) return "PÊNALTIS";
-    return "JOGO PAUSADO";
+  const deveTratarComoProrrogacao =
+    ehKnockout &&
+    empatadoNoTempoNormal &&
+    (
+      temProrrogacao ||
+      minutoDeJogo > 90 ||
+      jogo.apiStatus === "PAUSED" ||
+      jogo.apiStatus === "SUSPENDED"
+    );
+
+  if (penaltis || jogo.apiStatus === "PENALTY_SHOOTOUT" || jogo.scoreDuration === "PENALTY_SHOOTOUT") {
+    return "PÊNALTIS";
   }
 
-  if (jogo.apiStatus === "PAUSED") {
-    if (ehKnockout && empatadoNoTempoNormal && temProrrogacao && minutos > 130) return "PÊNALTIS";
-    if (ehKnockout && empatadoNoTempoNormal && temProrrogacao && minutos > 110) return "INTERVALO PRORROGAÇÃO";
-    if (minutos > 45 && minutos <= 65) return "INTERVALO";
+  if (minutosCorridos <= 45) {
+    return `1º TEMPO - ${minutosCorridos}'`;
+  }
+
+  if (minutosCorridos <= 65) {
     return "INTERVALO";
   }
 
-  if (minutos <= 45) {
-    return `1º TEMPO - ${minutos}'`;
+  if (minutoDeJogo <= 90) {
+    return `2º TEMPO - ${minutoDeJogo}'`;
   }
 
-  if (minutos <= 65) {
-    return "INTERVALO";
-  }
-
-  if (minutos <= 110) {
-    return `2º TEMPO - ${Math.min(90, minutos - 20)}'`;
-  }
-
-  if (!ehKnockout || !empatadoNoTempoNormal || !temProrrogacao) {
+  if (!deveTratarComoProrrogacao) {
     return "2º TEMPO - 90'";
   }
 
-  if (jogo.apiStatus !== "EXTRA_TIME" && jogo.scoreDuration !== "EXTRA_TIME" && jogo.scoreDuration !== "PENALTY_SHOOTOUT") {
-    return "2º TEMPO - 90'";
+  if (minutoDeJogo <= 105) {
+    return `1ºT PRORROGAÇÃO - ${minutoDeJogo}'`;
   }
 
-  if (minutos <= 115) {
-    return "INTERVALO PRORROGAÇÃO";
-  }
-
-  if (minutos <= 130) {
-    return `1ºT PRORROGAÇÃO - ${Math.min(105, minutos - 25)}'`;
-  }
-
-  if (minutos <= 135) {
-    return "INTERVALO PRORROGAÇÃO";
-  }
-
-  if (minutos <= 150) {
-    return `2ºT PRORROGAÇÃO - ${Math.min(120, minutos - 30)}'`;
+  if (minutoDeJogo <= 120) {
+    return `2ºT PRORROGAÇÃO - ${minutoDeJogo}'`;
   }
 
   return "PÊNALTIS";
@@ -3653,8 +3647,15 @@ function htmlTempoJogoDinamico(jogo, textoPadrao = "AO VIVO") {
       data-kickoff="${jogo.kickoff}"
       data-status="${jogo.status}"
       data-api-status="${jogo.apiStatus || ""}"
+      data-score-duration="${jogo.scoreDuration || ""}"
       data-home-score="${jogo.homeScore ?? ""}"
       data-away-score="${jogo.awayScore ?? ""}"
+      data-regular-home-score="${jogo.regularTimeHomeScore ?? ""}"
+      data-regular-away-score="${jogo.regularTimeAwayScore ?? ""}"
+      data-extra-home-score="${jogo.extraTimeHomeScore ?? ""}"
+      data-extra-away-score="${jogo.extraTimeAwayScore ?? ""}"
+      data-penalties-home-score="${jogo.penaltiesHomeScore ?? ""}"
+      data-penalties-away-score="${jogo.penaltiesAwayScore ?? ""}"
       data-phase="${jogo.phase || ""}"
       data-knockout-match-id="${jogo.knockoutMatchId || ""}"
       data-match-id="${jogo.matchId || jogo.id || ""}"
@@ -3680,27 +3681,9 @@ function placarProrrogacaoFinalJogo(jogo) {
 
   if (!temProrrogacao) return null;
 
-  const tempoNormal = placarTempoNormalJogo(jogo);
-
-  const extraHome = Number(jogo.extraTimeHomeScore);
-  const extraAway = Number(jogo.extraTimeAwayScore);
-
-  if (Number.isNaN(extraHome) || Number.isNaN(extraAway)) return null;
-
-  const extraPareceSerPeriodo =
-    extraHome < Number(tempoNormal.home) ||
-    extraAway < Number(tempoNormal.away);
-
-  if (extraPareceSerPeriodo) {
-    return {
-      home: Number(tempoNormal.home) + extraHome,
-      away: Number(tempoNormal.away) + extraAway
-    };
-  }
-
   return {
-    home: extraHome,
-    away: extraAway
+    home: Number(jogo.extraTimeHomeScore),
+    away: Number(jogo.extraTimeAwayScore)
   };
 }
 
@@ -4041,29 +4024,48 @@ function atualizarTempoDosJogosAoVivo() {
     }
   });
 
-  const temposDinamicos = document.querySelectorAll(".tempo-jogo-dinamico");
+  cconst temposDinamicos = document.querySelectorAll(".tempo-jogo-dinamico");
 
-  temposDinamicos.forEach((elemento) => {
-    const kickoff = elemento.dataset.kickoff;
-    const status = elemento.dataset.status;
-    const apiStatus = elemento.dataset.apiStatus;
+temposDinamicos.forEach((elemento) => {
+  const kickoff = elemento.dataset.kickoff;
+  const status = elemento.dataset.status;
+  const apiStatus = elemento.dataset.apiStatus;
 
-    if (!kickoff) return;
-    if (status !== "live") return;
+  if (!kickoff) return;
+  if (status !== "live") return;
 
-    const jogoTemporario = {
-      kickoff,
-      status,
-      apiStatus
-    };
+  const jogoTemporario = {
+    kickoff,
+    status,
+    apiStatus,
+    scoreDuration: elemento.dataset.scoreDuration || "",
 
-    const tempo = textoTempoDoJogo(jogoTemporario);
+    homeScore: elemento.dataset.homeScore === "" ? undefined : Number(elemento.dataset.homeScore),
+    awayScore: elemento.dataset.awayScore === "" ? undefined : Number(elemento.dataset.awayScore),
 
-    if (tempo) {
-      elemento.innerText = tempo;
-    }
-  });
+    regularTimeHomeScore: elemento.dataset.regularHomeScore === "" ? undefined : Number(elemento.dataset.regularHomeScore),
+    regularTimeAwayScore: elemento.dataset.regularAwayScore === "" ? undefined : Number(elemento.dataset.regularAwayScore),
 
+    extraTimeHomeScore: elemento.dataset.extraHomeScore === "" ? undefined : Number(elemento.dataset.extraHomeScore),
+    extraTimeAwayScore: elemento.dataset.extraAwayScore === "" ? undefined : Number(elemento.dataset.extraAwayScore),
+
+    penaltiesHomeScore: elemento.dataset.penaltiesHomeScore === "" ? undefined : Number(elemento.dataset.penaltiesHomeScore),
+    penaltiesAwayScore: elemento.dataset.penaltiesAwayScore === "" ? undefined : Number(elemento.dataset.penaltiesAwayScore),
+
+    phase: elemento.dataset.phase || "",
+    knockoutMatchId: elemento.dataset.knockoutMatchId || "",
+    matchId: elemento.dataset.matchId || ""
+  };
+
+  const tempo =
+    textoTempoDoJogoDetalhado(jogoTemporario) ||
+    textoTempoDoJogo(jogoTemporario);
+
+  if (tempo) {
+    elemento.innerText = tempo;
+  }
+});
+  
   atualizarPainelContagemPrincipal();
 }
 
