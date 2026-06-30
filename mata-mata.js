@@ -1,4 +1,4 @@
-// VERSÃO 140
+// VERSÃO 141
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -1220,10 +1220,15 @@ function textoTempoDoJogoMataMata(jogo) {
       jogo.apiStatus === "SUSPENDED"
     );
 
-  const estaEmPenaltis =
-    jogo.apiStatus === "PENALTY_SHOOTOUT" ||
-    jogo.scoreDuration === "PENALTY_SHOOTOUT" ||
-    (deveTratarComoProrrogacao && minutoDeJogo > 120);
+const estaEmPenaltis =
+  (
+    jogo.status === "finished" &&
+    (
+      jogo.apiStatus === "PENALTY_SHOOTOUT" ||
+      jogo.scoreDuration === "PENALTY_SHOOTOUT"
+    )
+  ) ||
+  (deveTratarComoProrrogacao && minutoDeJogo > 120);
 
   if (estaEmPenaltis) {
     return "PÊNALTIS";
@@ -1368,7 +1373,7 @@ const blocoPlacarMata =
           <span>${jogo.awayTeam}</span>
         </div>
 
-        <div class="tempo-mata">${statusTexto}</div>
+<div class="tempo-mata" data-jogo-id="${jogo.id}">${statusTexto}</div>
 
         ${htmlDetalhesExtrasMataMata(jogo)}
         
@@ -1661,6 +1666,26 @@ function carregarProximoJogo() {
   }
 }
 
+function atualizarTempoMataMataDinamico() {
+  const elementosTempo = document.querySelectorAll(".tempo-mata[data-jogo-id]");
+
+  elementosTempo.forEach((elemento) => {
+    const jogoId = elemento.dataset.jogoId;
+    const jogo = jogosMataMata.find((item) => item.id === jogoId);
+
+    if (!jogo) return;
+
+    if (jogo.status === "finished") {
+      elemento.innerText = "ENCERRADO";
+      return;
+    }
+
+    if (!jogoAoVivoMataMata(jogo)) return;
+
+    elemento.innerText = textoTempoDoJogoMataMata(jogo) || "AO VIVO";
+  });
+}
+
 function iniciarContagem() {
   if (window.contagemMataMataLigada) return;
 
@@ -1668,24 +1693,29 @@ function iniciarContagem() {
 
   let ultimaAtualizacaoMatchesMataMata = 0;
 
-setInterval(async () => {
-  carregarProximoJogo();
+  setInterval(async () => {
+    carregarProximoJogo();
+    atualizarTempoMataMataDinamico();
 
-  const agora = Date.now();
+    const agora = Date.now();
 
-  if (
-    !window.usuarioSalvandoPalpiteMataMata &&
-    !window.usuarioInteragindoMataMata &&
-    Date.now() >= window.ignorarAtualizacaoMataMataAte
-  ) {
-    if (agora - ultimaAtualizacaoMatchesMataMata >= 60 * 1000) {
-      ultimaAtualizacaoMatchesMataMata = agora;
-      await atualizarMataMataPorMatchesFirestore();
+    if (
+      window.usuarioSalvandoPalpiteMataMata ||
+      window.usuarioInteragindoMataMata ||
+      Date.now() < window.ignorarAtualizacaoMataMataAte
+    ) {
+      return;
     }
 
-    carregarChaveamento();
-  }
-}, 1000);
+    if (agora - ultimaAtualizacaoMatchesMataMata >= 60 * 1000) {
+      ultimaAtualizacaoMatchesMataMata = agora;
+
+      await atualizarMataMataPorMatchesFirestore();
+
+      carregarChaveamento();
+      atualizarTempoMataMataDinamico();
+    }
+  }, 1000);
 }
 
 function configurarLoginMataMata() {
