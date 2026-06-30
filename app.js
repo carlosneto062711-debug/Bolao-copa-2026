@@ -1,4 +1,4 @@
-// VERSÃO 120
+// VERSÃO 121
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -2299,25 +2299,6 @@ function vencedorDoJogoPrincipal(jogo) {
     };
   }
 
-  const extraHome = Number(jogo.extraTimeHomeScore);
-  const extraAway = Number(jogo.extraTimeAwayScore);
-
-  if (!Number.isNaN(extraHome) && !Number.isNaN(extraAway)) {
-    if (extraHome > extraAway) {
-      return {
-        team: jogo.homeTeam,
-        flag: jogo.homeFlag || ""
-      };
-    }
-
-    if (extraAway > extraHome) {
-      return {
-        team: jogo.awayTeam,
-        flag: jogo.awayFlag || ""
-      };
-    }
-  }
-
   const penHome = Number(jogo.penaltiesHomeScore);
   const penAway = Number(jogo.penaltiesAwayScore);
 
@@ -2330,6 +2311,25 @@ function vencedorDoJogoPrincipal(jogo) {
     }
 
     if (penAway > penHome) {
+      return {
+        team: jogo.awayTeam,
+        flag: jogo.awayFlag || ""
+      };
+    }
+  }
+
+  const extraHome = Number(jogo.extraTimeHomeScore);
+  const extraAway = Number(jogo.extraTimeAwayScore);
+
+  if (!Number.isNaN(extraHome) && !Number.isNaN(extraAway)) {
+    if (extraHome > extraAway) {
+      return {
+        team: jogo.homeTeam,
+        flag: jogo.homeFlag || ""
+      };
+    }
+
+    if (extraAway > extraHome) {
       return {
         team: jogo.awayTeam,
         flag: jogo.awayFlag || ""
@@ -2393,7 +2393,7 @@ function adicionarJogosMataMataManuais(listaJogos) {
     "2026-07-03_22:30"
   ];
 
-  chaves.forEach((chave) => {
+    chaves.forEach((chave) => {
     const dadosManual = dadosMataMataManualPorChave(chave);
     if (!dadosManual) return;
 
@@ -2429,6 +2429,187 @@ function adicionarJogosMataMataManuais(listaJogos) {
       apiProvider: "manual"
     });
   });
+
+  aplicarAvancoAutomaticoPrincipal(listaJogos);
+}
+
+    if (jaExiste) return;
+
+    listaJogos.push({
+      id: dadosManual.id,
+      matchId: dadosManual.id,
+      knockoutMatchId: dadosManual.id,
+      phase: "knockout",
+      round: "round32",
+      homeTeam: dadosManual.homeTeam,
+      awayTeam: dadosManual.awayTeam,
+      date,
+      kickoff,
+      status: "scheduled",
+      apiProvider: "manual"
+    });
+  });
+}
+
+function aplicarAvancoAutomaticoPrincipal(listaJogos) {
+  function jogoPorId(id) {
+    return listaJogos.find((jogo) =>
+      jogo.id === id ||
+      jogo.matchId === id ||
+      jogo.knockoutMatchId === id
+    );
+  }
+
+  function jogoPorDataHora(date, hora) {
+    return listaJogos.find((jogo) =>
+      jogo.date === date &&
+      String(jogo.kickoff || "").slice(11, 16) === hora
+    );
+  }
+
+  function garantirJogo(id, round, date, hora) {
+    let jogo =
+      jogoPorId(id) ||
+      jogoPorDataHora(date, hora);
+
+    if (jogo) {
+      jogo.matchId = jogo.matchId || id;
+      jogo.knockoutMatchId = jogo.knockoutMatchId || id;
+      jogo.phase = jogo.phase || "knockout";
+      jogo.round = jogo.round || round;
+      return jogo;
+    }
+
+    jogo = {
+      id,
+      matchId: id,
+      knockoutMatchId: id,
+      phase: "knockout",
+      round,
+      homeTeam: "A definir",
+      awayTeam: "A definir",
+      date,
+      kickoff: `${date}T${hora}:00`,
+      status: "scheduled",
+      apiProvider: "manual"
+    };
+
+    listaJogos.push(jogo);
+    return jogo;
+  }
+
+  function avancar(destinoId, homeOrigemId, awayOrigemId) {
+    const destino = jogoPorId(destinoId);
+    if (!destino) return;
+
+    const jogoHome = jogoPorId(homeOrigemId);
+    const jogoAway = jogoPorId(awayOrigemId);
+
+    aplicarTimeNoJogoPrincipal(
+      destino,
+      "home",
+      vencedorDoJogoPrincipal(jogoHome)
+    );
+
+    aplicarTimeNoJogoPrincipal(
+      destino,
+      "away",
+      vencedorDoJogoPrincipal(jogoAway)
+    );
+  }
+
+  function perdedorDoJogoPrincipalPorId(id) {
+    const jogo = jogoPorId(id);
+    if (!jogo) return null;
+
+    const vencedor = vencedorDoJogoPrincipal(jogo);
+    if (!vencedor) return null;
+
+    const vencedorNormalizado = normalizarNomeTime(vencedor.team);
+    const homeNormalizado = normalizarNomeTime(jogo.homeTeam);
+    const awayNormalizado = normalizarNomeTime(jogo.awayTeam);
+
+    if (vencedorNormalizado === homeNormalizado) {
+      return {
+        team: jogo.awayTeam,
+        flag: jogo.awayFlag || ""
+      };
+    }
+
+    if (vencedorNormalizado === awayNormalizado) {
+      return {
+        team: jogo.homeTeam,
+        flag: jogo.homeFlag || ""
+      };
+    }
+
+    return null;
+  }
+
+  // OITAVAS
+  garantirJogo("Oesquerdo1", "round16", "2026-07-04", "18:00");
+  garantirJogo("Oesquerdo2", "round16", "2026-07-04", "14:00");
+  garantirJogo("Oesquerdo3", "round16", "2026-07-06", "16:00");
+  garantirJogo("Oesquerdo4", "round16", "2026-07-07", "13:00");
+
+  garantirJogo("Odireito1", "round16", "2026-07-05", "17:00");
+  garantirJogo("Odireito2", "round16", "2026-07-05", "21:00");
+  garantirJogo("Odireito3", "round16", "2026-07-06", "21:00");
+  garantirJogo("Odireito4", "round16", "2026-07-07", "17:00");
+
+  // QUARTAS
+  garantirJogo("Qesquerdo1", "quarter", "2026-07-09", "17:00");
+  garantirJogo("Qesquerdo2", "quarter", "2026-07-11", "18:00");
+
+  garantirJogo("Qdireito1", "quarter", "2026-07-10", "16:00");
+  garantirJogo("Qdireito2", "quarter", "2026-07-11", "22:00");
+
+  // SEMIS, 3º LUGAR E FINAL
+  garantirJogo("S1", "semi", "2026-07-14", "16:00");
+  garantirJogo("S2", "semi", "2026-07-15", "16:00");
+
+  garantirJogo("T3", "terceiro", "2026-07-18", "18:00");
+  garantirJogo("FINAL", "final", "2026-07-19", "16:00");
+
+  // 32 SELEÇÕES → OITAVAS
+  avancar("Oesquerdo1", "M103", "M106");
+  avancar("Oesquerdo2", "M101", "M104");
+  avancar("Oesquerdo3", "M112", "M111");
+  avancar("Oesquerdo4", "M110", "M109");
+
+  avancar("Odireito1", "M102", "M105");
+  avancar("Odireito2", "M107", "M108");
+  avancar("Odireito3", "M115", "M114");
+  avancar("Odireito4", "M113", "M116");
+
+  // OITAVAS → QUARTAS
+  avancar("Qesquerdo1", "Oesquerdo1", "Oesquerdo2");
+  avancar("Qesquerdo2", "Oesquerdo3", "Oesquerdo4");
+
+  avancar("Qdireito1", "Odireito1", "Odireito2");
+  avancar("Qdireito2", "Odireito3", "Odireito4");
+
+  // QUARTAS → SEMIS
+  avancar("S1", "Qesquerdo1", "Qesquerdo2");
+  avancar("S2", "Qdireito1", "Qdireito2");
+
+  // SEMIS → FINAL
+  avancar("FINAL", "S1", "S2");
+
+  // PERDEDORES DAS SEMIS → 3º LUGAR
+  const terceiroLugar = jogoPorId("T3");
+
+  aplicarTimeNoJogoPrincipal(
+    terceiroLugar,
+    "home",
+    perdedorDoJogoPrincipalPorId("S1")
+  );
+
+  aplicarTimeNoJogoPrincipal(
+    terceiroLugar,
+    "away",
+    perdedorDoJogoPrincipalPorId("S2")
+  );
 }
 
 function dadosMataMataManualPorJogo(jogo) {
@@ -3676,8 +3857,8 @@ const jogoAoVivo =
   statusTexto = htmlTempoJogoDinamico(jogo);
   badgeClasse = "ao-vivo";
   resultadoLinha = `Placar atual: ${placarTempoNormalJogo(jogo).home} x ${placarTempoNormalJogo(jogo).away}`;
-  comparacao = "Tempo normal encerrado.";
-}
+comparacao = "Jogo em andamento.";
+    }
     
    if (jogoFinalizado) {
   statusTexto = "Encerrado";
