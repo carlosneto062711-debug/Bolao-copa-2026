@@ -1,4 +1,4 @@
-// VERSÃO 116
+// VERSÃO 117
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -1523,9 +1523,9 @@ const jogosDaData = Object.values(jogosUnicosPorChave)
 }
 
     if (jogoFinalizado) {
-      statusJogo = "Encerrado";
-      resultadoJogo = `Resultado final: ${jogo.homeScore} x ${jogo.awayScore}`;
-    }
+  statusJogo = "Encerrado";
+  resultadoJogo = `Resultado final: ${textoResultadoFinalPalpitesJogo(jogo)}`;
+}
 
     cardJogo.innerHTML = `
 <strong>${nomeSeguroJogoPrincipal(jogo.homeTeam)} x ${nomeSeguroJogoPrincipal(jogo.awayTeam)}</strong>
@@ -1584,17 +1584,27 @@ const nomeUsuario = souEu
       let bolinha = "⚪";
       let textoPontos = "";
 
-      if (jogoFinalizado) {
-        const pontos = calcularPontos(
+     if (jogoFinalizado) {
+  const placarBolao = placarTempoNormalJogo(jogo);
+
+  const pontos =
+    palpite.phase === "knockout"
+      ? calcularPontosMataMata(
+          palpite.homeGuess,
+          palpite.awayGuess,
+          placarBolao.home,
+          placarBolao.away
+        )
+      : calcularPontos(
           palpite.homeGuess,
           palpite.awayGuess,
           jogo.homeScore,
           jogo.awayScore
         );
 
-        bolinha = pontos > 0 ? "🟢" : "🔴";
-        textoPontos = ` — ${pontos} ${pontos === 1 ? "ponto" : "pontos"}`;
-      }
+  bolinha = pontos > 0 ? "🟢" : "🔴";
+  textoPontos = ` — ${pontos} ${pontos === 1 ? "ponto" : "pontos"}`;
+}
 
       const linha = document.createElement("div");
 linha.className = souEu
@@ -3443,7 +3453,7 @@ function placarTempoNormalJogo(jogo) {
   };
 }
 
-function placarProrrogacaoJogo(jogo) {
+function placarProrrogacaoFinalJogo(jogo) {
   const temProrrogacao =
     jogo.extraTimeHomeScore !== undefined &&
     jogo.extraTimeHomeScore !== null &&
@@ -3452,9 +3462,27 @@ function placarProrrogacaoJogo(jogo) {
 
   if (!temProrrogacao) return null;
 
+  const tempoNormal = placarTempoNormalJogo(jogo);
+
+  const extraHome = Number(jogo.extraTimeHomeScore);
+  const extraAway = Number(jogo.extraTimeAwayScore);
+
+  if (Number.isNaN(extraHome) || Number.isNaN(extraAway)) return null;
+
+  const extraPareceSerPeriodo =
+    extraHome < Number(tempoNormal.home) ||
+    extraAway < Number(tempoNormal.away);
+
+  if (extraPareceSerPeriodo) {
+    return {
+      home: Number(tempoNormal.home) + extraHome,
+      away: Number(tempoNormal.away) + extraAway
+    };
+  }
+
   return {
-    home: jogo.extraTimeHomeScore,
-    away: jogo.extraTimeAwayScore
+    home: extraHome,
+    away: extraAway
   };
 }
 
@@ -3468,13 +3496,29 @@ function placarPenaltisJogo(jogo) {
   if (!temPenaltis) return null;
 
   return {
-    home: jogo.penaltiesHomeScore,
-    away: jogo.penaltiesAwayScore
+    home: Number(jogo.penaltiesHomeScore),
+    away: Number(jogo.penaltiesAwayScore)
   };
 }
 
+function textoResultadoFinalPalpitesJogo(jogo) {
+  const normal = placarTempoNormalJogo(jogo);
+  const prorrogacao = placarProrrogacaoFinalJogo(jogo);
+  const penaltis = placarPenaltisJogo(jogo);
+
+  if (penaltis) {
+    return `${normal.home} (${penaltis.home}) x (${penaltis.away}) ${normal.away}`;
+  }
+
+  if (prorrogacao) {
+    return `${prorrogacao.home} x ${prorrogacao.away}`;
+  }
+
+  return `${normal.home} x ${normal.away}`;
+}
+
 function htmlDetalhesExtrasJogo(jogo) {
-  const prorrogacao = placarProrrogacaoJogo(jogo);
+const prorrogacao = placarProrrogacaoFinalJogo(jogo);
   const penaltis = placarPenaltisJogo(jogo);
 
   if (!prorrogacao && !penaltis) return "";
@@ -3627,35 +3671,45 @@ const jogoAoVivo =
   comparacao = "Tempo normal encerrado.";
 }
     
-    if (jogoFinalizado) {
-      statusTexto = "Encerrado";
-      badgeClasse = "finalizado";
+   if (jogoFinalizado) {
+  statusTexto = "Encerrado";
+  badgeClasse = "finalizado";
 
-      const pontos =
-  palpite.phase === "knockout"
-    ? calcularPontosMataMata(
-        palpite.homeGuess,
-        palpite.awayGuess,
-        jogo.homeScore,
-        jogo.awayScore
-      )
-    : calcularPontos(
-        palpite.homeGuess,
-        palpite.awayGuess,
-        jogo.homeScore,
-        jogo.awayScore
-      );
+  const placarBolao = placarTempoNormalJogo(jogo);
 
-      resultadoLinha = `Resultado final: ${jogo.homeScore} x ${jogo.awayScore}`;
-      pontosLinha = `Você fez: ${pontos} ${pontos === 1 ? "ponto" : "pontos"}`;
+  const pontos =
+    palpite.phase === "knockout"
+      ? calcularPontosMataMata(
+          palpite.homeGuess,
+          palpite.awayGuess,
+          placarBolao.home,
+          placarBolao.away
+        )
+      : calcularPontos(
+          palpite.homeGuess,
+          palpite.awayGuess,
+          jogo.homeScore,
+          jogo.awayScore
+        );
 
-      comparacao = textoResultadoPalpite(
-        palpite.homeGuess,
-        palpite.awayGuess,
-        jogo.homeScore,
-        jogo.awayScore
-      );
-    }
+  resultadoLinha = `Resultado final: ${textoResultadoFinalPalpitesJogo(jogo)}`;
+  pontosLinha = `Você fez: ${pontos} ${pontos === 1 ? "ponto" : "pontos"}`;
+
+  comparacao =
+    palpite.phase === "knockout"
+      ? textoResultadoPalpite(
+          palpite.homeGuess,
+          palpite.awayGuess,
+          placarBolao.home,
+          placarBolao.away
+        )
+      : textoResultadoPalpite(
+          palpite.homeGuess,
+          palpite.awayGuess,
+          jogo.homeScore,
+          jogo.awayScore
+        );
+}
 
     const div = document.createElement("div");
     div.className = "linha-info";
