@@ -1,4 +1,4 @@
-// VERSÃO 127
+// VERSÃO 128
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -1819,38 +1819,19 @@ function amanhaISO() {
 }
 
 function textoTempoDoJogo(jogo) {
+  if (!jogo) return "";
+
   if (jogo.status === "finished") {
     return "ENCERRADO";
   }
 
-  if (jogo.apiStatus === "PAUSED") {
-    return "JOGO PAUSADO";
+  const detalhado = textoTempoDoJogoDetalhado(jogo);
+
+  if (detalhado) {
+    return detalhado;
   }
 
-  if (jogo.apiStatus === "SUSPENDED") {
-    return "SUSPENSO";
-  }
-
-  const agora = Date.now();
-  const inicio = new Date(jogo.kickoff).getTime();
-
-  if (agora < inicio) {
-    return "";
-  }
-
-  const minutosCorridos = Math.floor((agora - inicio) / 60000);
-
-  if (minutosCorridos <= 45) {
-    const minutoJogo = Math.max(1, minutosCorridos + 1);
-    return `1º TEMPO - ${minutoJogo}'`;
-  }
-
-  if (minutosCorridos > 45 && minutosCorridos <= 65) {
-    return "INTERVALO";
-  }
-
-  const minutoJogo = Math.min(90, minutosCorridos - 20);
-  return `2º TEMPO - ${minutoJogo}'`;
+  return "AO VIVO";
 }
 
 function removerJogosDuplicados(listaJogos) {
@@ -3607,10 +3588,15 @@ function textoTempoDoJogoDetalhado(jogo) {
       jogo.apiStatus === "SUSPENDED"
     );
 
-  const estaEmPenaltis =
-    jogo.apiStatus === "PENALTY_SHOOTOUT" ||
-    jogo.scoreDuration === "PENALTY_SHOOTOUT" ||
-    (deveTratarComoProrrogacao && minutoDeJogo > 120);
+ const estaEmPenaltis =
+  (
+    jogo.status === "finished" &&
+    (
+      jogo.apiStatus === "PENALTY_SHOOTOUT" ||
+      jogo.scoreDuration === "PENALTY_SHOOTOUT"
+    )
+  ) ||
+  (deveTratarComoProrrogacao && minutoDeJogo > 120);
 
   if (estaEmPenaltis) {
     return "PÊNALTIS";
