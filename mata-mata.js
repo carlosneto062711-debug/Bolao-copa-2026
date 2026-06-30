@@ -1,4 +1,4 @@
-// VERSÃO 133
+// VERSÃO 134
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -409,25 +409,6 @@ function vencedorDoJogoMataMata(jogo) {
     };
   }
 
-  const extraHome = Number(jogo.extraTimeHomeScore);
-  const extraAway = Number(jogo.extraTimeAwayScore);
-
-  if (!Number.isNaN(extraHome) && !Number.isNaN(extraAway)) {
-    if (extraHome > extraAway) {
-      return {
-        team: jogo.homeTeam,
-        flag: jogo.homeFlag
-      };
-    }
-
-    if (extraAway > extraHome) {
-      return {
-        team: jogo.awayTeam,
-        flag: jogo.awayFlag
-      };
-    }
-  }
-
   const penHome = Number(jogo.penaltiesHomeScore);
   const penAway = Number(jogo.penaltiesAwayScore);
 
@@ -444,6 +425,29 @@ function vencedorDoJogoMataMata(jogo) {
         team: jogo.awayTeam,
         flag: jogo.awayFlag
       };
+    }
+  }
+
+  const prorrogacao = placarProrrogacaoMataMata(jogo);
+
+  if (prorrogacao) {
+    const extraHome = Number(prorrogacao.home);
+    const extraAway = Number(prorrogacao.away);
+
+    if (!Number.isNaN(extraHome) && !Number.isNaN(extraAway)) {
+      if (extraHome > extraAway) {
+        return {
+          team: jogo.homeTeam,
+          flag: jogo.homeFlag
+        };
+      }
+
+      if (extraAway > extraHome) {
+        return {
+          team: jogo.awayTeam,
+          flag: jogo.awayFlag
+        };
+      }
     }
   }
 
@@ -493,68 +497,64 @@ function colocarClassificadoNoJogo(destino, posicao, classificado) {
 }
 
 function aplicarAvancoAutomaticoMataMata() {
-  const pares = [
-    // LADO ESQUERDO DO CHAVEAMENTO REAL
+ const pares = [
+  // CANADÁ x HOLANDA/MARROCOS — 04/07 14:00
+  {
+    destino: buscarJogoOitavasMataMata("esquerdo", "2026-07-04", "14:00"),
+    homeOrigem: "M101",
+    awayOrigem: "M104"
+  },
 
-    // ALE/PAR x FRA/SUE
-    {
-      destino: buscarJogoOitavasMataMata("esquerdo", "2026-07-04", "14:00"),
-      homeOrigem: "M103",
-      awayOrigem: "M106"
-    },
+  // PARAGUAI x FRANÇA/SUÉCIA — 04/07 18:00
+  {
+    destino: buscarJogoOitavasMataMata("direito", "2026-07-04", "18:00"),
+    homeOrigem: "M103",
+    awayOrigem: "M106"
+  },
 
-    // AFS/CAN x HOL/MAR
-    {
-      destino: buscarJogoOitavasMataMata("esquerdo", "2026-07-05", "17:00"),
-      homeOrigem: "M101",
-      awayOrigem: "M104"
-    },
+  // BRASIL/JAPÃO x COSTA DO MARFIM/NORUEGA — 05/07 17:00
+  {
+    destino: buscarJogoOitavasMataMata("esquerdo", "2026-07-05", "17:00"),
+    homeOrigem: "M102",
+    awayOrigem: "M105"
+  },
 
-    // POR/CRO x ESP/AUT
-    {
-      destino: buscarJogoOitavasMataMata("esquerdo", "2026-07-06", "16:00"),
-      homeOrigem: "M112",
-      awayOrigem: "M111"
-    },
+  // MÉXICO/EQUADOR x INGLATERRA/CONGO DR — 05/07 21:00
+  {
+    destino: buscarJogoOitavasMataMata("direito", "2026-07-05", "21:00"),
+    homeOrigem: "M107",
+    awayOrigem: "M108"
+  },
 
-    // EUA/BOS x BEL/SEN
-    {
-      destino: buscarJogoOitavasMataMata("esquerdo", "2026-07-07", "13:00"),
-      homeOrigem: "M110",
-      awayOrigem: "M109"
-    },
+  // PORTUGAL/CROÁCIA x ESPANHA/ÁUSTRIA — 06/07 16:00
+  {
+    destino: buscarJogoOitavasMataMata("esquerdo", "2026-07-06", "16:00"),
+    homeOrigem: "M112",
+    awayOrigem: "M111"
+  },
 
-    // LADO DIREITO DO CHAVEAMENTO REAL
+  // ARGENTINA/CABO VERDE x AUSTRÁLIA/EGITO — 06/07 21:00
+  {
+    destino: buscarJogoOitavasMataMata("direito", "2026-07-06", "21:00"),
+    homeOrigem: "M115",
+    awayOrigem: "M114"
+  },
 
-    // BRA/JAP x CDM/NOR
-    {
-      destino: buscarJogoOitavasMataMata("direito", "2026-07-04", "18:00"),
-      homeOrigem: "M102",
-      awayOrigem: "M105"
-    },
+  // EUA/BÓSNIA x BÉLGICA/SENEGAL — 07/07 13:00
+  {
+    destino: buscarJogoOitavasMataMata("esquerdo", "2026-07-07", "13:00"),
+    homeOrigem: "M110",
+    awayOrigem: "M109"
+  },
 
-    // MEX/EQU x ING/RDC
-    {
-      destino: buscarJogoOitavasMataMata("direito", "2026-07-05", "21:00"),
-      homeOrigem: "M107",
-      awayOrigem: "M108"
-    },
-
-    // ARG/CPV x AUS/EGT
-    {
-      destino: buscarJogoOitavasMataMata("direito", "2026-07-06", "21:00"),
-      homeOrigem: "M115",
-      awayOrigem: "M114"
-    },
-
-    // SUI/AGL x COL/GAN
-    {
-      destino: buscarJogoOitavasMataMata("direito", "2026-07-07", "17:00"),
-      homeOrigem: "M113",
-      awayOrigem: "M116"
-    }
-  ];
-
+  // SUÍÇA/ARGÉLIA x COLÔMBIA/GANA — 07/07 17:00
+  {
+    destino: buscarJogoOitavasMataMata("direito", "2026-07-07", "17:00"),
+    homeOrigem: "M113",
+    awayOrigem: "M116"
+  }
+];
+  
   pares.forEach((par) => {
     const jogoHome = jogosMataMata.find((jogo) => jogo.id === par.homeOrigem);
     const jogoAway = jogosMataMata.find((jogo) => jogo.id === par.awayOrigem);
@@ -1246,11 +1246,11 @@ function placarProrrogacaoMataMata(jogo) {
 
   if (Number.isNaN(extraHome) || Number.isNaN(extraAway)) return null;
 
-  const extraPareceSerApenasPeriodo =
+  const extraPareceSerPeriodo =
     extraHome < Number(tempoNormal.home) ||
     extraAway < Number(tempoNormal.away);
 
-  if (extraPareceSerApenasPeriodo) {
+  if (extraPareceSerPeriodo) {
     return {
       home: Number(tempoNormal.home) + extraHome,
       away: Number(tempoNormal.away) + extraAway
