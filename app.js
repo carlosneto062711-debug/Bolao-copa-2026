@@ -1,4 +1,4 @@
-// VERSÃO 128
+// VERSÃO 129
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -3991,70 +3991,75 @@ carregarMeusPalpites(dataSelecionadaMeusPalpites);
 }
 
 function atualizarTempoDosJogosAoVivo() {
-  const cardsAoVivo = document.querySelectorAll(".jogo-ao-vivo");
+  const temposDinamicos = document.querySelectorAll(".tempo-jogo-dinamico");
 
-  cardsAoVivo.forEach((card) => {
-    const kickoff = card.dataset.kickoff;
-    const apiStatus = card.dataset.apiStatus;
+  temposDinamicos.forEach((elemento) => {
+    const kickoff = elemento.dataset.kickoff;
+    const status = elemento.dataset.status;
+    const apiStatus = elemento.dataset.apiStatus;
 
     if (!kickoff) return;
+    if (status !== "live") return;
 
     const jogoTemporario = {
       kickoff,
-      status: "live",
-      apiStatus
+      status,
+      apiStatus,
+      scoreDuration: elemento.dataset.scoreDuration || "",
+
+      homeScore:
+        elemento.dataset.homeScore === ""
+          ? undefined
+          : Number(elemento.dataset.homeScore),
+
+      awayScore:
+        elemento.dataset.awayScore === ""
+          ? undefined
+          : Number(elemento.dataset.awayScore),
+
+      regularTimeHomeScore:
+        elemento.dataset.regularHomeScore === ""
+          ? undefined
+          : Number(elemento.dataset.regularHomeScore),
+
+      regularTimeAwayScore:
+        elemento.dataset.regularAwayScore === ""
+          ? undefined
+          : Number(elemento.dataset.regularAwayScore),
+
+      extraTimeHomeScore:
+        elemento.dataset.extraHomeScore === ""
+          ? undefined
+          : Number(elemento.dataset.extraHomeScore),
+
+      extraTimeAwayScore:
+        elemento.dataset.extraAwayScore === ""
+          ? undefined
+          : Number(elemento.dataset.extraAwayScore),
+
+      penaltiesHomeScore:
+        elemento.dataset.penaltiesHomeScore === ""
+          ? undefined
+          : Number(elemento.dataset.penaltiesHomeScore),
+
+      penaltiesAwayScore:
+        elemento.dataset.penaltiesAwayScore === ""
+          ? undefined
+          : Number(elemento.dataset.penaltiesAwayScore),
+
+      phase: elemento.dataset.phase || "",
+      knockoutMatchId: elemento.dataset.knockoutMatchId || "",
+      matchId: elemento.dataset.matchId || ""
     };
 
-    const tempo = textoTempoDoJogo(jogoTemporario);
-    const textoTempo = card.querySelector(".tempo-jogo-ao-vivo");
+    const tempo =
+      textoTempoDoJogoDetalhado(jogoTemporario) ||
+      textoTempoDoJogo(jogoTemporario) ||
+      "AO VIVO";
 
-    if (textoTempo) {
-      textoTempo.innerText = tempo || "AO VIVO";
-    }
+    elemento.innerText = tempo;
   });
 
-const temposDinamicos = document.querySelectorAll(".tempo-jogo-dinamico");
-  
-temposDinamicos.forEach((elemento) => {
-  const kickoff = elemento.dataset.kickoff;
-  const status = elemento.dataset.status;
-  const apiStatus = elemento.dataset.apiStatus;
-
-  if (!kickoff) return;
-  if (status !== "live") return;
-
-  const jogoTemporario = {
-    kickoff,
-    status,
-    apiStatus,
-    scoreDuration: elemento.dataset.scoreDuration || "",
-
-    homeScore: elemento.dataset.homeScore === "" ? undefined : Number(elemento.dataset.homeScore),
-    awayScore: elemento.dataset.awayScore === "" ? undefined : Number(elemento.dataset.awayScore),
-
-    regularTimeHomeScore: elemento.dataset.regularHomeScore === "" ? undefined : Number(elemento.dataset.regularHomeScore),
-    regularTimeAwayScore: elemento.dataset.regularAwayScore === "" ? undefined : Number(elemento.dataset.regularAwayScore),
-
-    extraTimeHomeScore: elemento.dataset.extraHomeScore === "" ? undefined : Number(elemento.dataset.extraHomeScore),
-    extraTimeAwayScore: elemento.dataset.extraAwayScore === "" ? undefined : Number(elemento.dataset.extraAwayScore),
-
-    penaltiesHomeScore: elemento.dataset.penaltiesHomeScore === "" ? undefined : Number(elemento.dataset.penaltiesHomeScore),
-    penaltiesAwayScore: elemento.dataset.penaltiesAwayScore === "" ? undefined : Number(elemento.dataset.penaltiesAwayScore),
-
-    phase: elemento.dataset.phase || "",
-    knockoutMatchId: elemento.dataset.knockoutMatchId || "",
-    matchId: elemento.dataset.matchId || ""
-  };
-
-  const tempo =
-    textoTempoDoJogoDetalhado(jogoTemporario) ||
-    textoTempoDoJogo(jogoTemporario);
-
-  if (tempo) {
-    elemento.innerText = tempo;
-  }
-});
-  
   atualizarPainelContagemPrincipal();
 }
 
