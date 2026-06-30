@@ -1,4 +1,4 @@
-// VERSÃO 119
+// VERSÃO 120
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -3348,11 +3348,11 @@ async function carregarResultadosAnteriores(dataFiltro = dataSelecionadaResultad
     const div = document.createElement("div");
     div.className = "linha-info";
     div.innerHTML = `
-      <strong>${jogo.homeTeam} ${jogo.homeScore} x ${jogo.awayScore} ${jogo.awayTeam}</strong>
-      <span>${jogo.date} — ${formatarHora(jogo.kickoff)}</span>
-      <br>
-      <span class="badge finalizado">Finalizado</span>
-    `;
+  <strong>${nomeSeguroJogoPrincipal(jogo.homeTeam)} ${textoResultadoFinalPalpitesJogo(jogo)} ${nomeSeguroJogoPrincipal(jogo.awayTeam)}</strong>
+  <span>${jogo.date} — ${formatarHora(jogo.kickoff)}</span>
+  <br>
+  <span class="badge finalizado">Finalizado</span>
+`;
 
     painel.appendChild(div);
   });
