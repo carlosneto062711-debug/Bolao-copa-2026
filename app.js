@@ -1,4 +1,4 @@
-// VERSÃO 125
+// VERSÃO 126
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -4024,8 +4024,8 @@ function atualizarTempoDosJogosAoVivo() {
     }
   });
 
-  cconst temposDinamicos = document.querySelectorAll(".tempo-jogo-dinamico");
-
+const temposDinamicos = document.querySelectorAll(".tempo-jogo-dinamico");
+  
 temposDinamicos.forEach((elemento) => {
   const kickoff = elemento.dataset.kickoff;
   const status = elemento.dataset.status;
