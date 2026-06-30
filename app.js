@@ -1,4 +1,4 @@
-// VERSÃO 123
+// VERSÃO 124
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -220,6 +220,22 @@ async function buscarFootballDataPorPeriodo(dataInicioISO, dataFimISO) {
 }
 
 function converterStatusFootballData(statusApi) {
+  if (statusApi === "FINISHED") return "finished";
+
+  if (
+    statusApi === "IN_PLAY" ||
+    statusApi === "PAUSED" ||
+    statusApi === "SUSPENDED" ||
+    statusApi === "EXTRA_TIME" ||
+    statusApi === "PENALTY_SHOOTOUT"
+  ) {
+    return "live";
+  }
+
+  return "scheduled";
+}
+
+function statusFootballDataParaFirestore(statusApi) {
   if (statusApi === "FINISHED") return "finished";
 
   if (
