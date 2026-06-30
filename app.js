@@ -1,4 +1,4 @@
-// VERSÃO 118
+// VERSÃO 119
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -178,22 +178,6 @@ function traduzirTimeFootballData(nomeApi) {
   return MAPA_TIMES_FOOTBALL_DATA[nomeApi] || nomeApi;
 }
 
-function converterStatusFootballData(statusApi) {
-  if (statusApi === "FINISHED") return "finished";
-
-  if (
-    statusApi === "IN_PLAY" ||
-    statusApi === "PAUSED" ||
-    statusApi === "SUSPENDED" ||
-    statusApi === "EXTRA_TIME" ||
-    statusApi === "PENALTY_SHOOTOUT"
-  ) {
-    return "live";
-  }
-
-  return "scheduled";
-}
-
 function dadosHorarioBrasil(utcDate) {
   const dataUtc = new Date(utcDate);
 
@@ -241,7 +225,9 @@ function converterStatusFootballData(statusApi) {
   if (
     statusApi === "IN_PLAY" ||
     statusApi === "PAUSED" ||
-    statusApi === "SUSPENDED"
+    statusApi === "SUSPENDED" ||
+    statusApi === "EXTRA_TIME" ||
+    statusApi === "PENALTY_SHOOTOUT"
   ) {
     return "live";
   }
