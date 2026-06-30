@@ -1,4 +1,4 @@
-// VERSÃO 126
+// VERSÃO 127
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -3577,8 +3577,6 @@ function textoTempoDoJogoDetalhado(jogo) {
         ? 45
         : minutosCorridos - 20;
 
-  const penaltis = placarPenaltisJogo(jogo);
-
   const empatadoNoTempoNormal =
     Number(placarTempoNormalJogo(jogo).home) === Number(placarTempoNormalJogo(jogo).away);
 
@@ -3609,7 +3607,12 @@ function textoTempoDoJogoDetalhado(jogo) {
       jogo.apiStatus === "SUSPENDED"
     );
 
-  if (penaltis || jogo.apiStatus === "PENALTY_SHOOTOUT" || jogo.scoreDuration === "PENALTY_SHOOTOUT") {
+  const estaEmPenaltis =
+    jogo.apiStatus === "PENALTY_SHOOTOUT" ||
+    jogo.scoreDuration === "PENALTY_SHOOTOUT" ||
+    (deveTratarComoProrrogacao && minutoDeJogo > 120);
+
+  if (estaEmPenaltis) {
     return "PÊNALTIS";
   }
 
