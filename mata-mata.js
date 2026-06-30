@@ -1,4 +1,4 @@
-// VERSÃO 141
+// VERSÃO 142
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -1302,7 +1302,14 @@ function htmlDetalhesExtrasMataMata(jogo) {
   const prorrogacao = placarProrrogacaoMataMata(jogo);
   const penaltis = placarPenaltisMataMata(jogo);
 
-  if (!prorrogacao && !penaltis) return "";
+  const estaEmPenaltis =
+    jogo.apiStatus === "PENALTY_SHOOTOUT" ||
+    jogo.scoreDuration === "PENALTY_SHOOTOUT";
+
+  if (!prorrogacao && !penaltis && !estaEmPenaltis) return "";
+
+  const textoPenaltisSemPlacar =
+    jogo.status === "finished" ? "aguardando placar" : "em andamento";
 
   return `
     <div class="detalhes-extras-mata">
@@ -1314,7 +1321,9 @@ function htmlDetalhesExtrasMataMata(jogo) {
       ${
         penaltis
           ? `<div class="linha-extra-mata">Pênaltis: <strong>${penaltis.home} x ${penaltis.away}</strong></div>`
-          : ""
+          : estaEmPenaltis
+            ? `<div class="linha-extra-mata">Pênaltis: <strong>${textoPenaltisSemPlacar}</strong></div>`
+            : ""
       }
     </div>
   `;
