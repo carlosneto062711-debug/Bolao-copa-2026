@@ -1,4 +1,4 @@
-// VERSÃO 129
+// VERSÃO 130
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -1501,8 +1501,56 @@ palpites
       status: jogoFirestore?.status || jogoExistente.status || palpite.status || "scheduled",
       apiStatus: jogoFirestore?.apiStatus || jogoExistente.apiStatus || palpite.apiStatus || null,
 
-      homeScore: jogoFirestore?.homeScore ?? jogoExistente.homeScore ?? palpite.homeScore ?? null,
-      awayScore: jogoFirestore?.awayScore ?? jogoExistente.awayScore ?? palpite.awayScore ?? null
+     homeScore: jogoFirestore?.homeScore ?? jogoExistente.homeScore ?? palpite.homeScore ?? null,
+awayScore: jogoFirestore?.awayScore ?? jogoExistente.awayScore ?? palpite.awayScore ?? null,
+
+regularTimeHomeScore:
+  jogoFirestore?.regularTimeHomeScore ??
+  jogoExistente.regularTimeHomeScore ??
+  palpite.regularTimeHomeScore ??
+  null,
+
+regularTimeAwayScore:
+  jogoFirestore?.regularTimeAwayScore ??
+  jogoExistente.regularTimeAwayScore ??
+  palpite.regularTimeAwayScore ??
+  null,
+
+extraTimeHomeScore:
+  jogoFirestore?.extraTimeHomeScore ??
+  jogoExistente.extraTimeHomeScore ??
+  palpite.extraTimeHomeScore ??
+  null,
+
+extraTimeAwayScore:
+  jogoFirestore?.extraTimeAwayScore ??
+  jogoExistente.extraTimeAwayScore ??
+  palpite.extraTimeAwayScore ??
+  null,
+
+penaltiesHomeScore:
+  jogoFirestore?.penaltiesHomeScore ??
+  jogoExistente.penaltiesHomeScore ??
+  palpite.penaltiesHomeScore ??
+  null,
+
+penaltiesAwayScore:
+  jogoFirestore?.penaltiesAwayScore ??
+  jogoExistente.penaltiesAwayScore ??
+  palpite.penaltiesAwayScore ??
+  null,
+
+scoreDuration:
+  jogoFirestore?.scoreDuration ??
+  jogoExistente.scoreDuration ??
+  palpite.scoreDuration ??
+  null,
+
+winner:
+  jogoFirestore?.winner ??
+  jogoExistente.winner ??
+  palpite.winner ??
+  null
     };
   });
 
@@ -3693,25 +3741,27 @@ function placarPenaltisJogo(jogo) {
 
 function textoResultadoFinalPalpitesJogo(jogo) {
   const normal = placarTempoNormalJogo(jogo);
-  const prorrogacao = placarProrrogacaoFinalJogo(jogo);
   const penaltis = placarPenaltisJogo(jogo);
 
   if (penaltis) {
     return `${normal.home} (${penaltis.home}) x (${penaltis.away}) ${normal.away}`;
   }
 
-  if (prorrogacao) {
-    return `${prorrogacao.home} x ${prorrogacao.away}`;
-  }
-
   return `${normal.home} x ${normal.away}`;
 }
 
 function htmlDetalhesExtrasJogo(jogo) {
-const prorrogacao = placarProrrogacaoFinalJogo(jogo);
+  const prorrogacao = placarProrrogacaoFinalJogo(jogo);
   const penaltis = placarPenaltisJogo(jogo);
 
-  if (!prorrogacao && !penaltis) return "";
+  const estaEmPenaltis =
+    jogo.apiStatus === "PENALTY_SHOOTOUT" ||
+    jogo.scoreDuration === "PENALTY_SHOOTOUT";
+
+  if (!prorrogacao && !penaltis && !estaEmPenaltis) return "";
+
+  const textoPenaltisSemPlacar =
+    jogo.status === "finished" ? "aguardando placar" : "em andamento";
 
   return `
     <div class="bloco-extras-jogo">
@@ -3723,7 +3773,9 @@ const prorrogacao = placarProrrogacaoFinalJogo(jogo);
       ${
         penaltis
           ? `<div class="linha-extra-jogo">Pênaltis: <strong>${penaltis.home} x ${penaltis.away}</strong></div>`
-          : ""
+          : estaEmPenaltis
+            ? `<div class="linha-extra-jogo">Pênaltis: <strong>${textoPenaltisSemPlacar}</strong></div>`
+            : ""
       }
     </div>
   `;
@@ -3800,20 +3852,70 @@ palpites.forEach((palpite) => {
     jogosPorId[palpite.matchId] ||
     jogosPorId[palpite.firestoreMatchId];
 
-  if (palpite.phase === "knockout") {
-    jogo = {
-      ...(jogo || {}),
-      id: palpite.matchId,
-      knockoutMatchId: palpite.knockoutMatchId || palpite.matchId,
-      homeTeam: nomeSeguroJogoPrincipal(palpite.homeTeam, jogo?.homeTeam),
-      awayTeam: nomeSeguroJogoPrincipal(palpite.awayTeam, jogo?.awayTeam),
-      homeScore: jogo?.homeScore ?? palpite.homeScore ?? null,
-      awayScore: jogo?.awayScore ?? palpite.awayScore ?? null,
-      date: palpite.date || jogo?.date,
-      kickoff: palpite.kickoff || jogo?.kickoff,
-      status: jogo?.status || palpite.status || "scheduled"
-    };
-  }
+ if (palpite.phase === "knockout") {
+  jogo = {
+    ...(jogo || {}),
+
+    id: jogo?.id || palpite.firestoreMatchId || palpite.matchId,
+    matchId: palpite.matchId,
+    knockoutMatchId: palpite.knockoutMatchId || palpite.matchId,
+
+    homeTeam: nomeSeguroJogoPrincipal(jogo?.homeTeam, palpite.homeTeam),
+    awayTeam: nomeSeguroJogoPrincipal(jogo?.awayTeam, palpite.awayTeam),
+
+    homeScore: jogo?.homeScore ?? palpite.homeScore ?? null,
+    awayScore: jogo?.awayScore ?? palpite.awayScore ?? null,
+
+    regularTimeHomeScore:
+      jogo?.regularTimeHomeScore ??
+      palpite.regularTimeHomeScore ??
+      null,
+
+    regularTimeAwayScore:
+      jogo?.regularTimeAwayScore ??
+      palpite.regularTimeAwayScore ??
+      null,
+
+    extraTimeHomeScore:
+      jogo?.extraTimeHomeScore ??
+      palpite.extraTimeHomeScore ??
+      null,
+
+    extraTimeAwayScore:
+      jogo?.extraTimeAwayScore ??
+      palpite.extraTimeAwayScore ??
+      null,
+
+    penaltiesHomeScore:
+      jogo?.penaltiesHomeScore ??
+      palpite.penaltiesHomeScore ??
+      null,
+
+    penaltiesAwayScore:
+      jogo?.penaltiesAwayScore ??
+      palpite.penaltiesAwayScore ??
+      null,
+
+    scoreDuration:
+      jogo?.scoreDuration ??
+      palpite.scoreDuration ??
+      null,
+
+    winner:
+      jogo?.winner ??
+      palpite.winner ??
+      null,
+
+    apiStatus:
+      jogo?.apiStatus ??
+      palpite.apiStatus ??
+      null,
+
+    date: jogo?.date || palpite.date,
+    kickoff: jogo?.kickoff || palpite.kickoff,
+    status: jogo?.status || palpite.status || "scheduled"
+  };
+}
 
   if (!jogo) return;
   if (jogo.date !== dataSelecionadaMeusPalpites) return;
