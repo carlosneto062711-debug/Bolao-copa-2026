@@ -1,4 +1,4 @@
-// VERSÃO 121
+// VERSÃO 122
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -2393,7 +2393,7 @@ function adicionarJogosMataMataManuais(listaJogos) {
     "2026-07-03_22:30"
   ];
 
-    chaves.forEach((chave) => {
+  chaves.forEach((chave) => {
     const dadosManual = dadosMataMataManualPorChave(chave);
     if (!dadosManual) return;
 
@@ -2431,24 +2431,6 @@ function adicionarJogosMataMataManuais(listaJogos) {
   });
 
   aplicarAvancoAutomaticoPrincipal(listaJogos);
-}
-
-    if (jaExiste) return;
-
-    listaJogos.push({
-      id: dadosManual.id,
-      matchId: dadosManual.id,
-      knockoutMatchId: dadosManual.id,
-      phase: "knockout",
-      round: "round32",
-      homeTeam: dadosManual.homeTeam,
-      awayTeam: dadosManual.awayTeam,
-      date,
-      kickoff,
-      status: "scheduled",
-      apiProvider: "manual"
-    });
-  });
 }
 
 function aplicarAvancoAutomaticoPrincipal(listaJogos) {
