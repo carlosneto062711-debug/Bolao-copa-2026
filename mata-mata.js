@@ -1,4 +1,4 @@
-// VERSÃO 137
+// VERSÃO 138
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -1174,16 +1174,6 @@ function textoTempoDoJogoMataMata(jogo) {
     return "ENCERRADO";
   }
 
-  const temPenaltis =
-    jogo.penaltiesHomeScore !== undefined &&
-    jogo.penaltiesHomeScore !== null &&
-    jogo.penaltiesAwayScore !== undefined &&
-    jogo.penaltiesAwayScore !== null;
-
-  if (temPenaltis || jogo.apiStatus === "PENALTY_SHOOTOUT") {
-    return "PÊNALTIS";
-  }
-
   if (!jogoComecouMataMata(jogo)) {
     return "";
   }
@@ -1194,48 +1184,79 @@ function textoTempoDoJogoMataMata(jogo) {
   let minutos = Math.floor((agora - inicio) / 60000) + 1;
   if (minutos < 1) minutos = 1;
 
+  const penaltis = placarPenaltisMataMata(jogo);
+
+  if (penaltis || jogo.apiStatus === "PENALTY_SHOOTOUT" || jogo.scoreDuration === "PENALTY_SHOOTOUT") {
+    return "PÊNALTIS";
+  }
+
+  const empatadoNoTempoNormal =
+    Number(placarTempoNormalMataMata(jogo).home) === Number(placarTempoNormalMataMata(jogo).away);
+
+  const temProrrogacao =
+    jogo.apiStatus === "EXTRA_TIME" ||
+    jogo.scoreDuration === "EXTRA_TIME" ||
+    jogo.scoreDuration === "PENALTY_SHOOTOUT" ||
+    (
+      jogo.extraTimeHomeScore !== undefined &&
+      jogo.extraTimeHomeScore !== null &&
+      jogo.extraTimeAwayScore !== undefined &&
+      jogo.extraTimeAwayScore !== null
+    ) ||
+    (
+      jogo.penaltiesHomeScore !== undefined &&
+      jogo.penaltiesHomeScore !== null &&
+      jogo.penaltiesAwayScore !== undefined &&
+      jogo.penaltiesAwayScore !== null
+    );
+
   if (jogo.apiStatus === "SUSPENDED") {
-    if (minutos > 120) return "PÊNALTIS";
+    if (empatadoNoTempoNormal && temProrrogacao && minutos > 130) return "PÊNALTIS";
     return "JOGO PAUSADO";
   }
 
   if (jogo.apiStatus === "PAUSED") {
-    if (minutos > 120) return "PÊNALTIS";
-    if (minutos > 90) return "INTERVALO PRORROGAÇÃO";
+    if (empatadoNoTempoNormal && temProrrogacao && minutos > 130) return "PÊNALTIS";
+    if (empatadoNoTempoNormal && temProrrogacao && minutos > 110) return "INTERVALO PRORROGAÇÃO";
+    if (minutos > 45 && minutos <= 65) return "INTERVALO";
     return "INTERVALO";
-  }
-
-  if (jogo.apiStatus === "EXTRA_TIME") {
-    if (minutos <= 95) return "INTERVALO PRORROGAÇÃO";
-    if (minutos <= 105) return `1ºT PRORROGAÇÃO - ${minutos}'`;
-    if (minutos <= 110) return "INTERVALO PRORROGAÇÃO";
-    if (minutos <= 120) return `2ºT PRORROGAÇÃO - ${minutos}'`;
-    return "PÊNALTIS";
   }
 
   if (minutos <= 45) {
     return `1º TEMPO - ${minutos}'`;
   }
 
-  if (minutos <= 60) {
+  if (minutos <= 65) {
     return "INTERVALO";
   }
 
-  if (minutos <= 90) {
-    return `2º TEMPO - ${Math.min(90, minutos - 15)}'`;
+  if (minutos <= 110) {
+    return `2º TEMPO - ${Math.min(90, minutos - 20)}'`;
   }
 
-  const empatado =
-    Number(jogo.homeScore ?? 0) === Number(jogo.awayScore ?? 0);
-
-  if (!empatado) {
-    return `2º TEMPO - 90'`;
+  if (!empatadoNoTempoNormal || !temProrrogacao) {
+    return "2º TEMPO - 90'";
   }
 
-  if (minutos <= 95) return "INTERVALO PRORROGAÇÃO";
-  if (minutos <= 105) return `1ºT PRORROGAÇÃO - ${minutos}'`;
-  if (minutos <= 110) return "INTERVALO PRORROGAÇÃO";
-  if (minutos <= 120) return `2ºT PRORROGAÇÃO - ${minutos}'`;
+  if (jogo.apiStatus !== "EXTRA_TIME" && jogo.scoreDuration !== "EXTRA_TIME" && jogo.scoreDuration !== "PENALTY_SHOOTOUT") {
+    return "2º TEMPO - 90'";
+  }
+
+  if (minutos <= 115) {
+    return "INTERVALO PRORROGAÇÃO";
+  }
+
+  if (minutos <= 130) {
+    return `1ºT PRORROGAÇÃO - ${Math.min(105, minutos - 25)}'`;
+  }
+
+  if (minutos <= 135) {
+    return "INTERVALO PRORROGAÇÃO";
+  }
+
+  if (minutos <= 150) {
+    return `2ºT PRORROGAÇÃO - ${Math.min(120, minutos - 30)}'`;
+  }
 
   return "PÊNALTIS";
 }
