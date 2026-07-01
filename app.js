@@ -1,4 +1,4 @@
-// VERSÃO 131
+// VERSÃO 132
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -1102,8 +1102,8 @@ const pontos = calcularPontosMataMata(
           scored: true,
           scoredAt: new Date().toISOString(),
           status: "finished",
-         homeScore: Number(placarBaseHome),
-awayScore: Number(placarBaseAway),
+        homeScore: Number(placarBase.home),
+awayScore: Number(placarBase.away),
 realFinalHomeScore: Number(jogo.homeScore),
 realFinalAwayScore: Number(jogo.awayScore),
 scoreDuration: jogo.scoreDuration || null,
@@ -2946,7 +2946,7 @@ if (ehMataMata) {
     areaStatus = `
       <div class="placar-mata-principal">
         <span>${nomeSeguroJogoPrincipal(jogoSeguro.homeTeam)}</span>
-        <strong>${placarTempoNormalJogo(jogo).home} x ${placarTempoNormalJogo(jogo).away}</strong>
+       <strong>${placarVisualFinalJogo(jogo).home} x ${placarVisualFinalJogo(jogo).away}</strong>
         <span>${nomeSeguroJogoPrincipal(jogoSeguro.awayTeam)}</span>
       </div>
 
@@ -2964,7 +2964,7 @@ if (ehMataMata) {
     areaStatus = `
       <div class="placar-mata-principal">
         <span>${nomeSeguroJogoPrincipal(jogoSeguro.homeTeam)}</span>
-        <strong>${placarTempoNormalJogo(jogo).home} x ${placarTempoNormalJogo(jogo).away}</strong>
+       <strong>${placarVisualFinalJogo(jogo).home} x ${placarVisualFinalJogo(jogo).away}</strong>
         <span>${nomeSeguroJogoPrincipal(jogoSeguro.awayTeam)}</span>
       </div>
 
@@ -3552,7 +3552,7 @@ async function carregarResultadosAnteriores(dataFiltro = dataSelecionadaResultad
     const div = document.createElement("div");
     div.className = "linha-info";
     div.innerHTML = `
-  <strong>${nomeSeguroJogoPrincipal(jogo.homeTeam)} ${textoResultadoFinalPalpitesJogo(jogo)} ${nomeSeguroJogoPrincipal(jogo.awayTeam)}</strong>
+ <strong>${nomeSeguroJogoPrincipal(jogo.homeTeam)} ${placarVisualFinalJogo(jogo).home} x ${placarVisualFinalJogo(jogo).away} ${nomeSeguroJogoPrincipal(jogo.awayTeam)}</strong>
   <span>${jogo.date} — ${formatarHora(jogo.kickoff)}</span>
   <br>
   <span class="badge finalizado">Finalizado</span>
@@ -3739,6 +3739,27 @@ function placarTempoNormalJogo(jogo) {
     home: jogo.homeScore ?? 0,
     away: jogo.awayScore ?? 0
   };
+}
+
+function placarVisualFinalJogo(jogo) {
+  if (!jogo) {
+    return { home: 0, away: 0 };
+  }
+
+  const temFinal =
+    jogo.homeScore !== undefined &&
+    jogo.homeScore !== null &&
+    jogo.awayScore !== undefined &&
+    jogo.awayScore !== null;
+
+  if (temFinal) {
+    return {
+      home: Number(jogo.homeScore),
+      away: Number(jogo.awayScore)
+    };
+  }
+
+  return placarTempoNormalJogo(jogo);
 }
 
 function placarProrrogacaoFinalJogo(jogo) {
