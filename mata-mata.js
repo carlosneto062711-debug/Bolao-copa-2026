@@ -1,4 +1,4 @@
-// VERSÃO 143
+// VERSÃO 144
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -1304,6 +1304,27 @@ function placarTempoNormalMataMata(jogo) {
   };
 }
 
+function placarVisualFinalMataMata(jogo) {
+  if (!jogo) {
+    return { home: 0, away: 0 };
+  }
+
+  const temFinal =
+    jogo.homeScore !== undefined &&
+    jogo.homeScore !== null &&
+    jogo.awayScore !== undefined &&
+    jogo.awayScore !== null;
+
+  if (temFinal) {
+    return {
+      home: Number(jogo.homeScore),
+      away: Number(jogo.awayScore)
+    };
+  }
+
+  return placarTempoNormalMataMata(jogo);
+}
+
 function placarProrrogacaoMataMata(jogo) {
   const temProrrogacao =
     jogo.extraTimeHomeScore !== undefined &&
@@ -1414,7 +1435,7 @@ const blocoPlacarMata =
 
         <div class="linha-placar-mata">
           <span>${jogo.homeTeam}</span>
-         <strong>${placarTempoNormalMataMata(jogo).home} x ${placarTempoNormalMataMata(jogo).away}</strong>
+        <strong>${placarVisualFinalMataMata(jogo).home} x ${placarVisualFinalMataMata(jogo).away}</strong>
           <span>${jogo.awayTeam}</span>
         </div>
 
