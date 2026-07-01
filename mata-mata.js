@@ -1,4 +1,4 @@
-// VERSÃO 142
+// VERSÃO 143
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -1262,9 +1262,45 @@ const estaEmPenaltis =
 }
 
 function placarTempoNormalMataMata(jogo) {
+  if (!jogo) {
+    return { home: 0, away: 0 };
+  }
+
+  const temTempoNormal =
+    jogo.regularTimeHomeScore !== undefined &&
+    jogo.regularTimeHomeScore !== null &&
+    jogo.regularTimeAwayScore !== undefined &&
+    jogo.regularTimeAwayScore !== null;
+
+  if (temTempoNormal) {
+    return {
+      home: Number(jogo.regularTimeHomeScore),
+      away: Number(jogo.regularTimeAwayScore)
+    };
+  }
+
+  const temPlacarFinal =
+    jogo.homeScore !== undefined &&
+    jogo.homeScore !== null &&
+    jogo.awayScore !== undefined &&
+    jogo.awayScore !== null;
+
+  const temProrrogacao =
+    jogo.extraTimeHomeScore !== undefined &&
+    jogo.extraTimeHomeScore !== null &&
+    jogo.extraTimeAwayScore !== undefined &&
+    jogo.extraTimeAwayScore !== null;
+
+  if (temPlacarFinal && temProrrogacao) {
+    return {
+      home: Number(jogo.homeScore) - Number(jogo.extraTimeHomeScore),
+      away: Number(jogo.awayScore) - Number(jogo.extraTimeAwayScore)
+    };
+  }
+
   return {
-    home: jogo.regularTimeHomeScore ?? jogo.homeScore ?? 0,
-    away: jogo.regularTimeAwayScore ?? jogo.awayScore ?? 0
+    home: jogo.homeScore ?? 0,
+    away: jogo.awayScore ?? 0
   };
 }
 
