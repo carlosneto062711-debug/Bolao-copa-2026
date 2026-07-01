@@ -1,4 +1,4 @@
-// VERSÃO 130
+// VERSÃO 131
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -1080,17 +1080,13 @@ async function atualizarPontuacaoMataMata() {
         return;
       }
 
-     const placarBaseHome =
-  jogo.regularTimeHomeScore ?? jogo.homeScore;
-
-const placarBaseAway =
-  jogo.regularTimeAwayScore ?? jogo.awayScore;
+     const placarBase = placarTempoNormalJogo(jogo);
 
 const pontos = calcularPontosMataMata(
   palpite.homeGuess,
   palpite.awayGuess,
-  placarBaseHome,
-  placarBaseAway
+  placarBase.home,
+  placarBase.away
 );
 
       if (
@@ -3703,9 +3699,45 @@ function htmlTempoJogoDinamico(jogo, textoPadrao = "AO VIVO") {
 }
 
 function placarTempoNormalJogo(jogo) {
+  if (!jogo) {
+    return { home: 0, away: 0 };
+  }
+
+  const temTempoNormal =
+    jogo.regularTimeHomeScore !== undefined &&
+    jogo.regularTimeHomeScore !== null &&
+    jogo.regularTimeAwayScore !== undefined &&
+    jogo.regularTimeAwayScore !== null;
+
+  if (temTempoNormal) {
+    return {
+      home: Number(jogo.regularTimeHomeScore),
+      away: Number(jogo.regularTimeAwayScore)
+    };
+  }
+
+  const temPlacarFinal =
+    jogo.homeScore !== undefined &&
+    jogo.homeScore !== null &&
+    jogo.awayScore !== undefined &&
+    jogo.awayScore !== null;
+
+  const temProrrogacao =
+    jogo.extraTimeHomeScore !== undefined &&
+    jogo.extraTimeHomeScore !== null &&
+    jogo.extraTimeAwayScore !== undefined &&
+    jogo.extraTimeAwayScore !== null;
+
+  if (temPlacarFinal && temProrrogacao) {
+    return {
+      home: Number(jogo.homeScore) - Number(jogo.extraTimeHomeScore),
+      away: Number(jogo.awayScore) - Number(jogo.extraTimeAwayScore)
+    };
+  }
+
   return {
-    home: jogo.regularTimeHomeScore ?? jogo.homeScore ?? 0,
-    away: jogo.regularTimeAwayScore ?? jogo.awayScore ?? 0
+    home: jogo.homeScore ?? 0,
+    away: jogo.awayScore ?? 0
   };
 }
 
