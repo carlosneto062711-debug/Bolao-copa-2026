@@ -1,4 +1,4 @@
-// VERSÃO 144
+// VERSÃO 145
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -313,12 +313,12 @@ const jogosMataMata = [
   ["2026-07-04", "18:00"], // ALE/PAR x FRA/SUE
   ["2026-07-04", "14:00"], // AFS/CAN x HOL/MAR
   ["2026-07-06", "16:00"], // POR/CRO x ESP/AUT
-  ["2026-07-07", "13:00"]  // EUA/BOS x BEL/SEN
+  ["2026-07-06", "21:00"]  // EUA/BOS x BEL/SEN
 ]),
 ...criarJogosGenericos("direito", "oitavas", "O", 4, [
   ["2026-07-05", "17:00"], // BRA/JAP x CDM/NOR
   ["2026-07-05", "21:00"], // MEX/EQU x ING/RDC
-  ["2026-07-06", "21:00"], // ARG/CPV x AUS/EGT
+  ["2026-07-07", "13:00"], // ARG/CPV x AUS/EGT
   ["2026-07-07", "17:00"]  // SUI/AGL x COL/GAN
 ]),
   
@@ -1151,8 +1151,36 @@ function jogoComecouMataMata(jogo) {
 
 function jogoAoVivoMataMata(jogo) {
   if (!jogo) return false;
-
   if (jogo.status === "finished") return false;
+
+  if (!jogoComecouMataMata(jogo)) return false;
+
+  const inicio = new Date(jogo.kickoff).getTime();
+  const agora = Date.now();
+
+  let minutosCorridos = Math.floor((agora - inicio) / 60000) + 1;
+  if (minutosCorridos < 1) minutosCorridos = 1;
+
+  const empatadoNoTempoNormal =
+    Number(placarTempoNormalMataMata(jogo).home) === Number(placarTempoNormalMataMata(jogo).away);
+
+  const temProrrogacaoOuPenaltis =
+    jogo.apiStatus === "EXTRA_TIME" ||
+    jogo.apiStatus === "PENALTY_SHOOTOUT" ||
+    jogo.scoreDuration === "EXTRA_TIME" ||
+    jogo.scoreDuration === "PENALTY_SHOOTOUT" ||
+    (
+      jogo.extraTimeHomeScore !== undefined &&
+      jogo.extraTimeHomeScore !== null &&
+      jogo.extraTimeAwayScore !== undefined &&
+      jogo.extraTimeAwayScore !== null
+    ) ||
+    (
+      jogo.penaltiesHomeScore !== undefined &&
+      jogo.penaltiesHomeScore !== null &&
+      jogo.penaltiesAwayScore !== undefined &&
+      jogo.penaltiesAwayScore !== null
+    );
 
   if (
     jogo.apiStatus === "IN_PLAY" ||
@@ -1161,10 +1189,20 @@ function jogoAoVivoMataMata(jogo) {
     jogo.apiStatus === "EXTRA_TIME" ||
     jogo.apiStatus === "PENALTY_SHOOTOUT"
   ) {
+    if (!empatadoNoTempoNormal && minutosCorridos > 110) {
+      return false;
+    }
+
     return true;
   }
 
-  return jogoComecouMataMata(jogo);
+  if (minutosCorridos <= 110) return true;
+
+  if (empatadoNoTempoNormal && temProrrogacaoOuPenaltis && minutosCorridos <= 155) {
+    return true;
+  }
+
+  return false;
 }
 
 function textoTempoDoJogoMataMata(jogo) {
@@ -1309,6 +1347,13 @@ function placarVisualFinalMataMata(jogo) {
     return { home: 0, away: 0 };
   }
 
+  const normal = placarTempoNormalMataMata(jogo);
+  const penaltis = placarPenaltisMataMata(jogo);
+
+  if (penaltis) {
+    return normal;
+  }
+
   const temFinal =
     jogo.homeScore !== undefined &&
     jogo.homeScore !== null &&
@@ -1322,7 +1367,7 @@ function placarVisualFinalMataMata(jogo) {
     };
   }
 
-  return placarTempoNormalMataMata(jogo);
+  return normal;
 }
 
 function placarProrrogacaoMataMata(jogo) {
