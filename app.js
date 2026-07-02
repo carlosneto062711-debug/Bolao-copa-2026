@@ -1,4 +1,4 @@
-// VERSÃO 132
+// VERSÃO 133
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -2174,8 +2174,8 @@ function idMataMataPorJogoPrincipal(jogo) {
     "2026-07-05_17:00": "Oesquerdo2",
     "2026-07-05_21:00": "Odireito2",
     "2026-07-06_16:00": "Oesquerdo3",
-    "2026-07-06_21:00": "Odireito3",
-    "2026-07-07_13:00": "Oesquerdo4",
+    "2026-07-06_21:00": "Oesquerdo4",
+"2026-07-07_13:00": "Odireito3",
     "2026-07-07_17:00": "Odireito4",
 
     "2026-07-09_17:00": "Qesquerdo1",
@@ -2570,15 +2570,15 @@ function aplicarAvancoAutomaticoPrincipal(listaJogos) {
   }
 
   // OITAVAS
-  garantirJogo("Oesquerdo1", "round16", "2026-07-04", "18:00");
-  garantirJogo("Oesquerdo2", "round16", "2026-07-04", "14:00");
-  garantirJogo("Oesquerdo3", "round16", "2026-07-06", "16:00");
-  garantirJogo("Oesquerdo4", "round16", "2026-07-07", "13:00");
+ garantirJogo("Oesquerdo1", "round16", "2026-07-04", "18:00");
+garantirJogo("Oesquerdo2", "round16", "2026-07-04", "14:00");
+garantirJogo("Oesquerdo3", "round16", "2026-07-06", "16:00");
+garantirJogo("Oesquerdo4", "round16", "2026-07-06", "21:00");
 
-  garantirJogo("Odireito1", "round16", "2026-07-05", "17:00");
-  garantirJogo("Odireito2", "round16", "2026-07-05", "21:00");
-  garantirJogo("Odireito3", "round16", "2026-07-06", "21:00");
-  garantirJogo("Odireito4", "round16", "2026-07-07", "17:00");
+garantirJogo("Odireito1", "round16", "2026-07-05", "17:00");
+garantirJogo("Odireito2", "round16", "2026-07-05", "21:00");
+garantirJogo("Odireito3", "round16", "2026-07-07", "13:00");
+garantirJogo("Odireito4", "round16", "2026-07-07", "17:00");
 
   // QUARTAS
   garantirJogo("Qesquerdo1", "quarter", "2026-07-09", "17:00");
@@ -3552,8 +3552,8 @@ async function carregarResultadosAnteriores(dataFiltro = dataSelecionadaResultad
     const div = document.createElement("div");
     div.className = "linha-info";
     div.innerHTML = `
- <strong>${nomeSeguroJogoPrincipal(jogo.homeTeam)} ${placarVisualFinalJogo(jogo).home} x ${placarVisualFinalJogo(jogo).away} ${nomeSeguroJogoPrincipal(jogo.awayTeam)}</strong>
-  <span>${jogo.date} — ${formatarHora(jogo.kickoff)}</span>
+<strong>${nomeSeguroJogoPrincipal(jogo.homeTeam)} ${textoResultadoVisualFinalJogo(jogo)} ${nomeSeguroJogoPrincipal(jogo.awayTeam)}</strong>
+<span>${jogo.date} — ${formatarHora(jogo.kickoff)}</span>
   <br>
   <span class="badge finalizado">Finalizado</span>
 `;
@@ -3746,6 +3746,13 @@ function placarVisualFinalJogo(jogo) {
     return { home: 0, away: 0 };
   }
 
+  const normal = placarTempoNormalJogo(jogo);
+  const penaltis = placarPenaltisJogo(jogo);
+
+  if (penaltis) {
+    return normal;
+  }
+
   const temFinal =
     jogo.homeScore !== undefined &&
     jogo.homeScore !== null &&
@@ -3759,7 +3766,19 @@ function placarVisualFinalJogo(jogo) {
     };
   }
 
-  return placarTempoNormalJogo(jogo);
+  return normal;
+}
+
+function textoResultadoVisualFinalJogo(jogo) {
+  const visual = placarVisualFinalJogo(jogo);
+  const normal = placarTempoNormalJogo(jogo);
+  const penaltis = placarPenaltisJogo(jogo);
+
+  if (penaltis) {
+    return `${normal.home} (${penaltis.home}) x (${penaltis.away}) ${normal.away}`;
+  }
+
+  return `${visual.home} x ${visual.away}`;
 }
 
 function placarProrrogacaoFinalJogo(jogo) {
