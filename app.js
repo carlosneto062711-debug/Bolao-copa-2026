@@ -1,4 +1,4 @@
-// VERSÃO 133
+// VERSÃO 134
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -1881,10 +1881,46 @@ function textoTempoDoJogo(jogo) {
 function removerJogosDuplicados(listaJogos) {
   const mapa = new Map();
 
+  function valorQualidadeJogo(jogo) {
+    let valor = 0;
+
+    if (jogo.apiMatchId) valor += 100;
+
+    const home = nomeSeguroJogoPrincipal(jogo.homeTeam, "");
+    const away = nomeSeguroJogoPrincipal(jogo.awayTeam, "");
+
+    if (home && home !== "A definir") valor += 10;
+    if (away && away !== "A definir") valor += 10;
+
+    if (jogo.status === "finished") valor += 30;
+    if (jogo.status === "live") valor += 20;
+    if (jogo.status === "scheduled") valor += 10;
+
+    if (jogo.homeScore !== undefined && jogo.homeScore !== null) valor += 5;
+    if (jogo.awayScore !== undefined && jogo.awayScore !== null) valor += 5;
+
+    const atualizado = new Date(
+      jogo.updatedFromApiAt || jogo.createdFromApiAt || 0
+    ).getTime();
+
+    if (!Number.isNaN(atualizado)) {
+      valor += Math.min(10, atualizado / 1000000000000);
+    }
+
+    return valor;
+  }
+
   listaJogos.forEach((jogo) => {
-    const chave = jogo.apiMatchId
-      ? `api_${jogo.apiMatchId}`
-      : `${normalizarNomeTime(jogo.homeTeam)}_${normalizarNomeTime(jogo.awayTeam)}_${jogo.date}`;
+    const idMataMata =
+      typeof idMataMataPorJogoPrincipal === "function"
+        ? idMataMataPorJogoPrincipal(jogo)
+        : null;
+
+    const chave = idMataMata
+      ? `mata_${idMataMata}`
+      : jogo.apiMatchId
+        ? `api_${jogo.apiMatchId}`
+        : `${jogo.date}_${String(jogo.kickoff || "").slice(11, 16)}_${normalizarNomeTime(jogo.homeTeam)}_${normalizarNomeTime(jogo.awayTeam)}`;
 
     const jogoExistente = mapa.get(chave);
 
@@ -1893,23 +1929,7 @@ function removerJogosDuplicados(listaJogos) {
       return;
     }
 
-    const existenteTemApi = !!jogoExistente.apiMatchId;
-    const novoTemApi = !!jogo.apiMatchId;
-
-    if (novoTemApi && !existenteTemApi) {
-      mapa.set(chave, jogo);
-      return;
-    }
-
-    const atualizadoExistente = new Date(
-      jogoExistente.updatedFromApiAt || jogoExistente.createdFromApiAt || 0
-    ).getTime();
-
-    const atualizadoNovo = new Date(
-      jogo.updatedFromApiAt || jogo.createdFromApiAt || 0
-    ).getTime();
-
-    if (atualizadoNovo > atualizadoExistente) {
+    if (valorQualidadeJogo(jogo) >= valorQualidadeJogo(jogoExistente)) {
       mapa.set(chave, jogo);
     }
   });
@@ -2172,7 +2192,7 @@ function idMataMataPorJogoPrincipal(jogo) {
     "2026-07-04_14:00": "Oesquerdo1",
     "2026-07-04_18:00": "Odireito1",
     "2026-07-05_17:00": "Oesquerdo2",
-    "2026-07-05_21:00": "Odireito2",
+   "2026-07-05_22:00": "Odireito2",
     "2026-07-06_16:00": "Oesquerdo3",
     "2026-07-06_21:00": "Oesquerdo4",
 "2026-07-07_13:00": "Odireito3",
@@ -2576,7 +2596,7 @@ garantirJogo("Oesquerdo3", "round16", "2026-07-06", "16:00");
 garantirJogo("Oesquerdo4", "round16", "2026-07-06", "21:00");
 
 garantirJogo("Odireito1", "round16", "2026-07-05", "17:00");
-garantirJogo("Odireito2", "round16", "2026-07-05", "21:00");
+garantirJogo("Odireito2", "round16", "2026-07-05", "22:00");
 garantirJogo("Odireito3", "round16", "2026-07-07", "13:00");
 garantirJogo("Odireito4", "round16", "2026-07-07", "17:00");
 
