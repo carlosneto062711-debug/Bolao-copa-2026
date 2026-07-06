@@ -1,4 +1,4 @@
-// VERSÃO 146
+// VERSÃO 147
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -322,15 +322,15 @@ const jogosMataMata = [
   ["2026-07-07", "17:00"]  // SUI/AGL x COL/GAN
 ]),
   
-  // QUARTAS
-  ...criarJogosGenericos("esquerdo", "quartas", "Q", 2, [
-    ["2026-07-09", "17:00"],
-    ["2026-07-11", "18:00"]
-  ]),
-  ...criarJogosGenericos("direito", "quartas", "Q", 2, [
-    ["2026-07-10", "16:00"],
-    ["2026-07-11", "22:00"]
-  ]),
+ // QUARTAS
+...criarJogosGenericos("esquerdo", "quartas", "Q", 2, [
+  ["2026-07-09", "17:00"],
+  ["2026-07-10", "16:00"]
+]),
+...criarJogosGenericos("direito", "quartas", "Q", 2, [
+  ["2026-07-11", "18:00"],
+  ["2026-07-11", "22:00"]
+]),
 
   // SEMIFINAIS
   {
