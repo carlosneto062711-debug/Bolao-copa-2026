@@ -1,4 +1,4 @@
-// VERSÃO 145
+// VERSÃO 146
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -317,7 +317,7 @@ const jogosMataMata = [
 ]),
 ...criarJogosGenericos("direito", "oitavas", "O", 4, [
   ["2026-07-05", "17:00"], // BRA/JAP x CDM/NOR
-  ["2026-07-05", "21:00"], // MEX/EQU x ING/RDC
+  ["2026-07-05", "22:00"], // MEX/EQU x ING/RDC
   ["2026-07-07", "13:00"], // ARG/CPV x AUS/EGT
   ["2026-07-07", "17:00"]  // SUI/AGL x COL/GAN
 ]),
