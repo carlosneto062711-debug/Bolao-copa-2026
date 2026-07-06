@@ -1,4 +1,4 @@
-// VERSÃO 134
+// VERSÃO 135
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 
@@ -2199,8 +2199,8 @@ function idMataMataPorJogoPrincipal(jogo) {
     "2026-07-07_17:00": "Odireito4",
 
     "2026-07-09_17:00": "Qesquerdo1",
-    "2026-07-10_16:00": "Qdireito1",
-    "2026-07-11_18:00": "Qesquerdo2",
+   "2026-07-10_16:00": "Qesquerdo2",
+"2026-07-11_18:00": "Qdireito1",
     "2026-07-11_22:00": "Qdireito2",
 
     "2026-07-14_16:00": "S1",
@@ -2602,11 +2602,11 @@ garantirJogo("Odireito4", "round16", "2026-07-07", "17:00");
 
   // QUARTAS
   garantirJogo("Qesquerdo1", "quarter", "2026-07-09", "17:00");
-  garantirJogo("Qesquerdo2", "quarter", "2026-07-11", "18:00");
+garantirJogo("Qesquerdo2", "quarter", "2026-07-10", "16:00");
 
-  garantirJogo("Qdireito1", "quarter", "2026-07-10", "16:00");
-  garantirJogo("Qdireito2", "quarter", "2026-07-11", "22:00");
-
+garantirJogo("Qdireito1", "quarter", "2026-07-11", "18:00");
+garantirJogo("Qdireito2", "quarter", "2026-07-11", "22:00");
+  
   // SEMIS, 3º LUGAR E FINAL
   garantirJogo("S1", "semi", "2026-07-14", "16:00");
   garantirJogo("S2", "semi", "2026-07-15", "16:00");
